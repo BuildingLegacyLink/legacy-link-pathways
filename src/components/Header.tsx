@@ -9,7 +9,7 @@ const Header = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { name: 'Planning', path: '/dashboard' },
+    { name: 'Planning', path: '/planning' },
     { name: 'Learning', path: '/learn' },
     { name: 'Vault', path: '/vault' },
   ];
