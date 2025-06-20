@@ -1,8 +1,10 @@
-
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Clock, DollarSign, Users } from 'lucide-react';
 
 const CTASection = () => {
+  const navigate = useNavigate();
+
   const stats = [
     { icon: Clock, value: '5 min', label: 'Quick Setup' },
     { icon: DollarSign, value: '$0', label: 'Getting Started' },
@@ -11,7 +13,7 @@ const CTASection = () => {
 
   const handleTakeQuizNow = () => {
     console.log('Take the Quiz Now clicked');
-    // TODO: Navigate to quiz page
+    navigate('/quiz');
   };
 
   const handleChatWithLink = () => {
