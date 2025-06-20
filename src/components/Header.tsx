@@ -9,20 +9,14 @@ const Header = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Learn', path: '/learn' },
-    { name: 'Tools', path: '/tools' },
+    { name: 'Planning', path: '/dashboard' },
+    { name: 'Learning', path: '/learn' },
     { name: 'Vault', path: '/vault' },
   ];
 
-  const handleSignIn = () => {
-    console.log('Sign In clicked');
-    // TODO: Navigate to sign in page
-  };
-
-  const handleStartLegacy = () => {
-    console.log('Start Your Legacy clicked');
-    navigate('/quiz');
+  const handleSignOut = () => {
+    console.log('Sign Out clicked');
+    navigate('/');
   };
 
   const handleNavClick = (path: string, name: string) => {
@@ -37,44 +31,38 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">L</span>
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
+              <span className="text-2xl font-bold text-gray-900">Legacy Link</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">Legacy Link</span>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-8">
+              {navItems.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => handleNavClick(item.path, item.name)}
+                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors duration-200 cursor-pointer"
+                >
+                  {item.name}
+                </button>
+              ))}
+            </nav>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            {navItems.map((item) => (
-              <button
-                key={item.name}
-                onClick={() => handleNavClick(item.path, item.name)}
-                className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200 cursor-pointer"
-              >
-                {item.name}
-              </button>
-            ))}
-          </nav>
-
-          {/* CTA Buttons */}
+          {/* User Info & Sign Out */}
           <div className="hidden md:flex items-center space-x-4">
+            <span className="text-gray-700 font-medium">Christopher Bakken</span>
             <Button 
               variant="outline" 
               className="text-gray-600 border-gray-300"
-              onClick={handleSignIn}
+              onClick={handleSignOut}
             >
-              Sign In
-            </Button>
-            <Button 
-              className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white"
-              onClick={handleStartLegacy}
-            >
-              Start Your Legacy
+              Sign Out
             </Button>
           </div>
 
@@ -96,25 +84,20 @@ const Header = () => {
               {navItems.map((item) => (
                 <button
                   key={item.name}
-                  className="block px-3 py-2 text-gray-600 hover:text-blue-600 font-medium cursor-pointer w-full text-left"
+                  className="block px-3 py-2 text-gray-600 hover:text-gray-900 font-medium cursor-pointer w-full text-left"
                   onClick={() => handleNavClick(item.path, item.name)}
                 >
                   {item.name}
                 </button>
               ))}
               <div className="flex flex-col space-y-2 pt-4">
+                <span className="px-3 py-2 text-gray-700 font-medium">Christopher Bakken</span>
                 <Button 
                   variant="outline" 
-                  className="text-gray-600 border-gray-300"
-                  onClick={handleSignIn}
+                  className="text-gray-600 border-gray-300 mx-3"
+                  onClick={handleSignOut}
                 >
-                  Sign In
-                </Button>
-                <Button 
-                  className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white"
-                  onClick={handleStartLegacy}
-                >
-                  Start Your Legacy
+                  Sign Out
                 </Button>
               </div>
             </div>
