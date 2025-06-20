@@ -3,6 +3,16 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, TrendingUp, BookOpen } from 'lucide-react';
 
 const HeroSection = () => {
+  const handleTakeQuiz = () => {
+    console.log('Take the 5-Minute Quiz clicked');
+    // TODO: Navigate to quiz page
+  };
+
+  const handleSeeHowItWorks = () => {
+    console.log('See How It Works clicked');
+    // TODO: Show demo or scroll to features section
+  };
+
   return (
     <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,6 +33,7 @@ const HeroSection = () => {
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
+              onClick={handleTakeQuiz}
             >
               Take the 5-Minute Quiz
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -31,6 +42,7 @@ const HeroSection = () => {
               variant="outline" 
               size="lg" 
               className="text-gray-600 border-gray-300 px-8 py-3 text-lg"
+              onClick={handleSeeHowItWorks}
             >
               See How It Works
             </Button>

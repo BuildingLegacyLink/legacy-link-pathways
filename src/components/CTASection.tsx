@@ -9,6 +9,16 @@ const CTASection = () => {
     { icon: Users, value: '1000+', label: 'Young Adults' },
   ];
 
+  const handleTakeQuizNow = () => {
+    console.log('Take the Quiz Now clicked');
+    // TODO: Navigate to quiz page
+  };
+
+  const handleChatWithLink = () => {
+    console.log('Chat with Link clicked');
+    // TODO: Open chat interface with Link AI
+  };
+
   return (
     <section className="py-20 bg-gradient-to-br from-blue-900 via-blue-800 to-teal-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -39,6 +49,7 @@ const CTASection = () => {
           <Button 
             size="lg" 
             className="bg-white text-blue-900 hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
+            onClick={handleTakeQuizNow}
           >
             Take the Quiz Now
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -47,6 +58,7 @@ const CTASection = () => {
             variant="outline" 
             size="lg" 
             className="border-white text-white hover:bg-white hover:text-blue-900 px-8 py-3 text-lg"
+            onClick={handleChatWithLink}
           >
             Chat with Link
           </Button>
