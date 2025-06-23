@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/utils/currency';
 
 const IncomeSection = () => {
   const { user } = useAuth();
@@ -97,15 +97,6 @@ const IncomeSection = () => {
       return;
     }
     addIncomeMutation.mutate(newIncome);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const currentIncomes = incomes.filter(income => income.is_current);
@@ -238,7 +229,7 @@ const IncomeSection = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="amount">Amount</Label>
+                    <Label htmlFor="amount">Amount ($)</Label>
                     <Input
                       id="amount"
                       type="number"

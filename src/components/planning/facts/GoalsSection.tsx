@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { formatCurrency } from '@/utils/currency';
 
 const GoalsSection = () => {
   const { user } = useAuth();
@@ -152,7 +153,7 @@ const GoalsSection = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="target_amount">Target Amount</Label>
+                <Label htmlFor="target_amount">Target Amount ($)</Label>
                 <Input
                   id="target_amount"
                   name="target_amount"

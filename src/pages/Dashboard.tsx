@@ -2,6 +2,7 @@
 import Header from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, DollarSign, Target, Shield } from 'lucide-react';
+import { formatCurrency } from '@/utils/currency';
 
 const Dashboard = () => {
   return (
@@ -22,7 +23,7 @@ const Dashboard = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Net Worth</p>
-                  <p className="text-2xl font-bold text-gray-900">$0</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -36,7 +37,7 @@ const Dashboard = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-gray-600">Monthly Income</p>
-                  <p className="text-2xl font-bold text-gray-900">$0</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(0)}</p>
                 </div>
               </div>
             </CardContent>

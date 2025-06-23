@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/utils/currency';
 
 const SavingsSection = () => {
   const { user } = useAuth();
@@ -108,15 +108,6 @@ const SavingsSection = () => {
     addSavingMutation.mutate(newSaving);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const totalSavings = savings.reduce((sum, saving) => sum + saving.amount, 0);
 
   if (savingsLoading) {
@@ -183,12 +174,12 @@ const SavingsSection = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Contribution Name</Label>
+                    <Label htmlFor="name">Account/Contribution Name</Label>
                     <Input
                       id="name"
                       value={newSaving.name}
                       onChange={(e) => setNewSaving({ ...newSaving, name: e.target.value })}
-                      placeholder="e.g., 401k, Emergency Fund"
+                      placeholder="e.g., 401k, Roth IRA, Emergency Fund"
                       required
                     />
                   </div>
@@ -209,7 +200,7 @@ const SavingsSection = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="amount">Amount</Label>
+                    <Label htmlFor="amount">Amount ($)</Label>
                     <Input
                       id="amount"
                       type="number"
