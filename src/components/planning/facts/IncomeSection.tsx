@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
 const IncomeSection = () => {
   const { user } = useAuth();
@@ -45,7 +46,13 @@ const IncomeSection = () => {
       if (!user) throw new Error('No user');
       const { error } = await supabase
         .from('income')
-        .insert([{ ...income, user_id: user.id, amount: parseFloat(income.amount) }]);
+        .insert([{ 
+          ...income, 
+          user_id: user.id, 
+          amount: parseFloat(income.amount),
+          start_date: income.start_date || null,
+          end_date: income.end_date || null
+        }]);
       
       if (error) throw error;
     },
@@ -61,6 +68,10 @@ const IncomeSection = () => {
         is_current: true
       });
       setIsAdding(false);
+      toast({ title: 'Success', description: 'Income added successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to add income: ' + error.message, variant: 'destructive' });
     }
   });
 
@@ -75,13 +86,26 @@ const IncomeSection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['income'] });
+      toast({ title: 'Success', description: 'Income deleted successfully!' });
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newIncome.name || !newIncome.amount) return;
+    if (!newIncome.name || !newIncome.amount) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
     addIncomeMutation.mutate(newIncome);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const currentIncomes = incomes.filter(income => income.is_current);
@@ -108,7 +132,7 @@ const IncomeSection = () => {
                   <div>
                     <div className="font-medium">{income.name}</div>
                     <div className="text-sm text-gray-600">
-                      ${income.amount.toLocaleString()} {income.frequency}
+                      {formatCurrency(income.amount)} {income.frequency}
                     </div>
                   </div>
                   <Button
@@ -121,6 +145,11 @@ const IncomeSection = () => {
                   </Button>
                 </div>
               ))}
+              {currentIncomes.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  No current income entries
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -137,7 +166,7 @@ const IncomeSection = () => {
                   <div>
                     <div className="font-medium">{income.name}</div>
                     <div className="text-sm text-gray-600">
-                      ${income.amount.toLocaleString()} {income.frequency}
+                      {formatCurrency(income.amount)} {income.frequency}
                     </div>
                     {income.start_date && (
                       <div className="text-xs text-gray-500">
@@ -155,6 +184,11 @@ const IncomeSection = () => {
                   </Button>
                 </div>
               ))}
+              {futureIncomes.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  No future income entries
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -208,10 +242,10 @@ const IncomeSection = () => {
                     <Input
                       id="amount"
                       type="number"
-                      step="0.01"
+                      step="1"
                       value={newIncome.amount}
                       onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
-                      placeholder="0.00"
+                      placeholder="5000"
                       required
                     />
                   </div>

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
 const SavingsSection = () => {
   const { user } = useAuth();
@@ -76,6 +77,10 @@ const SavingsSection = () => {
         frequency: 'monthly'
       });
       setIsAdding(false);
+      toast({ title: 'Success', description: 'Savings contribution added successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to add savings: ' + error.message, variant: 'destructive' });
     }
   });
 
@@ -90,13 +95,26 @@ const SavingsSection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings'] });
+      toast({ title: 'Success', description: 'Savings contribution deleted successfully!' });
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSaving.name || !newSaving.amount) return;
+    if (!newSaving.name || !newSaving.amount) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
     addSavingMutation.mutate(newSaving);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const totalSavings = savings.reduce((sum, saving) => sum + saving.amount, 0);
@@ -113,7 +131,7 @@ const SavingsSection = () => {
         <CardHeader>
           <CardTitle className="text-lg flex justify-between">
             Monthly Savings Contributions
-            <span className="text-green-600">${totalSavings.toLocaleString()}/month</span>
+            <span className="text-green-600">{formatCurrency(totalSavings)}/month</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -123,7 +141,7 @@ const SavingsSection = () => {
                 <div>
                   <div className="font-medium">{saving.name}</div>
                   <div className="text-sm text-gray-600">
-                    ${saving.amount.toLocaleString()} {saving.frequency}
+                    {formatCurrency(saving.amount)} {saving.frequency}
                     {saving.goals && (
                       <span className="ml-2 text-blue-600">→ {saving.goals.name}</span>
                     )}
@@ -195,10 +213,10 @@ const SavingsSection = () => {
                     <Input
                       id="amount"
                       type="number"
-                      step="0.01"
+                      step="1"
                       value={newSaving.amount}
                       onChange={(e) => setNewSaving({ ...newSaving, amount: e.target.value })}
-                      placeholder="0.00"
+                      placeholder="500"
                       required
                     />
                   </div>

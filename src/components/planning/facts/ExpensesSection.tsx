@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
 const ExpensesSection = () => {
   const { user } = useAuth();
@@ -57,6 +58,10 @@ const ExpensesSection = () => {
         frequency: 'monthly'
       });
       setIsAdding(false);
+      toast({ title: 'Success', description: 'Expense added successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to add expense: ' + error.message, variant: 'destructive' });
     }
   });
 
@@ -71,13 +76,26 @@ const ExpensesSection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast({ title: 'Success', description: 'Expense deleted successfully!' });
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExpense.name || !newExpense.amount) return;
+    if (!newExpense.name || !newExpense.amount) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
     addExpenseMutation.mutate(newExpense);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const essentialExpenses = expenses.filter(expense => expense.type === 'essential');
@@ -100,7 +118,7 @@ const ExpensesSection = () => {
           <CardHeader>
             <CardTitle className="text-lg flex justify-between">
               Essential Expenses
-              <span className="text-green-600">${totalEssential.toLocaleString()}/month</span>
+              <span className="text-green-600">{formatCurrency(totalEssential)}/month</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -110,7 +128,7 @@ const ExpensesSection = () => {
                   <div>
                     <div className="font-medium">{expense.name}</div>
                     <div className="text-sm text-gray-600 capitalize">
-                      {expense.category} • ${expense.amount.toLocaleString()} {expense.frequency}
+                      {expense.category} • {formatCurrency(expense.amount)} {expense.frequency}
                     </div>
                   </div>
                   <Button
@@ -123,6 +141,11 @@ const ExpensesSection = () => {
                   </Button>
                 </div>
               ))}
+              {essentialExpenses.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  No essential expenses
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -132,7 +155,7 @@ const ExpensesSection = () => {
           <CardHeader>
             <CardTitle className="text-lg flex justify-between">
               Discretionary Expenses
-              <span className="text-blue-600">${totalDiscretionary.toLocaleString()}/month</span>
+              <span className="text-blue-600">{formatCurrency(totalDiscretionary)}/month</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -142,7 +165,7 @@ const ExpensesSection = () => {
                   <div>
                     <div className="font-medium">{expense.name}</div>
                     <div className="text-sm text-gray-600 capitalize">
-                      {expense.category} • ${expense.amount.toLocaleString()} {expense.frequency}
+                      {expense.category} • {formatCurrency(expense.amount)} {expense.frequency}
                     </div>
                   </div>
                   <Button
@@ -155,6 +178,11 @@ const ExpensesSection = () => {
                   </Button>
                 </div>
               ))}
+              {discretionaryExpenses.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  No discretionary expenses
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -224,10 +252,10 @@ const ExpensesSection = () => {
                     <Input
                       id="amount"
                       type="number"
-                      step="0.01"
+                      step="1"
                       value={newExpense.amount}
                       onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                      placeholder="0.00"
+                      placeholder="1500"
                       required
                     />
                   </div>

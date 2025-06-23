@@ -8,35 +8,66 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const GoalsSection = () => {
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: goals, isLoading } = useQuery({
-    queryKey: ['goals'],
+    queryKey: ['goals', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('goals').select('*').order('priority', { ascending: true });
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('priority', { ascending: true });
       if (error) throw error;
       return data;
     },
+    enabled: !!user
   });
 
   const addGoalMutation = useMutation({
     mutationFn: async (goalData: any) => {
-      const { data, error } = await supabase.from('goals').insert(goalData);
+      if (!user) throw new Error('No user');
+      const { data, error } = await supabase.from('goals').insert({ ...goalData, user_id: user.id });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       setIsDialogOpen(false);
-      toast({ title: 'Success', description: 'Goal added successfully!' });
+      setEditingGoal(null);
+      toast({ title: 'Success', description: 'Goal saved successfully!' });
     },
     onError: (error) => {
-      toast({ title: 'Error', description: 'Failed to add goal: ' + error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to save goal: ' + error.message, variant: 'destructive' });
+    },
+  });
+
+  const updateGoalMutation = useMutation({
+    mutationFn: async ({ id, ...goalData }: any) => {
+      const { data, error } = await supabase
+        .from('goals')
+        .update(goalData)
+        .eq('id', id);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      setIsDialogOpen(false);
+      setEditingGoal(null);
+      toast({ title: 'Success', description: 'Goal updated successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to update goal: ' + error.message, variant: 'destructive' });
     },
   });
 
@@ -61,17 +92,32 @@ const GoalsSection = () => {
       target_date: formData.get('target_date') as string || null,
       priority: parseInt(formData.get('priority') as string) || 1,
       description: formData.get('description') as string || null,
-      user_id: (await supabase.auth.getUser()).data.user?.id,
     };
 
-    addGoalMutation.mutate(goalData);
+    if (editingGoal) {
+      updateGoalMutation.mutate({ id: editingGoal.id, ...goalData });
+    } else {
+      addGoalMutation.mutate(goalData);
+    }
   };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const openEditDialog = (goal: any) => {
+    setEditingGoal(goal);
+    setIsDialogOpen(true);
+  };
+
+  const openAddDialog = () => {
+    setEditingGoal(null);
+    setIsDialogOpen(true);
   };
 
   if (isLoading) return <div>Loading goals...</div>;
@@ -82,16 +128,16 @@ const GoalsSection = () => {
         <h2 className="text-2xl font-bold text-gray-900">Financial Goals</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button onClick={openAddDialog} className="bg-green-600 hover:bg-green-700">
               <Plus className="h-4 w-4 mr-2" />
               Add Goal
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Financial Goal</DialogTitle>
+              <DialogTitle>{editingGoal ? 'Edit Goal' : 'Add New Financial Goal'}</DialogTitle>
               <DialogDescription>
-                Set a new financial goal to track your progress.
+                {editingGoal ? 'Update your financial goal details.' : 'Set a new financial goal to track your progress.'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -100,6 +146,7 @@ const GoalsSection = () => {
                 <Input
                   id="name"
                   name="name"
+                  defaultValue={editingGoal?.name || ''}
                   placeholder="Emergency Fund"
                   required
                 />
@@ -110,7 +157,8 @@ const GoalsSection = () => {
                   id="target_amount"
                   name="target_amount"
                   type="number"
-                  step="0.01"
+                  step="1"
+                  defaultValue={editingGoal?.target_amount || ''}
                   placeholder="50000"
                   required
                 />
@@ -121,6 +169,7 @@ const GoalsSection = () => {
                   id="target_date"
                   name="target_date"
                   type="date"
+                  defaultValue={editingGoal?.target_date || ''}
                 />
               </div>
               <div className="space-y-2">
@@ -131,7 +180,7 @@ const GoalsSection = () => {
                   type="number"
                   min="1"
                   max="5"
-                  defaultValue="1"
+                  defaultValue={editingGoal?.priority || 1}
                 />
               </div>
               <div className="space-y-2">
@@ -139,11 +188,12 @@ const GoalsSection = () => {
                 <Textarea
                   id="description"
                   name="description"
+                  defaultValue={editingGoal?.description || ''}
                   placeholder="6 months of living expenses"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={addGoalMutation.isPending}>
-                {addGoalMutation.isPending ? 'Adding...' : 'Add Goal'}
+              <Button type="submit" className="w-full" disabled={addGoalMutation.isPending || updateGoalMutation.isPending}>
+                {(addGoalMutation.isPending || updateGoalMutation.isPending) ? 'Saving...' : editingGoal ? 'Update Goal' : 'Add Goal'}
               </Button>
             </form>
           </DialogContent>
@@ -162,14 +212,24 @@ const GoalsSection = () => {
                       {formatCurrency(Number(goal.target_amount))}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteGoalMutation.mutate(goal.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditDialog(goal)}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteGoalMutation.mutate(goal.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
