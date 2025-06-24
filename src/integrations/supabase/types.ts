@@ -155,34 +155,46 @@ export type Database = {
       }
       learning_progress: {
         Row: {
+          attempts: number | null
           completed: boolean | null
           completed_at: string | null
           created_at: string
           id: string
+          level: string | null
           module_id: string
           score: number | null
+          topic_id: string | null
+          total_xp: number | null
           updated_at: string
           user_id: string
           xp_earned: number | null
         }
         Insert: {
+          attempts?: number | null
           completed?: boolean | null
           completed_at?: string | null
           created_at?: string
           id?: string
+          level?: string | null
           module_id: string
           score?: number | null
+          topic_id?: string | null
+          total_xp?: number | null
           updated_at?: string
           user_id: string
           xp_earned?: number | null
         }
         Update: {
+          attempts?: number | null
           completed?: boolean | null
           completed_at?: string | null
           created_at?: string
           id?: string
+          level?: string | null
           module_id?: string
           score?: number | null
+          topic_id?: string | null
+          total_xp?: number | null
           updated_at?: string
           user_id?: string
           xp_earned?: number | null
@@ -224,6 +236,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      modules: {
+        Row: {
+          description: string | null
+          id: string
+          level: string
+          name: string
+          questions: Json
+          sort_order: number | null
+          topic_id: string
+          xp_value: number | null
+        }
+        Insert: {
+          description?: string | null
+          id: string
+          level: string
+          name: string
+          questions?: Json
+          sort_order?: number | null
+          topic_id: string
+          xp_value?: number | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          level?: string
+          name?: string
+          questions?: Json
+          sort_order?: number | null
+          topic_id?: string
+          xp_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modules_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -298,6 +351,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      test_out_progress: {
+        Row: {
+          completed: boolean | null
+          created_at: string
+          id: string
+          level: string
+          passed: boolean | null
+          score: number | null
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          level: string
+          passed?: boolean | null
+          score?: number | null
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          level?: string
+          passed?: boolean | null
+          score?: number | null
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_out_progress_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          description?: string | null
+          icon?: string | null
+          id: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
       }
     }
     Views: {
