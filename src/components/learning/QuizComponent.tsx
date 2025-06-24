@@ -29,9 +29,19 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState(0);
+  const [missedQuestions, setMissedQuestions] = useState<number[]>([]);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+  const [isReviewPhase, setIsReviewPhase] = useState(false);
 
   console.log('QuizComponent rendered with module:', module);
   console.log('Module questions:', module.questions);
+
+  // Initialize questions on component mount
+  useEffect(() => {
+    if (module.questions && module.questions.length > 0) {
+      setAllQuestions([...module.questions]);
+    }
+  }, [module.questions]);
 
   // If no questions, show error message
   if (!module.questions || module.questions.length === 0) {
@@ -58,26 +68,35 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     );
   }
 
-  const currentQuestion = module.questions[currentQuestionIndex];
-  const progress = ((answeredQuestions) / module.questions.length) * 100;
+  const currentQuestion = allQuestions[currentQuestionIndex];
+  const totalQuestions = module.questions.length;
+  const progress = (answeredQuestions / totalQuestions) * 100;
 
   console.log('Current question:', currentQuestion);
+  console.log('Review phase:', isReviewPhase);
+  console.log('Missed questions:', missedQuestions);
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (showFeedback) return; // Prevent selection during feedback
     setSelectedAnswer(answerIndex);
-  };
-
-  const handleSubmitAnswer = () => {
-    if (selectedAnswer === null) return;
-
-    const correct = selectedAnswer === currentQuestion.correctAnswer;
+    
+    const correct = answerIndex === currentQuestion.correctAnswer;
     setIsCorrect(correct);
     setShowFeedback(true);
 
     if (correct) {
       setCorrectAnswers(prev => prev + 1);
+      // Auto-advance after a short delay for correct answers
+      setTimeout(() => {
+        handleNext();
+      }, 1000);
+    } else {
+      // Track missed question for review
+      if (!isReviewPhase) {
+        setMissedQuestions(prev => [...prev, currentQuestionIndex]);
+      }
     }
+    
     setAnsweredQuestions(prev => prev + 1);
   };
 
@@ -85,49 +104,61 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     setSelectedAnswer(null);
     setShowFeedback(false);
     
-    if (currentQuestionIndex < module.questions.length - 1) {
+    if (currentQuestionIndex < allQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      // Quiz complete - calculate final score
-      const scorePercentage = Math.round((correctAnswers / module.questions.length) * 100);
-      const xpEarned = scorePercentage >= 70 ? module.xp_value : 0;
-      
-      onComplete(scorePercentage, xpEarned);
+      // Check if we need to review missed questions
+      if (!isReviewPhase && missedQuestions.length > 0) {
+        // Start review phase with missed questions
+        const missedQuestionObjects = missedQuestions.map(index => module.questions[index]);
+        setAllQuestions(missedQuestionObjects);
+        setCurrentQuestionIndex(0);
+        setIsReviewPhase(true);
+        setMissedQuestions([]);
+      } else {
+        // Quiz complete - calculate final score
+        const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100);
+        const xpEarned = scorePercentage >= 70 ? module.xp_value : 0;
+        
+        onComplete(scorePercentage, xpEarned);
+      }
     }
   };
 
-  if (showFeedback) {
-    return (
-      <Card className="max-w-3xl mx-auto">
-        <CardContent className="p-8 text-center">
-          <div className="mb-6">
-            {isCorrect ? (
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            ) : (
-              <X className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            )}
-            <h2 className="text-2xl font-bold mb-2">
-              {isCorrect ? 'Correct!' : 'Oops...'}
-            </h2>
-            {!isCorrect && (
-              <p className="text-gray-600 mb-4">
-                The correct answer was: <strong>{currentQuestion.options[currentQuestion.correctAnswer]}</strong>
-              </p>
-            )}
-            <p className="text-gray-600">
-              {isCorrect 
-                ? 'Great job! Keep it up.' 
-                : 'Don\'t worry, keep learning!'}
-            </p>
-          </div>
-          
-          <Button onClick={handleNext} className="bg-gradient-to-r from-blue-500 to-teal-500 text-white">
-            {currentQuestionIndex < module.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getOptionClassName = (optionIndex: number) => {
+    if (!showFeedback) {
+      return selectedAnswer === optionIndex
+        ? 'border-blue-500 bg-blue-50'
+        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-25';
+    }
+
+    // Show feedback colors
+    if (optionIndex === currentQuestion.correctAnswer) {
+      return 'border-green-500 bg-green-50'; // Correct answer is green
+    }
+    
+    if (selectedAnswer === optionIndex && !isCorrect) {
+      return 'border-red-500 bg-red-50'; // User's wrong answer is red
+    }
+    
+    return 'border-gray-200'; // Other options remain neutral
+  };
+
+  const getRadioClassName = (optionIndex: number) => {
+    if (!showFeedback) {
+      return selectedAnswer === optionIndex ? 'border-blue-500 bg-blue-500' : 'border-gray-300';
+    }
+
+    if (optionIndex === currentQuestion.correctAnswer) {
+      return 'border-green-500 bg-green-500';
+    }
+    
+    if (selectedAnswer === optionIndex && !isCorrect) {
+      return 'border-red-500 bg-red-500';
+    }
+    
+    return 'border-gray-300';
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -143,7 +174,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
         
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm text-gray-500">
-            Question {currentQuestionIndex + 1} of {module.questions.length}
+            {isReviewPhase ? 'Review: ' : ''}Question {currentQuestionIndex + 1} of {allQuestions.length}
           </span>
           <span className="text-sm text-gray-500">
             {module.name} • +{module.xp_value} XP
@@ -172,17 +203,16 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
               <button
                 key={index}
                 onClick={() => handleAnswerSelect(index)}
-                className={`p-4 border-2 rounded-lg transition-colors text-left ${
-                  selectedAnswer === index
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300 hover:bg-blue-25'
+                disabled={showFeedback}
+                className={`p-4 border-2 rounded-lg transition-colors text-left ${getOptionClassName(index)} ${
+                  showFeedback ? 'cursor-not-allowed' : 'cursor-pointer'
                 }`}
               >
                 <div className="flex items-center">
-                  <div className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                    selectedAnswer === index ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-                  }`}>
-                    {selectedAnswer === index && <div className="w-2 h-2 bg-white rounded-full" />}
+                  <div className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${getRadioClassName(index)}`}>
+                    {(selectedAnswer === index || (showFeedback && index === currentQuestion.correctAnswer)) && 
+                      <div className="w-2 h-2 bg-white rounded-full" />
+                    }
                   </div>
                   {option}
                 </div>
@@ -191,17 +221,19 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
           </div>
 
           <div className="flex justify-end">
-            <Button 
-              onClick={handleSubmitAnswer}
-              disabled={selectedAnswer === null}
-              className={`px-8 py-2 rounded-lg ${
-                selectedAnswer !== null
-                  ? 'bg-gradient-to-r from-blue-500 to-teal-500 text-white hover:from-blue-600 hover:to-teal-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              Submit Answer
-            </Button>
+            {showFeedback && !isCorrect ? (
+              <Button 
+                onClick={handleNext}
+                className="bg-gradient-to-r from-blue-500 to-teal-500 text-white hover:from-blue-600 hover:to-teal-600"
+              >
+                {currentQuestionIndex < allQuestions.length - 1 ? 'Next Question' : 
+                 (!isReviewPhase && missedQuestions.length > 0) ? 'Review Missed Questions' : 'Finish Quiz'}
+              </Button>
+            ) : !showFeedback && (
+              <div className="text-gray-500 text-sm">
+                Select an answer to continue
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
