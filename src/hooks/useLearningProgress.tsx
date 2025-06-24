@@ -172,15 +172,20 @@ export const useLearningProgress = () => {
 
   // Check if module is unlocked
   const isModuleUnlocked = (moduleId: string) => {
-    if (!userProgress || !modules.length) return false;
+    if (!modules.length) return false;
     
     const module = modules.find(m => m.id === moduleId);
     if (!module) return false;
     
     const { currentLevel } = calculateUserStats();
     
+    // Define level hierarchy
+    const levelHierarchy = ['beginner', 'intermediate', 'advanced', 'expert'];
+    const currentLevelIndex = levelHierarchy.indexOf(currentLevel);
+    const moduleLevelIndex = levelHierarchy.indexOf(module.level);
+    
     // If module is from a higher level than user's current level, it's locked
-    if (module.level !== currentLevel) return false;
+    if (moduleLevelIndex > currentLevelIndex) return false;
     
     // Get modules for the same topic and level, ordered by sort_order
     const topicModules = modules
@@ -188,16 +193,21 @@ export const useLearningProgress = () => {
       .sort((a, b) => a.sort_order - b.sort_order);
     
     const moduleIndex = topicModules.findIndex(m => m.id === moduleId);
-    if (moduleIndex === 0) return true; // First module is always unlocked
+    if (moduleIndex === 0) return true; // First module of each topic/level is always unlocked
     
-    // Check if previous module is completed
+    // For subsequent modules, check if previous module is completed
+    if (!userProgress) return false;
+    
     const previousModule = topicModules[moduleIndex - 1];
     const previousProgress = userProgress.find(p => p.module_id === previousModule.id);
     
     console.log(`Checking unlock for ${module.name}:`, {
       moduleIndex,
       previousModule: previousModule?.name,
-      previousProgress: previousProgress?.completed
+      previousProgress: previousProgress?.completed,
+      currentLevel,
+      moduleLevel: module.level,
+      isFirstModule: moduleIndex === 0
     });
     
     return previousProgress?.completed || false;
