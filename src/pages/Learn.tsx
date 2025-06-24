@@ -30,6 +30,8 @@ const Learn = () => {
 
   const handleStartQuiz = (module: any) => {
     console.log('Starting quiz for module:', module);
+    console.log('Module questions:', module.questions);
+    console.log('Questions length:', module.questions?.length);
     setSelectedModule(module);
     setShowResults(false);
     setQuizResults(null);
@@ -100,8 +102,11 @@ const Learn = () => {
     );
   }
 
+  console.log('Current state:', { selectedModule, showResults, quizResults });
+
   // Show quiz results
   if (showResults && selectedModule && quizResults) {
+    console.log('Rendering quiz results');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 p-6">
         <QuizResults
@@ -116,7 +121,8 @@ const Learn = () => {
   }
 
   // Show quiz component
-  if (selectedModule) {
+  if (selectedModule && !showResults) {
+    console.log('Rendering quiz component for module:', selectedModule);
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 p-6">
         <QuizComponent
@@ -129,6 +135,7 @@ const Learn = () => {
   }
 
   // Main learning page
+  console.log('Rendering main learning page');
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
       <div className="container mx-auto px-4 py-8">

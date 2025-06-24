@@ -30,8 +30,12 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState(0);
 
+  console.log('QuizComponent rendered with module:', module);
+  console.log('Module questions:', module.questions);
+
   // If no questions, show error message
   if (!module.questions || module.questions.length === 0) {
+    console.log('No questions found for module:', module);
     return (
       <Card className="max-w-3xl mx-auto">
         <CardContent className="p-8 text-center">
@@ -40,6 +44,9 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
             <h2 className="text-2xl font-bold mb-2">No Questions Available</h2>
             <p className="text-gray-600 mb-4">
               This module doesn't have any questions yet. Please check back later.
+            </p>
+            <p className="text-sm text-gray-500">
+              Module ID: {module.id}
             </p>
           </div>
           
@@ -53,6 +60,8 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
 
   const currentQuestion = module.questions[currentQuestionIndex];
   const progress = ((answeredQuestions) / module.questions.length) * 100;
+
+  console.log('Current question:', currentQuestion);
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (showFeedback) return; // Prevent selection during feedback
