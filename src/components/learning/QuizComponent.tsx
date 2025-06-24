@@ -121,21 +121,23 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     setShowFeedback(true);
 
     if (correct) {
-      // Mark this question as correct
+      // Mark this question as correct immediately
       const questionIndexToMark = isReviewPhase ? missedQuestionIndices[currentQuestionIndex] : currentQuestionIndex;
       console.log('Marking question as correct:', questionIndexToMark);
       
+      // Update correct answers and then handle next logic
       setCorrectAnswers(prev => {
         const newCorrectAnswers = [...prev];
         newCorrectAnswers[questionIndexToMark] = true;
         console.log('Updated correct answers:', newCorrectAnswers);
+        
+        // Auto-advance after a short delay for correct answers
+        setTimeout(() => {
+          handleNext(newCorrectAnswers);
+        }, 1000);
+        
         return newCorrectAnswers;
       });
-      
-      // Auto-advance after a short delay for correct answers
-      setTimeout(() => {
-        handleNext();
-      }, 1000);
     } else {
       // Track missed question for review
       const questionIndexToTrack = isReviewPhase ? missedQuestionIndices[currentQuestionIndex] : currentQuestionIndex;
@@ -147,7 +149,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = (updatedCorrectAnswers?: boolean[]) => {
     console.log('Moving to next question');
     setSelectedAnswer(null);
     setShowFeedback(false);
@@ -155,6 +157,9 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     if (currentQuestionIndex < allQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
+      // Use the updated correct answers if provided, otherwise use current state
+      const finalCorrectAnswers = updatedCorrectAnswers || correctAnswers;
+      
       // Check if we need to review missed questions
       if (missedQuestionIndices.length > 0 && !isReviewPhase) {
         console.log('Starting review phase with missed questions:', missedQuestionIndices);
@@ -166,9 +171,9 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       } else {
         // Quiz complete - calculate final score
         console.log('Quiz complete, calculating score');
-        console.log('Final correct answers array:', correctAnswers);
+        console.log('Final correct answers array:', finalCorrectAnswers);
         
-        const finalCorrectCount = correctAnswers.filter(Boolean).length;
+        const finalCorrectCount = finalCorrectAnswers.filter(Boolean).length;
         console.log('Final correct count:', finalCorrectCount);
         console.log('Total questions:', module.questions.length);
         
@@ -285,7 +290,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
           <div className="flex justify-end">
             {showFeedback && !isCorrect ? (
               <Button 
-                onClick={handleNext}
+                onClick={() => handleNext()}
                 className="bg-gradient-to-r from-blue-500 to-teal-500 text-white hover:from-blue-600 hover:to-teal-600"
               >
                 {currentQuestionIndex < allQuestions.length - 1 ? 'Next Question' : 
