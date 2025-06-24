@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { useLearningProgress } from '@/hooks/useLearningProgress';
 import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import LevelProgressBar from '@/components/learning/LevelProgressBar';
+import LevelSelector from '@/components/learning/LevelSelector';
 import TopicCard from '@/components/learning/TopicCard';
 import QuizComponent from '@/components/learning/QuizComponent';
 import QuizResults from '@/components/learning/QuizResults';
@@ -29,24 +29,26 @@ const Learn = () => {
   const [quizResults, setQuizResults] = useState<{ score: number; xpEarned: number } | null>(null);
 
   const userStats = calculateUserStats();
-
-  // Define level hierarchy
-  const levelHierarchy = ['beginner', 'intermediate', 'advanced', 'expert'];
-  const currentLevelIndex = levelHierarchy.indexOf(userStats.currentLevel);
-
-  // Filter modules to only show current level and below
-  const availableLevels = levelHierarchy.slice(0, currentLevelIndex + 1);
-  const filteredModules = modules.filter(module => availableLevels.includes(module.level));
   
-  // Filter topics to only show those that have modules at the user's available levels
+  // Add state for selected level - defaults to current level
+  const [selectedLevel, setSelectedLevel] = useState<string>(userStats.currentLevel);
+
+  // Update selected level when user stats change (level up)
+  if (selectedLevel !== userStats.currentLevel && userStats.currentLevel !== 'beginner') {
+    setSelectedLevel(userStats.currentLevel);
+  }
+
+  // Filter modules to only show selected level
+  const filteredModules = modules.filter(module => module.level === selectedLevel);
+  
+  // Filter topics to only show those that have modules at the selected level
   const filteredTopics = topics.filter(topic => 
     filteredModules.some(module => module.topic_id === topic.id)
   );
 
   console.log('User level filtering:', {
     currentLevel: userStats.currentLevel,
-    currentLevelIndex,
-    availableLevels,
+    selectedLevel,
     totalModules: modules.length,
     filteredModules: filteredModules.length,
     totalTopics: topics.length,
@@ -106,6 +108,11 @@ const Learn = () => {
     setSelectedModule(null);
     setShowResults(false);
     setQuizResults(null);
+  };
+
+  const handleLevelSelect = (level: string) => {
+    console.log('Level selected:', level);
+    setSelectedLevel(level);
   };
 
   if (!user) {
@@ -210,10 +217,19 @@ const Learn = () => {
             />
           </div>
 
+          {/* Level Selector */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <LevelSelector
+              currentLevel={userStats.currentLevel}
+              selectedLevel={selectedLevel}
+              onLevelSelect={handleLevelSelect}
+            />
+          </div>
+
           {/* Topics Grid */}
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-              Learning Topics ({userStats.currentLevel} level)
+              Learning Topics ({selectedLevel} level)
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -225,7 +241,7 @@ const Learn = () => {
                     topic={topic}
                     modules={topicModules}
                     userProgress={userProgress || []}
-                    currentLevel={userStats.currentLevel}
+                    currentLevel={selectedLevel}
                     onStartQuiz={handleStartQuiz}
                     isModuleUnlocked={isModuleUnlocked}
                   />
