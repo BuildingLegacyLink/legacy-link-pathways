@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -69,6 +68,8 @@ export const useLearningProgress = () => {
       const module = modules.find(m => m.id === moduleId);
       if (!module) throw new Error('Module not found');
 
+      console.log('Updating progress for module:', moduleId, { score, xpEarned, completed });
+
       const { error } = await supabase
         .from('learning_progress')
         .upsert({
@@ -84,12 +85,26 @@ export const useLearningProgress = () => {
           total_xp: xpEarned
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Progress updated successfully in database');
     },
     onSuccess: () => {
+      console.log('Mutation onSuccess called, invalidating queries');
       // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['learning-progress'] });
       toast({ title: 'Progress saved!', description: 'Your learning progress has been updated.' });
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error);
+      toast({ 
+        title: 'Error saving progress', 
+        description: 'Failed to save your progress. Please try again.',
+        variant: 'destructive'
+      });
     }
   });
 
@@ -155,6 +170,7 @@ export const useLearningProgress = () => {
     topics,
     modules,
     updateProgress: (params: any, options?: any) => {
+      console.log('updateProgress called with:', params, options);
       return updateProgressMutation.mutate(params, options);
     },
     isUpdating: updateProgressMutation.isPending,

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,53 +31,15 @@ const Learn = () => {
 
   const handleStartQuiz = (module: any) => {
     console.log('Starting quiz for module:', module);
-    console.log('Module questions:', module.questions);
-    console.log('Questions length:', module.questions?.length);
     setSelectedModule(module);
     setShowResults(false);
     setQuizResults(null);
   };
 
-  const handleQuizComplete = async (score: number, xpEarned: number) => {
+  const handleQuizComplete = (score: number, xpEarned: number) => {
     console.log('Quiz completed:', { score, xpEarned });
     setQuizResults({ score, xpEarned });
     setShowResults(true);
-    
-    // Update progress in database - mark as completed if score is 100%
-    if (selectedModule) {
-      try {
-        // Use Promise-based approach to ensure completion
-        await new Promise<void>((resolve, reject) => {
-          updateProgress({
-            moduleId: selectedModule.id,
-            score,
-            xpEarned,
-            completed: score === 100 // Only complete if score is 100%
-          }, {
-            onSuccess: () => {
-              console.log('Progress update successful');
-              resolve();
-            },
-            onError: (error) => {
-              console.error('Progress update failed:', error);
-              reject(error);
-            }
-          });
-        });
-        
-        // Force refresh the progress data after successful update
-        console.log('Refreshing progress data...');
-        await refetchProgress();
-        console.log('Progress data refreshed');
-        
-        // Show success message
-        if (score === 100) {
-          console.log(`Module completed! +${xpEarned} XP earned`);
-        }
-      } catch (error) {
-        console.error('Error updating progress:', error);
-      }
-    }
   };
 
   const handleRetryQuiz = () => {
@@ -86,7 +47,38 @@ const Learn = () => {
     setQuizResults(null);
   };
 
-  const handleBackToTopics = () => {
+  const handleBackToTopics = async () => {
+    // Save progress when user clicks "Continue Learning" from results
+    if (selectedModule && quizResults && quizResults.score === 100) {
+      console.log('Saving completed module progress...');
+      try {
+        await new Promise<void>((resolve, reject) => {
+          updateProgress({
+            moduleId: selectedModule.id,
+            score: quizResults.score,
+            xpEarned: quizResults.xpEarned,
+            completed: true
+          }, {
+            onSuccess: () => {
+              console.log('Progress saved successfully');
+              resolve();
+            },
+            onError: (error) => {
+              console.error('Failed to save progress:', error);
+              reject(error);
+            }
+          });
+        });
+        
+        // Force refresh to update UI
+        console.log('Refreshing progress data...');
+        await refetchProgress();
+        console.log('Progress refreshed, returning to topics');
+      } catch (error) {
+        console.error('Error saving progress:', error);
+      }
+    }
+    
     setSelectedModule(null);
     setShowResults(false);
     setQuizResults(null);
