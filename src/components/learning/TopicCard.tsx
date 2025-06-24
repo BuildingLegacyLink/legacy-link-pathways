@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, Lock, Play } from 'lucide-react';
 
@@ -22,11 +21,12 @@ interface TopicCardProps {
   };
   modules: Module[];
   userProgress: any[];
+  currentLevel: string;
   isModuleUnlocked: (moduleId: string) => boolean;
-  onModuleClick: (module: Module) => void;
+  onStartQuiz: (module: Module) => void;
 }
 
-const TopicCard = ({ topic, modules, userProgress, isModuleUnlocked, onModuleClick }: TopicCardProps) => {
+const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocked, onStartQuiz }: TopicCardProps) => {
   const topicModules = modules.filter(m => m.topic_id === topic.id);
   const completedModules = topicModules.filter(m => 
     userProgress.find(p => p.module_id === m.id && p.completed)
@@ -80,7 +80,7 @@ const TopicCard = ({ topic, modules, userProgress, isModuleUnlocked, onModuleCli
                       ? 'bg-green-50 border-green-200 hover:bg-green-100'
                       : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
                 }`}
-                onClick={() => status !== 'locked' && onModuleClick(module)}
+                onClick={() => status !== 'locked' && onStartQuiz(module)}
               >
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
