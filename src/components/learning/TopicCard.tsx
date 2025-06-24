@@ -6,6 +6,9 @@ interface Module {
   id: string;
   name: string;
   description: string;
+  topic_id: string;
+  level: string;
+  sort_order: number;
   xp_value: number;
   questions: any[];
 }
