@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLearningProgress } from '@/hooks/useLearningProgress';
@@ -29,26 +28,18 @@ const Learn = () => {
   const [quizResults, setQuizResults] = useState<{ score: number; xpEarned: number } | null>(null);
 
   const userStats = calculateUserStats();
-  
-  // Selected level defaults to current level, but can be changed via selector
   const [selectedLevel, setSelectedLevel] = useState<string>(userStats.currentLevel);
 
-  // Auto-update selected level when user advances
-  if (selectedLevel !== userStats.currentLevel && 
-      ['intermediate', 'advanced', 'expert'].includes(userStats.currentLevel) &&
-      selectedLevel === 'beginner') {
+  // Update selected level when user advances automatically
+  useEffect(() => {
     setSelectedLevel(userStats.currentLevel);
-  }
+  }, [userStats.currentLevel]);
 
-  // Filter modules and topics based on selected level - only show current selected level
+  // Filter modules and topics based on selected level
   const filteredModules = modules.filter(module => module.level === selectedLevel);
   const filteredTopics = topics.filter(topic => 
     filteredModules.some(module => module.topic_id === topic.id)
   );
-
-  console.log('Current user stats:', userStats);
-  console.log('Selected level:', selectedLevel);
-  console.log('Filtered modules:', filteredModules.length);
 
   const handleStartQuiz = (module: any) => {
     console.log('Starting quiz for module:', module);

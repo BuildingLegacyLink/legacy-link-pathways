@@ -12,7 +12,7 @@ const LevelSelector = ({ currentLevel, selectedLevel, onLevelSelect }: LevelSele
   const levelHierarchy = ['beginner', 'intermediate', 'advanced', 'expert'];
   const currentLevelIndex = levelHierarchy.indexOf(currentLevel);
   
-  // Only show levels up to and including the current level
+  // Show all levels up to and including the current level
   const availableLevels = levelHierarchy.slice(0, currentLevelIndex + 1);
 
   const getLevelIcon = (level: string) => {
@@ -25,34 +25,36 @@ const LevelSelector = ({ currentLevel, selectedLevel, onLevelSelect }: LevelSele
     }
   };
 
-  const getLevelColor = (level: string, isSelected: boolean) => {
-    const baseColors = {
-      beginner: isSelected ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200',
-      intermediate: isSelected ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-      advanced: isSelected ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200',
-      expert: isSelected ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-    };
-    return baseColors[level] || baseColors.beginner;
-  };
-
   if (availableLevels.length <= 1) {
     return null; // Don't show selector if only one level is available
   }
 
   return (
-    <div className="flex flex-wrap gap-2 justify-center mb-6">
-      {availableLevels.map((level) => (
-        <Button
-          key={level}
-          variant="outline"
-          size="sm"
-          className={`${getLevelColor(level, selectedLevel === level)} border-2 transition-all duration-200`}
-          onClick={() => onLevelSelect(level)}
-        >
-          {getLevelIcon(level)}
-          <span className="ml-2 capitalize">{level}</span>
-        </Button>
-      ))}
+    <div className="flex flex-wrap gap-3 justify-center mb-8">
+      <div className="text-sm text-gray-600 mb-2 w-full text-center">
+        Switch between unlocked levels:
+      </div>
+      {availableLevels.map((level) => {
+        const isSelected = selectedLevel === level;
+        return (
+          <Button
+            key={level}
+            variant={isSelected ? "default" : "outline"}
+            size="default"
+            className={`
+              min-w-[120px] h-12 transition-all duration-200 font-medium
+              ${isSelected 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' 
+                : 'bg-white hover:bg-blue-50 text-blue-600 border-2 border-blue-200 hover:border-blue-300'
+              }
+            `}
+            onClick={() => onLevelSelect(level)}
+          >
+            {getLevelIcon(level)}
+            <span className="ml-2 capitalize">{level}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 };

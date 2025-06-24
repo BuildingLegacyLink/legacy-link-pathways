@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -135,7 +134,7 @@ export const useLearningProgress = () => {
     }
   });
 
-  // Calculate user's current level and XP - SIMPLIFIED AND FIXED
+  // Calculate user's current level and XP with CUMULATIVE XP
   const calculateUserStats = () => {
     if (!userProgress || !modules.length) return { 
       currentLevel: 'beginner', 
@@ -151,11 +150,17 @@ export const useLearningProgress = () => {
     // Get completed modules by user
     const completedModuleIds = userProgress.filter(p => p.completed).map(p => p.module_id);
     
-    // Group modules by level
+    // Group modules by level and calculate XP per level
     const beginnerModules = modules.filter(m => m.level === 'beginner');
     const intermediateModules = modules.filter(m => m.level === 'intermediate');
     const advancedModules = modules.filter(m => m.level === 'advanced');
     const expertModules = modules.filter(m => m.level === 'expert');
+    
+    // Calculate total XP needed for each level (CUMULATIVE)
+    const beginnerTotalXP = beginnerModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    const intermediateTotalXP = beginnerTotalXP + intermediateModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    const advancedTotalXP = intermediateTotalXP + advancedModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    const expertTotalXP = advancedTotalXP + expertModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
     
     // Count completed modules per level
     const completedBeginnerCount = beginnerModules.filter(m => completedModuleIds.includes(m.id)).length;
@@ -163,63 +168,46 @@ export const useLearningProgress = () => {
     const completedAdvancedCount = advancedModules.filter(m => completedModuleIds.includes(m.id)).length;
     const completedExpertCount = expertModules.filter(m => completedModuleIds.includes(m.id)).length;
     
-    // Calculate level progression based on completed modules
+    // Determine current level and progress
     let currentLevel = 'beginner';
     let levelProgress = 0;
     let nextLevel = 'intermediate';
-    let nextLevelXP = 0;
+    let nextLevelXP = intermediateTotalXP;
     
     // Expert level (all modules completed)
     if (expertModules.length > 0 && completedExpertCount === expertModules.length) {
       currentLevel = 'expert';
       levelProgress = 100;
       nextLevel = null;
+      nextLevelXP = expertTotalXP;
     } 
     // Advanced level (all advanced modules completed)
     else if (advancedModules.length > 0 && completedAdvancedCount === advancedModules.length) {
       currentLevel = 'advanced';
       nextLevel = 'expert';
-      if (expertModules.length > 0) {
-        const expertTotalXP = expertModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
-        const expertEarnedXP = expertModules.filter(m => completedModuleIds.includes(m.id))
-          .reduce((sum, m) => sum + (m.xp_value || 0), 0);
-        levelProgress = expertTotalXP > 0 ? (expertEarnedXP / expertTotalXP) * 100 : 0;
-        nextLevelXP = expertTotalXP;
-      }
+      nextLevelXP = expertTotalXP;
+      levelProgress = expertTotalXP > 0 ? (totalXP / expertTotalXP) * 100 : 0;
     } 
     // Intermediate level (all intermediate modules completed)
     else if (intermediateModules.length > 0 && completedIntermediateCount === intermediateModules.length) {
       currentLevel = 'intermediate';
       nextLevel = 'advanced';
-      if (advancedModules.length > 0) {
-        const advancedTotalXP = advancedModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
-        const advancedEarnedXP = advancedModules.filter(m => completedModuleIds.includes(m.id))
-          .reduce((sum, m) => sum + (m.xp_value || 0), 0);
-        levelProgress = advancedTotalXP > 0 ? (advancedEarnedXP / advancedTotalXP) * 100 : 0;
-        nextLevelXP = advancedTotalXP;
-      }
+      nextLevelXP = advancedTotalXP;
+      levelProgress = advancedTotalXP > 0 ? (totalXP / advancedTotalXP) * 100 : 0;
     } 
-    // Beginner level completed (all beginner modules completed)
+    // Beginner level completed (all beginner modules completed) - auto advance to intermediate
     else if (beginnerModules.length > 0 && completedBeginnerCount === beginnerModules.length) {
       currentLevel = 'intermediate';
       nextLevel = 'advanced';
-      if (intermediateModules.length > 0) {
-        const intermediateTotalXP = intermediateModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
-        const intermediateEarnedXP = intermediateModules.filter(m => completedModuleIds.includes(m.id))
-          .reduce((sum, m) => sum + (m.xp_value || 0), 0);
-        levelProgress = intermediateTotalXP > 0 ? (intermediateEarnedXP / intermediateTotalXP) * 100 : 0;
-        nextLevelXP = intermediateTotalXP;
-      }
+      nextLevelXP = advancedTotalXP;
+      levelProgress = advancedTotalXP > 0 ? (totalXP / advancedTotalXP) * 100 : 0;
     } 
     // Still working on beginner level
     else {
       currentLevel = 'beginner';
       nextLevel = 'intermediate';
-      const beginnerTotalXP = beginnerModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
-      const beginnerEarnedXP = beginnerModules.filter(m => completedModuleIds.includes(m.id))
-        .reduce((sum, m) => sum + (m.xp_value || 0), 0);
-      levelProgress = beginnerTotalXP > 0 ? (beginnerEarnedXP / beginnerTotalXP) * 100 : 0;
-      nextLevelXP = beginnerTotalXP;
+      nextLevelXP = intermediateTotalXP;
+      levelProgress = intermediateTotalXP > 0 ? (totalXP / intermediateTotalXP) * 100 : 0;
     }
     
     console.log('Level calculation:', {
@@ -228,10 +216,10 @@ export const useLearningProgress = () => {
       levelProgress,
       nextLevel,
       nextLevelXP,
-      completedBeginnerCount,
-      totalBeginnerCount: beginnerModules.length,
-      completedIntermediateCount,
-      totalIntermediateCount: intermediateModules.length
+      beginnerTotalXP,
+      intermediateTotalXP,
+      advancedTotalXP,
+      expertTotalXP
     });
     
     return { currentLevel, totalXP, levelProgress, nextLevel, nextLevelXP };
