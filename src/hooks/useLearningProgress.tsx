@@ -165,57 +165,77 @@ export const useLearningProgress = () => {
       userProgress.find(p => p.module_id === m.id && p.completed)
     );
     
-    // Determine current level based on completion
+    // Determine current level based on completion of ALL modules at each level
     let currentLevel = 'beginner';
     let levelProgress = 0;
     let nextLevel = 'intermediate';
     let nextLevelXP = 0;
     
-    if (completedExpertModules.length === expertModules.length && expertModules.length > 0) {
+    // Check if ALL expert modules are completed
+    if (expertModules.length > 0 && completedExpertModules.length === expertModules.length) {
       currentLevel = 'expert';
       levelProgress = 100;
       nextLevel = null;
       nextLevelXP = totalXP;
-    } else if (completedAdvancedModules.length === advancedModules.length && advancedModules.length > 0) {
+    }
+    // Check if ALL advanced modules are completed
+    else if (advancedModules.length > 0 && completedAdvancedModules.length === advancedModules.length) {
       currentLevel = 'advanced';
       nextLevel = 'expert';
       if (expertModules.length > 0) {
-        levelProgress = (completedExpertModules.length / expertModules.length) * 100;
-        nextLevelXP = totalXP + (expertModules.length - completedExpertModules.length) * (expertModules[0]?.xp_value || 50);
+        // Show progress in expert level
+        const expertTotalXP = expertModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        const expertEarnedXP = completedExpertModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        levelProgress = expertTotalXP > 0 ? (expertEarnedXP / expertTotalXP) * 100 : 0;
+        nextLevelXP = expertTotalXP;
       } else {
         levelProgress = 100;
         nextLevel = null;
         nextLevelXP = totalXP;
       }
-    } else if (completedIntermediateModules.length === intermediateModules.length && intermediateModules.length > 0) {
+    }
+    // Check if ALL intermediate modules are completed
+    else if (intermediateModules.length > 0 && completedIntermediateModules.length === intermediateModules.length) {
       currentLevel = 'intermediate';
       nextLevel = 'advanced';
       if (advancedModules.length > 0) {
-        levelProgress = (completedAdvancedModules.length / advancedModules.length) * 100;
-        nextLevelXP = totalXP + (advancedModules.length - completedAdvancedModules.length) * (advancedModules[0]?.xp_value || 50);
+        // Show progress in advanced level
+        const advancedTotalXP = advancedModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        const advancedEarnedXP = completedAdvancedModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        levelProgress = advancedTotalXP > 0 ? (advancedEarnedXP / advancedTotalXP) * 100 : 0;
+        nextLevelXP = advancedTotalXP;
       } else {
         levelProgress = 100;
         nextLevel = 'expert';
         nextLevelXP = totalXP;
       }
-    } else if (completedBeginnerModules.length === beginnerModules.length && beginnerModules.length > 0) {
+    }
+    // Check if ALL beginner modules are completed
+    else if (beginnerModules.length > 0 && completedBeginnerModules.length === beginnerModules.length) {
       currentLevel = 'beginner';
       nextLevel = 'intermediate';
       if (intermediateModules.length > 0) {
-        levelProgress = (completedIntermediateModules.length / intermediateModules.length) * 100;
-        nextLevelXP = totalXP + (intermediateModules.length - completedIntermediateModules.length) * (intermediateModules[0]?.xp_value || 50);
+        // Show progress in intermediate level
+        const intermediateTotalXP = intermediateModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        const intermediateEarnedXP = completedIntermediateModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        levelProgress = intermediateTotalXP > 0 ? (intermediateEarnedXP / intermediateTotalXP) * 100 : 0;
+        nextLevelXP = intermediateTotalXP;
       } else {
         levelProgress = 100;
         nextLevel = 'advanced';
         nextLevelXP = totalXP;
       }
-    } else {
+    }
+    else {
       // Still working on beginner level
       currentLevel = 'beginner';
       nextLevel = 'intermediate';
       if (beginnerModules.length > 0) {
-        levelProgress = (completedBeginnerModules.length / beginnerModules.length) * 100;
-        nextLevelXP = totalXP + (beginnerModules.length - completedBeginnerModules.length) * (beginnerModules[0]?.xp_value || 25);
+        // Show progress within beginner level
+        const beginnerTotalXP = beginnerModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        const beginnerEarnedXP = completedBeginnerModules.reduce((sum, module) => sum + (module.xp_value || 0), 0);
+        levelProgress = beginnerTotalXP > 0 ? (beginnerEarnedXP / beginnerTotalXP) * 100 : 0;
+        nextLevelXP = beginnerTotalXP;
       }
     }
     
@@ -227,6 +247,7 @@ export const useLearningProgress = () => {
       nextLevelXP,
       beginnerCompleted: completedBeginnerModules.length,
       beginnerTotal: beginnerModules.length,
+      beginnerTotalXP: beginnerModules.reduce((sum, module) => sum + (module.xp_value || 0), 0),
       intermediateCompleted: completedIntermediateModules.length,
       intermediateTotal: intermediateModules.length,
       advancedCompleted: completedAdvancedModules.length,
