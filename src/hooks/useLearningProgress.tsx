@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -142,30 +141,99 @@ export const useLearningProgress = () => {
 
   // Calculate user's current level and XP
   const calculateUserStats = () => {
-    if (!userProgress) return { currentLevel: 'beginner', totalXP: 0, levelProgress: 0 };
+    if (!userProgress || !modules.length) return { currentLevel: 'beginner', totalXP: 0, levelProgress: 0 };
     
     const totalXP = userProgress.reduce((sum, progress) => sum + (progress.xp_earned || 0), 0);
     
-    // Level thresholds based on total XP needed for each level
-    const levelThresholds = {
-      beginner: 0,
-      intermediate: 150, // 6 beginner modules * 25 XP
-      advanced: 400,     // 150 + (5 intermediate modules * 50 XP)
-      expert: 750        // 400 + (7 advanced modules * 50 XP)
-    };
+    // Get modules by level
+    const beginnerModules = modules.filter(m => m.level === 'beginner');
+    const intermediateModules = modules.filter(m => m.level === 'intermediate');
+    const advancedModules = modules.filter(m => m.level === 'advanced');
+    const expertModules = modules.filter(m => m.level === 'expert');
     
+    // Count completed modules by level
+    const completedBeginnerModules = beginnerModules.filter(m => 
+      userProgress.find(p => p.module_id === m.id && p.completed)
+    );
+    const completedIntermediateModules = intermediateModules.filter(m => 
+      userProgress.find(p => p.module_id === m.id && p.completed)
+    );
+    const completedAdvancedModules = advancedModules.filter(m => 
+      userProgress.find(p => p.module_id === m.id && p.completed)
+    );
+    const completedExpertModules = expertModules.filter(m => 
+      userProgress.find(p => p.module_id === m.id && p.completed)
+    );
+    
+    // Determine current level based on completion
     let currentLevel = 'beginner';
-    if (totalXP >= levelThresholds.expert) currentLevel = 'expert';
-    else if (totalXP >= levelThresholds.advanced) currentLevel = 'advanced';
-    else if (totalXP >= levelThresholds.intermediate) currentLevel = 'intermediate';
+    let levelProgress = 0;
+    let nextLevel = 'intermediate';
+    let nextLevelXP = 0;
     
-    const nextLevel = currentLevel === 'beginner' ? 'intermediate' : 
-                     currentLevel === 'intermediate' ? 'advanced' : 
-                     currentLevel === 'advanced' ? 'expert' : null;
+    if (completedExpertModules.length === expertModules.length && expertModules.length > 0) {
+      currentLevel = 'expert';
+      levelProgress = 100;
+      nextLevel = null;
+      nextLevelXP = totalXP;
+    } else if (completedAdvancedModules.length === advancedModules.length && advancedModules.length > 0) {
+      currentLevel = 'advanced';
+      nextLevel = 'expert';
+      if (expertModules.length > 0) {
+        levelProgress = (completedExpertModules.length / expertModules.length) * 100;
+        nextLevelXP = totalXP + (expertModules.length - completedExpertModules.length) * (expertModules[0]?.xp_value || 50);
+      } else {
+        levelProgress = 100;
+        nextLevel = null;
+        nextLevelXP = totalXP;
+      }
+    } else if (completedIntermediateModules.length === intermediateModules.length && intermediateModules.length > 0) {
+      currentLevel = 'intermediate';
+      nextLevel = 'advanced';
+      if (advancedModules.length > 0) {
+        levelProgress = (completedAdvancedModules.length / advancedModules.length) * 100;
+        nextLevelXP = totalXP + (advancedModules.length - completedAdvancedModules.length) * (advancedModules[0]?.xp_value || 50);
+      } else {
+        levelProgress = 100;
+        nextLevel = 'expert';
+        nextLevelXP = totalXP;
+      }
+    } else if (completedBeginnerModules.length === beginnerModules.length && beginnerModules.length > 0) {
+      currentLevel = 'beginner';
+      nextLevel = 'intermediate';
+      if (intermediateModules.length > 0) {
+        levelProgress = (completedIntermediateModules.length / intermediateModules.length) * 100;
+        nextLevelXP = totalXP + (intermediateModules.length - completedIntermediateModules.length) * (intermediateModules[0]?.xp_value || 50);
+      } else {
+        levelProgress = 100;
+        nextLevel = 'advanced';
+        nextLevelXP = totalXP;
+      }
+    } else {
+      // Still working on beginner level
+      currentLevel = 'beginner';
+      nextLevel = 'intermediate';
+      if (beginnerModules.length > 0) {
+        levelProgress = (completedBeginnerModules.length / beginnerModules.length) * 100;
+        nextLevelXP = totalXP + (beginnerModules.length - completedBeginnerModules.length) * (beginnerModules[0]?.xp_value || 25);
+      }
+    }
     
-    const currentLevelXP = levelThresholds[currentLevel as keyof typeof levelThresholds];
-    const nextLevelXP = nextLevel ? levelThresholds[nextLevel as keyof typeof levelThresholds] : totalXP;
-    const levelProgress = nextLevel ? ((totalXP - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100 : 100;
+    console.log('Level calculation:', {
+      currentLevel,
+      totalXP,
+      levelProgress,
+      nextLevel,
+      nextLevelXP,
+      beginnerCompleted: completedBeginnerModules.length,
+      beginnerTotal: beginnerModules.length,
+      intermediateCompleted: completedIntermediateModules.length,
+      intermediateTotal: intermediateModules.length,
+      advancedCompleted: completedAdvancedModules.length,
+      advancedTotal: advancedModules.length,
+      expertCompleted: completedExpertModules.length,
+      expertTotal: expertModules.length
+    });
     
     return { currentLevel, totalXP, levelProgress, nextLevel, nextLevelXP };
   };
