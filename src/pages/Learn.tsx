@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,17 +47,29 @@ const Learn = () => {
     // Update progress in database - mark as completed if score is 100%
     if (selectedModule) {
       try {
-        await updateProgress({
-          moduleId: selectedModule.id,
-          score,
-          xpEarned,
-          completed: score === 100 // Only complete if score is 100%
+        // Use Promise-based approach to ensure completion
+        await new Promise<void>((resolve, reject) => {
+          updateProgress({
+            moduleId: selectedModule.id,
+            score,
+            xpEarned,
+            completed: score === 100 // Only complete if score is 100%
+          }, {
+            onSuccess: () => {
+              console.log('Progress update successful');
+              resolve();
+            },
+            onError: (error) => {
+              console.error('Progress update failed:', error);
+              reject(error);
+            }
+          });
         });
         
-        // Refresh the progress data to update the UI immediately
-        if (refetchProgress) {
-          await refetchProgress();
-        }
+        // Force refresh the progress data after successful update
+        console.log('Refreshing progress data...');
+        await refetchProgress();
+        console.log('Progress data refreshed');
         
         // Show success message
         if (score === 100) {
