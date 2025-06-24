@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -179,36 +180,33 @@ export const useLearningProgress = () => {
     let nextLevel = 'intermediate';
     let nextLevelXP = intermediateThreshold;
     
-    // Expert level (all modules completed)
+    // Check level progression based on completed modules
     if (expertModules.length > 0 && completedExpertCount === expertModules.length) {
+      // Expert level completed
       currentLevel = 'expert';
       levelProgress = 100;
       nextLevel = null;
       nextLevelXP = expertThreshold;
-    } 
-    // Advanced level (all advanced modules completed)
-    else if (advancedModules.length > 0 && completedAdvancedCount === advancedModules.length) {
+    } else if (advancedModules.length > 0 && completedAdvancedCount === advancedModules.length) {
+      // Advanced level completed - advance to expert
+      currentLevel = 'expert';
+      nextLevel = null;
+      nextLevelXP = expertThreshold;
+      levelProgress = expertThreshold > 0 ? (totalXP / expertThreshold) * 100 : 100;
+    } else if (intermediateModules.length > 0 && completedIntermediateCount === intermediateModules.length) {
+      // Intermediate level completed - advance to advanced
       currentLevel = 'advanced';
       nextLevel = 'expert';
       nextLevelXP = expertThreshold;
       levelProgress = expertThreshold > 0 ? (totalXP / expertThreshold) * 100 : 0;
-    } 
-    // Intermediate level (all intermediate modules completed)
-    else if (intermediateModules.length > 0 && completedIntermediateCount === intermediateModules.length) {
+    } else if (beginnerModules.length > 0 && completedBeginnerCount === beginnerModules.length) {
+      // Beginner level completed - advance to intermediate
       currentLevel = 'intermediate';
       nextLevel = 'advanced';
       nextLevelXP = advancedThreshold;
       levelProgress = advancedThreshold > 0 ? (totalXP / advancedThreshold) * 100 : 0;
-    } 
-    // Beginner level completed (all beginner modules completed) - auto advance to intermediate
-    else if (beginnerModules.length > 0 && completedBeginnerCount === beginnerModules.length) {
-      currentLevel = 'intermediate';
-      nextLevel = 'advanced';
-      nextLevelXP = advancedThreshold;
-      levelProgress = advancedThreshold > 0 ? (totalXP / advancedThreshold) * 100 : 0;
-    } 
-    // Still working on beginner level
-    else {
+    } else {
+      // Still working on beginner level
       currentLevel = 'beginner';
       nextLevel = 'intermediate';
       nextLevelXP = intermediateThreshold;
@@ -228,6 +226,10 @@ export const useLearningProgress = () => {
       intermediateThreshold,
       advancedThreshold,
       expertThreshold,
+      completedBeginnerCount,
+      completedIntermediateCount,
+      completedAdvancedCount,
+      completedExpertCount,
       beginnerModules: beginnerModules.length,
       intermediateModules: intermediateModules.length,
       advancedModules: advancedModules.length,
