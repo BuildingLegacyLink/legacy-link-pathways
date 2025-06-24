@@ -179,7 +179,7 @@ export const useLearningProgress = () => {
     
     const { currentLevel } = calculateUserStats();
     
-    // If module is from a higher level, it's locked
+    // If module is from a higher level than user's current level, it's locked
     if (module.level !== currentLevel) return false;
     
     // Get modules for the same topic and level, ordered by sort_order
@@ -193,6 +193,12 @@ export const useLearningProgress = () => {
     // Check if previous module is completed
     const previousModule = topicModules[moduleIndex - 1];
     const previousProgress = userProgress.find(p => p.module_id === previousModule.id);
+    
+    console.log(`Checking unlock for ${module.name}:`, {
+      moduleIndex,
+      previousModule: previousModule?.name,
+      previousProgress: previousProgress?.completed
+    });
     
     return previousProgress?.completed || false;
   };
