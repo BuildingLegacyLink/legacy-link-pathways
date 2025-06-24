@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -70,24 +71,55 @@ export const useLearningProgress = () => {
 
       console.log('Updating progress for module:', moduleId, { score, xpEarned, completed });
 
-      const { error } = await supabase
+      // First check if progress already exists
+      const { data: existingProgress } = await supabase
         .from('learning_progress')
-        .upsert({
-          user_id: user.id,
-          module_id: moduleId,
-          topic_id: module.topic_id,
-          level: module.level,
-          score,
-          xp_earned: xpEarned,
-          completed,
-          completed_at: completed ? new Date().toISOString() : null,
-          attempts: 1,
-          total_xp: xpEarned
-        });
-      
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('module_id', moduleId)
+        .single();
+
+      if (existingProgress) {
+        // Update existing record
+        const { error } = await supabase
+          .from('learning_progress')
+          .update({
+            score,
+            xp_earned: xpEarned,
+            completed,
+            completed_at: completed ? new Date().toISOString() : null,
+            attempts: (existingProgress.attempts || 0) + 1,
+            total_xp: xpEarned,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('module_id', moduleId);
+        
+        if (error) {
+          console.error('Supabase update error:', error);
+          throw error;
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('learning_progress')
+          .insert({
+            user_id: user.id,
+            module_id: moduleId,
+            topic_id: module.topic_id,
+            level: module.level,
+            score,
+            xp_earned: xpEarned,
+            completed,
+            completed_at: completed ? new Date().toISOString() : null,
+            attempts: 1,
+            total_xp: xpEarned
+          });
+        
+        if (error) {
+          console.error('Supabase insert error:', error);
+          throw error;
+        }
       }
       
       console.log('Progress updated successfully in database');
