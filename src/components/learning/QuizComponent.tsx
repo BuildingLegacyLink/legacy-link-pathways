@@ -51,6 +51,15 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     }
   }, [module]);
 
+  // Update original question index when moving through review questions
+  useEffect(() => {
+    if (isReviewPhase && missedQuestions.length > 0 && currentQuestionIndex < missedQuestions.length) {
+      setOriginalQuestionIndex(missedQuestions[currentQuestionIndex]);
+    } else {
+      setOriginalQuestionIndex(null);
+    }
+  }, [currentQuestionIndex, isReviewPhase, missedQuestions]);
+
   // If no questions, show error message
   if (!allQuestions || allQuestions.length === 0) {
     console.log('Rendering no questions message');
@@ -145,7 +154,6 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     console.log('Moving to next question');
     setSelectedAnswer(null);
     setShowFeedback(false);
-    setOriginalQuestionIndex(null);
     
     if (currentQuestionIndex < allQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -159,9 +167,6 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
         setCurrentQuestionIndex(0);
         setIsReviewPhase(true);
         
-        // Store the original indices for tracking progress correctly
-        setOriginalQuestionIndex(missedQuestions[0]);
-        
         // Clear missed questions for this round
         setMissedQuestions([]);
       } else {
@@ -174,13 +179,6 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       }
     }
   };
-
-  // Update original question index when moving through review questions
-  useEffect(() => {
-    if (isReviewPhase && missedQuestions.length > 0) {
-      setOriginalQuestionIndex(missedQuestions[currentQuestionIndex]);
-    }
-  }, [currentQuestionIndex, isReviewPhase, missedQuestions]);
 
   const getOptionClassName = (optionIndex: number) => {
     if (!showFeedback) {
