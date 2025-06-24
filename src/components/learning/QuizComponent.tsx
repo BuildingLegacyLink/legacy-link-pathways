@@ -25,7 +25,6 @@ interface QuizComponentProps {
 const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState<Set<number>>(new Set());
@@ -135,7 +134,6 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       // Track the original question index that was answered correctly
       const questionIndexToTrack = isReviewPhase && originalQuestionIndex !== null ? originalQuestionIndex : currentQuestionIndex;
       setCorrectlyAnsweredQuestions(prev => new Set([...prev, questionIndexToTrack]));
-      setCorrectAnswers(prev => prev + 1);
       
       // Auto-advance after a short delay for correct answers
       setTimeout(() => {
@@ -170,11 +168,14 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
         // Clear missed questions for this round
         setMissedQuestions([]);
       } else {
-        // Quiz complete - calculate final score
+        // Quiz complete - calculate final score based on correctly answered questions
         console.log('Quiz complete, calculating score');
-        const scorePercentage = Math.round((correctlyAnsweredQuestions.size / totalQuestions) * 100);
+        console.log('Correctly answered questions:', correctlyAnsweredQuestions.size);
+        console.log('Total questions:', module.questions.length);
+        const scorePercentage = Math.round((correctlyAnsweredQuestions.size / module.questions.length) * 100);
         const xpEarned = scorePercentage >= 70 ? module.xp_value : 0;
         
+        console.log('Final score:', scorePercentage, '% XP earned:', xpEarned);
         onComplete(scorePercentage, xpEarned);
       }
     }
