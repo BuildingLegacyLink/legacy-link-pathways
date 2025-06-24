@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -163,11 +162,10 @@ export const useLearningProgress = () => {
     const advancedXP = advancedModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
     const expertXP = expertModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
     
-    // Calculate cumulative XP thresholds
-    const beginnerThreshold = beginnerXP;
-    const intermediateThreshold = beginnerXP + intermediateXP;
-    const advancedThreshold = beginnerXP + intermediateXP + advancedXP;
-    const expertThreshold = beginnerXP + intermediateXP + advancedXP + expertXP;
+    // Calculate cumulative XP thresholds - each threshold is the sum of XP needed up to that level
+    const intermediateThreshold = beginnerXP; // To reach intermediate, complete beginner
+    const advancedThreshold = beginnerXP + intermediateXP; // To reach advanced, complete beginner + intermediate
+    const expertThreshold = beginnerXP + intermediateXP + advancedXP; // To reach expert, complete all previous
     
     // Count completed modules per level
     const completedBeginnerCount = beginnerModules.filter(m => completedModuleIds.includes(m.id)).length;
@@ -227,7 +225,6 @@ export const useLearningProgress = () => {
       intermediateXP,
       advancedXP,
       expertXP,
-      beginnerThreshold,
       intermediateThreshold,
       advancedThreshold,
       expertThreshold,
