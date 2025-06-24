@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,29 @@ const Learn = () => {
   const [quizResults, setQuizResults] = useState<{ score: number; xpEarned: number } | null>(null);
 
   const userStats = calculateUserStats();
+
+  // Define level hierarchy
+  const levelHierarchy = ['beginner', 'intermediate', 'advanced', 'expert'];
+  const currentLevelIndex = levelHierarchy.indexOf(userStats.currentLevel);
+
+  // Filter modules to only show current level and below
+  const availableLevels = levelHierarchy.slice(0, currentLevelIndex + 1);
+  const filteredModules = modules.filter(module => availableLevels.includes(module.level));
+  
+  // Filter topics to only show those that have modules at the user's available levels
+  const filteredTopics = topics.filter(topic => 
+    filteredModules.some(module => module.topic_id === topic.id)
+  );
+
+  console.log('User level filtering:', {
+    currentLevel: userStats.currentLevel,
+    currentLevelIndex,
+    availableLevels,
+    totalModules: modules.length,
+    filteredModules: filteredModules.length,
+    totalTopics: topics.length,
+    filteredTopics: filteredTopics.length
+  });
 
   const handleStartQuiz = (module: any) => {
     console.log('Starting quiz for module:', module);
@@ -189,12 +213,12 @@ const Learn = () => {
           {/* Topics Grid */}
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-              Learning Topics
+              Learning Topics ({userStats.currentLevel} level)
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {topics.map((topic) => {
-                const topicModules = modules.filter(m => m.topic_id === topic.id);
+              {filteredTopics.map((topic) => {
+                const topicModules = filteredModules.filter(m => m.topic_id === topic.id);
                 return (
                   <TopicCard
                     key={topic.id}
