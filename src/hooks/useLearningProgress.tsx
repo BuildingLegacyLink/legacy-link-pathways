@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -134,7 +135,7 @@ export const useLearningProgress = () => {
     }
   });
 
-  // Calculate user's current level and XP with CUMULATIVE XP
+  // Calculate user's current level and XP
   const calculateUserStats = () => {
     if (!userProgress || !modules.length) return { 
       currentLevel: 'beginner', 
@@ -156,11 +157,17 @@ export const useLearningProgress = () => {
     const advancedModules = modules.filter(m => m.level === 'advanced');
     const expertModules = modules.filter(m => m.level === 'expert');
     
-    // Calculate total XP needed for each level (CUMULATIVE)
-    const beginnerTotalXP = beginnerModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
-    const intermediateTotalXP = beginnerTotalXP + intermediateModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
-    const advancedTotalXP = intermediateTotalXP + advancedModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
-    const expertTotalXP = advancedTotalXP + expertModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    // Calculate XP needed for each individual level
+    const beginnerXP = beginnerModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    const intermediateXP = intermediateModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    const advancedXP = advancedModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    const expertXP = expertModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
+    
+    // Calculate cumulative XP thresholds
+    const beginnerThreshold = beginnerXP;
+    const intermediateThreshold = beginnerXP + intermediateXP;
+    const advancedThreshold = beginnerXP + intermediateXP + advancedXP;
+    const expertThreshold = beginnerXP + intermediateXP + advancedXP + expertXP;
     
     // Count completed modules per level
     const completedBeginnerCount = beginnerModules.filter(m => completedModuleIds.includes(m.id)).length;
@@ -172,54 +179,62 @@ export const useLearningProgress = () => {
     let currentLevel = 'beginner';
     let levelProgress = 0;
     let nextLevel = 'intermediate';
-    let nextLevelXP = intermediateTotalXP;
+    let nextLevelXP = intermediateThreshold;
     
     // Expert level (all modules completed)
     if (expertModules.length > 0 && completedExpertCount === expertModules.length) {
       currentLevel = 'expert';
       levelProgress = 100;
       nextLevel = null;
-      nextLevelXP = expertTotalXP;
+      nextLevelXP = expertThreshold;
     } 
     // Advanced level (all advanced modules completed)
     else if (advancedModules.length > 0 && completedAdvancedCount === advancedModules.length) {
       currentLevel = 'advanced';
       nextLevel = 'expert';
-      nextLevelXP = expertTotalXP;
-      levelProgress = expertTotalXP > 0 ? (totalXP / expertTotalXP) * 100 : 0;
+      nextLevelXP = expertThreshold;
+      levelProgress = expertThreshold > 0 ? (totalXP / expertThreshold) * 100 : 0;
     } 
     // Intermediate level (all intermediate modules completed)
     else if (intermediateModules.length > 0 && completedIntermediateCount === intermediateModules.length) {
       currentLevel = 'intermediate';
       nextLevel = 'advanced';
-      nextLevelXP = advancedTotalXP;
-      levelProgress = advancedTotalXP > 0 ? (totalXP / advancedTotalXP) * 100 : 0;
+      nextLevelXP = advancedThreshold;
+      levelProgress = advancedThreshold > 0 ? (totalXP / advancedThreshold) * 100 : 0;
     } 
     // Beginner level completed (all beginner modules completed) - auto advance to intermediate
     else if (beginnerModules.length > 0 && completedBeginnerCount === beginnerModules.length) {
       currentLevel = 'intermediate';
       nextLevel = 'advanced';
-      nextLevelXP = advancedTotalXP;
-      levelProgress = advancedTotalXP > 0 ? (totalXP / advancedTotalXP) * 100 : 0;
+      nextLevelXP = advancedThreshold;
+      levelProgress = advancedThreshold > 0 ? (totalXP / advancedThreshold) * 100 : 0;
     } 
     // Still working on beginner level
     else {
       currentLevel = 'beginner';
       nextLevel = 'intermediate';
-      nextLevelXP = intermediateTotalXP;
-      levelProgress = intermediateTotalXP > 0 ? (totalXP / intermediateTotalXP) * 100 : 0;
+      nextLevelXP = intermediateThreshold;
+      levelProgress = intermediateThreshold > 0 ? (totalXP / intermediateThreshold) * 100 : 0;
     }
     
-    console.log('Level calculation:', {
+    console.log('Level calculation debug:', {
       currentLevel,
       totalXP,
       levelProgress,
       nextLevel,
       nextLevelXP,
-      beginnerTotalXP,
-      intermediateTotalXP,
-      advancedTotalXP,
-      expertTotalXP
+      beginnerXP,
+      intermediateXP,
+      advancedXP,
+      expertXP,
+      beginnerThreshold,
+      intermediateThreshold,
+      advancedThreshold,
+      expertThreshold,
+      beginnerModules: beginnerModules.length,
+      intermediateModules: intermediateModules.length,
+      advancedModules: advancedModules.length,
+      expertModules: expertModules.length
     });
     
     return { currentLevel, totalXP, levelProgress, nextLevel, nextLevelXP };
