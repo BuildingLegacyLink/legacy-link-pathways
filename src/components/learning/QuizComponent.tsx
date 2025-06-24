@@ -28,15 +28,17 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-  const [answeredQuestions, setAnsweredQuestions] = useState(0);
+  const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState<Set<number>>(new Set());
   const [missedQuestions, setMissedQuestions] = useState<number[]>([]);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [isReviewPhase, setIsReviewPhase] = useState(false);
+  const [originalQuestionIndex, setOriginalQuestionIndex] = useState<number | null>(null);
 
   console.log('QuizComponent rendered with module:', module);
   console.log('Module questions:', module.questions);
   console.log('All questions state:', allQuestions);
   console.log('Current question index:', currentQuestionIndex);
+  console.log('Correctly answered questions:', correctlyAnsweredQuestions);
 
   // Initialize questions on component mount
   useEffect(() => {
@@ -79,11 +81,12 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
 
   const currentQuestion = allQuestions[currentQuestionIndex];
   const totalQuestions = module.questions.length;
-  const progress = (answeredQuestions / totalQuestions) * 100;
+  const progress = (correctlyAnsweredQuestions.size / totalQuestions) * 100;
 
   console.log('Current question:', currentQuestion);
   console.log('Review phase:', isReviewPhase);
   console.log('Missed questions:', missedQuestions);
+  console.log('Progress:', progress);
 
   if (!currentQuestion) {
     console.log('Current question is undefined, index:', currentQuestionIndex, 'questions length:', allQuestions.length);
@@ -120,48 +123,64 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     setShowFeedback(true);
 
     if (correct) {
+      // Track the original question index that was answered correctly
+      const questionIndexToTrack = isReviewPhase && originalQuestionIndex !== null ? originalQuestionIndex : currentQuestionIndex;
+      setCorrectlyAnsweredQuestions(prev => new Set([...prev, questionIndexToTrack]));
       setCorrectAnswers(prev => prev + 1);
+      
       // Auto-advance after a short delay for correct answers
       setTimeout(() => {
         handleNext();
       }, 1000);
     } else {
-      // Track missed question for review
-      if (!isReviewPhase) {
-        setMissedQuestions(prev => [...prev, currentQuestionIndex]);
+      // Track missed question for review (use original index if in review phase)
+      const questionIndexToTrack = isReviewPhase && originalQuestionIndex !== null ? originalQuestionIndex : currentQuestionIndex;
+      if (!missedQuestions.includes(questionIndexToTrack)) {
+        setMissedQuestions(prev => [...prev, questionIndexToTrack]);
       }
     }
-    
-    setAnsweredQuestions(prev => prev + 1);
   };
 
   const handleNext = () => {
     console.log('Moving to next question');
     setSelectedAnswer(null);
     setShowFeedback(false);
+    setOriginalQuestionIndex(null);
     
     if (currentQuestionIndex < allQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
       // Check if we need to review missed questions
-      if (!isReviewPhase && missedQuestions.length > 0) {
+      if (missedQuestions.length > 0) {
         console.log('Starting review phase with missed questions:', missedQuestions);
         // Start review phase with missed questions
         const missedQuestionObjects = missedQuestions.map(index => module.questions[index]);
         setAllQuestions(missedQuestionObjects);
         setCurrentQuestionIndex(0);
         setIsReviewPhase(true);
+        
+        // Store the original indices for tracking progress correctly
+        setOriginalQuestionIndex(missedQuestions[0]);
+        
+        // Clear missed questions for this round
         setMissedQuestions([]);
       } else {
         // Quiz complete - calculate final score
         console.log('Quiz complete, calculating score');
-        const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100);
+        const scorePercentage = Math.round((correctlyAnsweredQuestions.size / totalQuestions) * 100);
         const xpEarned = scorePercentage >= 70 ? module.xp_value : 0;
         
         onComplete(scorePercentage, xpEarned);
       }
     }
   };
+
+  // Update original question index when moving through review questions
+  useEffect(() => {
+    if (isReviewPhase && missedQuestions.length > 0) {
+      setOriginalQuestionIndex(missedQuestions[currentQuestionIndex]);
+    }
+  }, [currentQuestionIndex, isReviewPhase, missedQuestions]);
 
   const getOptionClassName = (optionIndex: number) => {
     if (!showFeedback) {
@@ -227,6 +246,10 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
             style={{width: `${progress}%`}}
           />
         </div>
+        
+        <div className="text-sm text-gray-600 text-center">
+          {correctlyAnsweredQuestions.size} of {totalQuestions} questions answered correctly
+        </div>
       </div>
 
       {/* Question */}
@@ -267,7 +290,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
                 className="bg-gradient-to-r from-blue-500 to-teal-500 text-white hover:from-blue-600 hover:to-teal-600"
               >
                 {currentQuestionIndex < allQuestions.length - 1 ? 'Next Question' : 
-                 (!isReviewPhase && missedQuestions.length > 0) ? 'Review Missed Questions' : 'Finish Quiz'}
+                 missedQuestions.length > 0 ? 'Review Missed Questions' : 'Finish Quiz'}
               </Button>
             ) : !showFeedback && (
               <div className="text-gray-500 text-sm">
