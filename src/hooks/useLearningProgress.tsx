@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +8,7 @@ export const useLearningProgress = () => {
   const queryClient = useQueryClient();
 
   // Get user's learning progress
-  const { data: userProgress, isLoading: progressLoading } = useQuery({
+  const { data: userProgress, isLoading: progressLoading, refetch: refetchProgress } = useQuery({
     queryKey: ['learning-progress', user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -87,6 +86,7 @@ export const useLearningProgress = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      // Invalidate both progress and general queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['learning-progress'] });
       toast({ title: 'Progress saved!', description: 'Your learning progress has been updated.' });
     }
@@ -157,6 +157,7 @@ export const useLearningProgress = () => {
     isUpdating: updateProgressMutation.isPending,
     calculateUserStats,
     isModuleUnlocked,
-    isLoading: progressLoading || topicsLoading || modulesLoading
+    isLoading: progressLoading || topicsLoading || modulesLoading,
+    refetchProgress
   };
 };

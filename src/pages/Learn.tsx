@@ -19,7 +19,8 @@ const Learn = () => {
     updateProgress, 
     calculateUserStats, 
     isModuleUnlocked, 
-    isLoading 
+    isLoading,
+    refetchProgress
   } = useLearningProgress();
 
   const [selectedModule, setSelectedModule] = useState<any>(null);
@@ -49,8 +50,13 @@ const Learn = () => {
           moduleId: selectedModule.id,
           score,
           xpEarned,
-          completed: score === 100 // Changed from score >= 70 to score === 100
+          completed: score === 100 // Only complete if score is 100%
         });
+        
+        // Refresh the progress data to update the UI immediately
+        if (refetchProgress) {
+          await refetchProgress();
+        }
         
         // Show success message
         if (score === 100) {
