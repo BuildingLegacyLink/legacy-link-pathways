@@ -30,30 +30,23 @@ const Learn = () => {
 
   const userStats = calculateUserStats();
   
-  // Add state for selected level - defaults to current level
+  // Selected level defaults to current level, but can be changed via selector
   const [selectedLevel, setSelectedLevel] = useState<string>(userStats.currentLevel);
 
-  // Update selected level when user stats change (level up)
+  // Update selected level when user advances to next level
   if (selectedLevel !== userStats.currentLevel && userStats.currentLevel !== 'beginner') {
     setSelectedLevel(userStats.currentLevel);
   }
 
-  // Filter modules to only show selected level
+  // Filter modules and topics based on selected level
   const filteredModules = modules.filter(module => module.level === selectedLevel);
-  
-  // Filter topics to only show those that have modules at the selected level
   const filteredTopics = topics.filter(topic => 
     filteredModules.some(module => module.topic_id === topic.id)
   );
 
-  console.log('User level filtering:', {
-    currentLevel: userStats.currentLevel,
-    selectedLevel,
-    totalModules: modules.length,
-    filteredModules: filteredModules.length,
-    totalTopics: topics.length,
-    filteredTopics: filteredTopics.length
-  });
+  console.log('Current user stats:', userStats);
+  console.log('Selected level:', selectedLevel);
+  console.log('Filtered modules:', filteredModules.length);
 
   const handleStartQuiz = (module: any) => {
     console.log('Starting quiz for module:', module);
