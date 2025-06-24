@@ -17,7 +17,6 @@ interface QuizComponentProps {
     description: string;
     xp_value: number;
     questions: Question[];
-    icon?: string;
   };
   onComplete: (score: number, xpEarned: number) => void;
   onBack: () => void;
@@ -26,16 +25,10 @@ interface QuizComponentProps {
 const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [questionsToRetry, setQuestionsToRetry] = useState<number[]>([]);
-  const [questionQueue, setQuestionQueue] = useState<number[]>([]);
-  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
+  const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-
-  useEffect(() => {
-    // Initialize question queue with all questions
-    setQuestionQueue(Array.from({ length: module.questions.length }, (_, i) => i));
-  }, [module.questions.length]);
+  const [answeredQuestions, setAnsweredQuestions] = useState(0);
 
   // If no questions, show error message
   if (!module.questions || module.questions.length === 0) {
@@ -58,45 +51,36 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     );
   }
 
-  const currentQuestion = module.questions[questionQueue[currentQuestionIndex]];
-  const progress = ((currentQuestionIndex + 1) / questionQueue.length) * 100;
+  const currentQuestion = module.questions[currentQuestionIndex];
+  const progress = ((answeredQuestions) / module.questions.length) * 100;
 
   const handleAnswerSelect = (answerIndex: number) => {
+    if (showFeedback) return; // Prevent selection during feedback
     setSelectedAnswer(answerIndex);
   };
 
   const handleSubmitAnswer = () => {
     if (selectedAnswer === null) return;
 
-    const questionIndex = questionQueue[currentQuestionIndex];
     const correct = selectedAnswer === currentQuestion.correctAnswer;
     setIsCorrect(correct);
     setShowFeedback(true);
 
-    if (!correct) {
-      // Add this question to retry queue if not already there
-      if (!questionsToRetry.includes(questionIndex)) {
-        setQuestionsToRetry(prev => [...prev, questionIndex]);
-        // Add to end of current queue for retry
-        setQuestionQueue(prev => [...prev, questionIndex]);
-      }
-    } else {
-      // Mark as correctly answered
-      setAnsweredQuestions(prev => new Set([...prev, questionIndex]));
+    if (correct) {
+      setCorrectAnswers(prev => prev + 1);
     }
+    setAnsweredQuestions(prev => prev + 1);
   };
 
   const handleNext = () => {
     setSelectedAnswer(null);
     setShowFeedback(false);
     
-    if (currentQuestionIndex < questionQueue.length - 1) {
+    if (currentQuestionIndex < module.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      // Quiz complete - calculate score based on unique questions answered correctly
-      const totalUniqueQuestions = module.questions.length;
-      const correctAnswers = answeredQuestions.size;
-      const scorePercentage = Math.round((correctAnswers / totalUniqueQuestions) * 100);
+      // Quiz complete - calculate final score
+      const scorePercentage = Math.round((correctAnswers / module.questions.length) * 100);
       const xpEarned = scorePercentage >= 70 ? module.xp_value : 0;
       
       onComplete(scorePercentage, xpEarned);
@@ -114,7 +98,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
               <X className="h-16 w-16 text-red-500 mx-auto mb-4" />
             )}
             <h2 className="text-2xl font-bold mb-2">
-              {isCorrect ? 'Correct!' : 'Not quite right'}
+              {isCorrect ? 'Correct!' : 'Oops...'}
             </h2>
             {!isCorrect && (
               <p className="text-gray-600 mb-4">
@@ -123,13 +107,13 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
             )}
             <p className="text-gray-600">
               {isCorrect 
-                ? 'Great job! Keep up the good work.' 
-                : 'Don\'t worry, you\'ll see this question again to practice.'}
+                ? 'Great job! Keep it up.' 
+                : 'Don\'t worry, keep learning!'}
             </p>
           </div>
           
           <Button onClick={handleNext} className="bg-gradient-to-r from-blue-500 to-teal-500 text-white">
-            {currentQuestionIndex < questionQueue.length - 1 ? 'Continue' : 'Finish Quiz'}
+            {currentQuestionIndex < module.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
           </Button>
         </CardContent>
       </Card>
@@ -150,10 +134,10 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
         
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm text-gray-500">
-            Question {currentQuestionIndex + 1} of {questionQueue.length}
+            Question {currentQuestionIndex + 1} of {module.questions.length}
           </span>
           <span className="text-sm text-gray-500">
-            {Math.round((progress / 100) * module.xp_value)}/{module.xp_value} XP
+            {module.name} • +{module.xp_value} XP
           </span>
         </div>
         
@@ -168,8 +152,8 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       {/* Question */}
       <Card className="max-w-3xl mx-auto">
         <CardContent className="p-8">
-          <div className="flex items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
               {currentQuestion.question}
             </h2>
           </div>
@@ -185,7 +169,14 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
                     : 'border-gray-200 hover:border-blue-300 hover:bg-blue-25'
                 }`}
               >
-                {option}
+                <div className="flex items-center">
+                  <div className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
+                    selectedAnswer === index ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                  }`}>
+                    {selectedAnswer === index && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </div>
+                  {option}
+                </div>
               </button>
             ))}
           </div>

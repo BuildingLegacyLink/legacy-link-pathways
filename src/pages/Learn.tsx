@@ -35,19 +35,28 @@ const Learn = () => {
     setQuizResults(null);
   };
 
-  const handleQuizComplete = (score: number, xpEarned: number) => {
+  const handleQuizComplete = async (score: number, xpEarned: number) => {
     console.log('Quiz completed:', { score, xpEarned });
     setQuizResults({ score, xpEarned });
     setShowResults(true);
     
     // Update progress in database
     if (selectedModule) {
-      updateProgress({
-        moduleId: selectedModule.id,
-        score,
-        xpEarned,
-        completed: score >= 70
-      });
+      try {
+        await updateProgress({
+          moduleId: selectedModule.id,
+          score,
+          xpEarned,
+          completed: score >= 70
+        });
+        
+        // Show success message
+        if (score >= 70) {
+          console.log(`Module completed! +${xpEarned} XP earned`);
+        }
+      } catch (error) {
+        console.error('Error updating progress:', error);
+      }
     }
   };
 

@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, Lock, Play } from 'lucide-react';
 
@@ -41,6 +42,21 @@ const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocke
     return 'locked';
   };
 
+  // Sort modules: unlocked/completed first, then locked ones
+  const sortedModules = [...topicModules].sort((a, b) => {
+    const statusA = getModuleStatus(a);
+    const statusB = getModuleStatus(b);
+    
+    // Priority: completed > unlocked > locked
+    const priorityMap = { completed: 3, unlocked: 2, locked: 1 };
+    const priorityDiff = priorityMap[statusB] - priorityMap[statusA];
+    
+    if (priorityDiff !== 0) return priorityDiff;
+    
+    // If same status, sort by sort_order
+    return a.sort_order - b.sort_order;
+  });
+
   return (
     <Card className="h-full">
       <CardContent className="p-6">
@@ -68,17 +84,17 @@ const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocke
         </div>
 
         <div className="space-y-2">
-          {topicModules.map((module, index) => {
+          {sortedModules.map((module) => {
             const status = getModuleStatus(module);
             return (
               <div
                 key={module.id}
-                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                   status === 'locked' 
                     ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed' 
                     : status === 'completed'
-                      ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                      : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                      ? 'bg-green-50 border-green-200 hover:bg-green-100 cursor-pointer'
+                      : 'bg-blue-50 border-blue-200 hover:bg-blue-100 cursor-pointer'
                 }`}
                 onClick={() => status !== 'locked' && onStartQuiz(module)}
               >
