@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,23 +26,24 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-  const [correctlyAnsweredQuestions, setCorrectlyAnsweredQuestions] = useState<Set<number>>(new Set());
-  const [missedQuestions, setMissedQuestions] = useState<number[]>([]);
+  const [correctAnswers, setCorrectAnswers] = useState<boolean[]>([]);
+  const [missedQuestionIndices, setMissedQuestionIndices] = useState<number[]>([]);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [isReviewPhase, setIsReviewPhase] = useState(false);
 
   console.log('QuizComponent rendered with module:', module);
-  console.log('Module questions:', module.questions);
-  console.log('All questions state:', allQuestions);
   console.log('Current question index:', currentQuestionIndex);
-  console.log('Correctly answered questions:', correctlyAnsweredQuestions);
+  console.log('Correct answers array:', correctAnswers);
+  console.log('Is review phase:', isReviewPhase);
 
-  // Initialize questions on component mount
+  // Initialize questions and correct answers tracker
   useEffect(() => {
     console.log('Setting up questions from module:', module);
     if (module.questions && Array.isArray(module.questions) && module.questions.length > 0) {
       console.log('Setting allQuestions to:', module.questions);
       setAllQuestions([...module.questions]);
+      // Initialize correct answers array with false for each question
+      setCorrectAnswers(new Array(module.questions.length).fill(false));
     } else {
       console.log('No valid questions found in module');
     }
@@ -79,11 +79,11 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
 
   const currentQuestion = allQuestions[currentQuestionIndex];
   const totalQuestions = module.questions.length;
-  const progress = (correctlyAnsweredQuestions.size / totalQuestions) * 100;
+  const correctCount = correctAnswers.filter(Boolean).length;
+  const progress = (correctCount / totalQuestions) * 100;
 
   console.log('Current question:', currentQuestion);
-  console.log('Review phase:', isReviewPhase);
-  console.log('Missed questions:', missedQuestions);
+  console.log('Correct count:', correctCount, 'Total questions:', totalQuestions);
   console.log('Progress:', progress);
 
   if (!currentQuestion) {
@@ -121,13 +121,15 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     setShowFeedback(true);
 
     if (correct) {
-      // Get the original question index for tracking
-      const questionIndexToTrack = isReviewPhase ? missedQuestions[currentQuestionIndex] : currentQuestionIndex;
-      console.log('Adding correct answer for question index:', questionIndexToTrack);
-      setCorrectlyAnsweredQuestions(prev => {
-        const newSet = new Set([...prev, questionIndexToTrack]);
-        console.log('Updated correctly answered questions:', newSet);
-        return newSet;
+      // Mark this question as correct
+      const questionIndexToMark = isReviewPhase ? missedQuestionIndices[currentQuestionIndex] : currentQuestionIndex;
+      console.log('Marking question as correct:', questionIndexToMark);
+      
+      setCorrectAnswers(prev => {
+        const newCorrectAnswers = [...prev];
+        newCorrectAnswers[questionIndexToMark] = true;
+        console.log('Updated correct answers:', newCorrectAnswers);
+        return newCorrectAnswers;
       });
       
       // Auto-advance after a short delay for correct answers
@@ -135,11 +137,12 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
         handleNext();
       }, 1000);
     } else {
-      // Track missed question for review (use original index if in review phase)
-      const questionIndexToTrack = isReviewPhase ? missedQuestions[currentQuestionIndex] : currentQuestionIndex;
+      // Track missed question for review
+      const questionIndexToTrack = isReviewPhase ? missedQuestionIndices[currentQuestionIndex] : currentQuestionIndex;
       console.log('Adding missed question for review:', questionIndexToTrack);
-      if (!missedQuestions.includes(questionIndexToTrack)) {
-        setMissedQuestions(prev => [...prev, questionIndexToTrack]);
+      
+      if (!missedQuestionIndices.includes(questionIndexToTrack)) {
+        setMissedQuestionIndices(prev => [...prev, questionIndexToTrack]);
       }
     }
   };
@@ -153,25 +156,23 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
       // Check if we need to review missed questions
-      if (missedQuestions.length > 0 && !isReviewPhase) {
-        console.log('Starting review phase with missed questions:', missedQuestions);
+      if (missedQuestionIndices.length > 0 && !isReviewPhase) {
+        console.log('Starting review phase with missed questions:', missedQuestionIndices);
         // Start review phase with missed questions
-        const missedQuestionObjects = missedQuestions.map(index => module.questions[index]);
+        const missedQuestionObjects = missedQuestionIndices.map(index => module.questions[index]);
         setAllQuestions(missedQuestionObjects);
         setCurrentQuestionIndex(0);
         setIsReviewPhase(true);
       } else {
-        // Quiz complete - calculate final score based on correctly answered questions
+        // Quiz complete - calculate final score
         console.log('Quiz complete, calculating score');
-        console.log('Correctly answered questions set:', correctlyAnsweredQuestions);
-        console.log('Correctly answered questions size:', correctlyAnsweredQuestions.size);
+        console.log('Final correct answers array:', correctAnswers);
+        
+        const finalCorrectCount = correctAnswers.filter(Boolean).length;
+        console.log('Final correct count:', finalCorrectCount);
         console.log('Total questions:', module.questions.length);
         
-        // Convert Set to Array to see the actual values
-        const correctlyAnsweredArray = Array.from(correctlyAnsweredQuestions);
-        console.log('Correctly answered questions array:', correctlyAnsweredArray);
-        
-        const scorePercentage = Math.round((correctlyAnsweredQuestions.size / module.questions.length) * 100);
+        const scorePercentage = Math.round((finalCorrectCount / module.questions.length) * 100);
         const xpEarned = scorePercentage >= 70 ? module.xp_value : 0;
         
         console.log('Final score:', scorePercentage, '% XP earned:', xpEarned);
@@ -246,7 +247,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
         </div>
         
         <div className="text-sm text-gray-600 text-center">
-          {correctlyAnsweredQuestions.size} of {totalQuestions} questions answered correctly
+          {correctCount} of {totalQuestions} questions answered correctly
         </div>
       </div>
 
@@ -288,7 +289,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
                 className="bg-gradient-to-r from-blue-500 to-teal-500 text-white hover:from-blue-600 hover:to-teal-600"
               >
                 {currentQuestionIndex < allQuestions.length - 1 ? 'Next Question' : 
-                 (missedQuestions.length > 0 && !isReviewPhase) ? 'Review Missed Questions' : 'Finish Quiz'}
+                 (missedQuestionIndices.length > 0 && !isReviewPhase) ? 'Review Missed Questions' : 'Finish Quiz'}
               </Button>
             ) : !showFeedback && (
               <div className="text-gray-500 text-sm">
