@@ -35,17 +35,23 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
 
   console.log('QuizComponent rendered with module:', module);
   console.log('Module questions:', module.questions);
+  console.log('All questions state:', allQuestions);
+  console.log('Current question index:', currentQuestionIndex);
 
   // Initialize questions on component mount
   useEffect(() => {
-    if (module.questions && module.questions.length > 0) {
+    console.log('Setting up questions from module:', module);
+    if (module.questions && Array.isArray(module.questions) && module.questions.length > 0) {
+      console.log('Setting allQuestions to:', module.questions);
       setAllQuestions([...module.questions]);
+    } else {
+      console.log('No valid questions found in module');
     }
-  }, [module.questions]);
+  }, [module]);
 
   // If no questions, show error message
-  if (!module.questions || module.questions.length === 0) {
-    console.log('No questions found for module:', module);
+  if (!allQuestions || allQuestions.length === 0) {
+    console.log('Rendering no questions message');
     return (
       <Card className="max-w-3xl mx-auto">
         <CardContent className="p-8 text-center">
@@ -57,6 +63,9 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
             </p>
             <p className="text-sm text-gray-500">
               Module ID: {module.id}
+            </p>
+            <p className="text-sm text-gray-500">
+              Questions data: {JSON.stringify(module.questions)}
             </p>
           </div>
           
@@ -76,8 +85,34 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   console.log('Review phase:', isReviewPhase);
   console.log('Missed questions:', missedQuestions);
 
+  if (!currentQuestion) {
+    console.log('Current question is undefined, index:', currentQuestionIndex, 'questions length:', allQuestions.length);
+    return (
+      <Card className="max-w-3xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <div className="mb-6">
+            <X className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Question Loading Error</h2>
+            <p className="text-gray-600 mb-4">
+              Unable to load the current question. Please try again.
+            </p>
+            <p className="text-sm text-gray-500">
+              Question index: {currentQuestionIndex}, Total questions: {allQuestions.length}
+            </p>
+          </div>
+          
+          <Button onClick={onBack} className="bg-gradient-to-r from-blue-500 to-teal-500 text-white">
+            Back to Topics
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const handleAnswerSelect = (answerIndex: number) => {
     if (showFeedback) return; // Prevent selection during feedback
+    console.log('Answer selected:', answerIndex, 'Correct answer:', currentQuestion.correctAnswer);
+    
     setSelectedAnswer(answerIndex);
     
     const correct = answerIndex === currentQuestion.correctAnswer;
@@ -101,6 +136,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   };
 
   const handleNext = () => {
+    console.log('Moving to next question');
     setSelectedAnswer(null);
     setShowFeedback(false);
     
@@ -109,6 +145,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     } else {
       // Check if we need to review missed questions
       if (!isReviewPhase && missedQuestions.length > 0) {
+        console.log('Starting review phase with missed questions:', missedQuestions);
         // Start review phase with missed questions
         const missedQuestionObjects = missedQuestions.map(index => module.questions[index]);
         setAllQuestions(missedQuestionObjects);
@@ -117,6 +154,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
         setMissedQuestions([]);
       } else {
         // Quiz complete - calculate final score
+        console.log('Quiz complete, calculating score');
         const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100);
         const xpEarned = scorePercentage >= 70 ? module.xp_value : 0;
         
@@ -159,6 +197,8 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     
     return 'border-gray-300';
   };
+
+  console.log('Rendering quiz question:', currentQuestion.question);
 
   return (
     <div className="max-w-4xl mx-auto">
