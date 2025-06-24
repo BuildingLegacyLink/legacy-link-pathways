@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,18 +42,18 @@ const Learn = () => {
     setQuizResults({ score, xpEarned });
     setShowResults(true);
     
-    // Update progress in database
+    // Update progress in database - mark as completed if score is 100%
     if (selectedModule) {
       try {
         await updateProgress({
           moduleId: selectedModule.id,
           score,
           xpEarned,
-          completed: score >= 70
+          completed: score === 100 // Changed from score >= 70 to score === 100
         });
         
         // Show success message
-        if (score >= 70) {
+        if (score === 100) {
           console.log(`Module completed! +${xpEarned} XP earned`);
         }
       } catch (error) {
