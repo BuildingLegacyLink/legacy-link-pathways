@@ -37,6 +37,27 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     setQuestionQueue(Array.from({ length: module.questions.length }, (_, i) => i));
   }, [module.questions.length]);
 
+  // If no questions, show error message
+  if (!module.questions || module.questions.length === 0) {
+    return (
+      <Card className="max-w-3xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <div className="mb-6">
+            <X className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">No Questions Available</h2>
+            <p className="text-gray-600 mb-4">
+              This module doesn't have any questions yet. Please check back later.
+            </p>
+          </div>
+          
+          <Button onClick={onBack} className="bg-gradient-to-r from-blue-500 to-teal-500 text-white">
+            Back to Topics
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const currentQuestion = module.questions[questionQueue[currentQuestionIndex]];
   const progress = ((currentQuestionIndex + 1) / questionQueue.length) * 100;
 

@@ -48,7 +48,7 @@ export const useLearningProgress = () => {
         .order('sort_order');
       
       if (error) throw error;
-      // Convert questions from Json to array format
+      // Convert questions from Json to array format and ensure they exist
       return data.map(module => ({
         ...module,
         questions: Array.isArray(module.questions) ? module.questions : []
