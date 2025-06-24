@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,6 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
   const [missedQuestions, setMissedQuestions] = useState<number[]>([]);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [isReviewPhase, setIsReviewPhase] = useState(false);
-  const [originalQuestionIndex, setOriginalQuestionIndex] = useState<number | null>(null);
 
   console.log('QuizComponent rendered with module:', module);
   console.log('Module questions:', module.questions);
@@ -48,15 +48,6 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       console.log('No valid questions found in module');
     }
   }, [module]);
-
-  // Update original question index when moving through review questions
-  useEffect(() => {
-    if (isReviewPhase && missedQuestions.length > 0 && currentQuestionIndex < missedQuestions.length) {
-      setOriginalQuestionIndex(missedQuestions[currentQuestionIndex]);
-    } else if (!isReviewPhase) {
-      setOriginalQuestionIndex(null);
-    }
-  }, [currentQuestionIndex, isReviewPhase, missedQuestions]);
 
   // If no questions, show error message
   if (!allQuestions || allQuestions.length === 0) {
@@ -130,8 +121,8 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
     setShowFeedback(true);
 
     if (correct) {
-      // Track the original question index that was answered correctly
-      const questionIndexToTrack = isReviewPhase && originalQuestionIndex !== null ? originalQuestionIndex : currentQuestionIndex;
+      // Get the original question index for tracking
+      const questionIndexToTrack = isReviewPhase ? missedQuestions[currentQuestionIndex] : currentQuestionIndex;
       console.log('Adding correct answer for question index:', questionIndexToTrack);
       setCorrectlyAnsweredQuestions(prev => {
         const newSet = new Set([...prev, questionIndexToTrack]);
@@ -145,7 +136,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       }, 1000);
     } else {
       // Track missed question for review (use original index if in review phase)
-      const questionIndexToTrack = isReviewPhase && originalQuestionIndex !== null ? originalQuestionIndex : currentQuestionIndex;
+      const questionIndexToTrack = isReviewPhase ? missedQuestions[currentQuestionIndex] : currentQuestionIndex;
       console.log('Adding missed question for review:', questionIndexToTrack);
       if (!missedQuestions.includes(questionIndexToTrack)) {
         setMissedQuestions(prev => [...prev, questionIndexToTrack]);
@@ -162,16 +153,13 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
       // Check if we need to review missed questions
-      if (missedQuestions.length > 0) {
+      if (missedQuestions.length > 0 && !isReviewPhase) {
         console.log('Starting review phase with missed questions:', missedQuestions);
         // Start review phase with missed questions
         const missedQuestionObjects = missedQuestions.map(index => module.questions[index]);
         setAllQuestions(missedQuestionObjects);
         setCurrentQuestionIndex(0);
         setIsReviewPhase(true);
-        
-        // Clear missed questions for this round
-        setMissedQuestions([]);
       } else {
         // Quiz complete - calculate final score based on correctly answered questions
         console.log('Quiz complete, calculating score');
@@ -300,7 +288,7 @@ const QuizComponent = ({ module, onComplete, onBack }: QuizComponentProps) => {
                 className="bg-gradient-to-r from-blue-500 to-teal-500 text-white hover:from-blue-600 hover:to-teal-600"
               >
                 {currentQuestionIndex < allQuestions.length - 1 ? 'Next Question' : 
-                 missedQuestions.length > 0 ? 'Review Missed Questions' : 'Finish Quiz'}
+                 (missedQuestions.length > 0 && !isReviewPhase) ? 'Review Missed Questions' : 'Finish Quiz'}
               </Button>
             ) : !showFeedback && (
               <div className="text-gray-500 text-sm">
