@@ -1,7 +1,7 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { useLearningProgress } from '@/hooks/useLearningProgress';
 import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
@@ -33,12 +33,14 @@ const Learn = () => {
   // Selected level defaults to current level, but can be changed via selector
   const [selectedLevel, setSelectedLevel] = useState<string>(userStats.currentLevel);
 
-  // Update selected level when user advances to next level
-  if (selectedLevel !== userStats.currentLevel && userStats.currentLevel !== 'beginner') {
+  // Auto-update selected level when user advances
+  if (selectedLevel !== userStats.currentLevel && 
+      ['intermediate', 'advanced', 'expert'].includes(userStats.currentLevel) &&
+      selectedLevel === 'beginner') {
     setSelectedLevel(userStats.currentLevel);
   }
 
-  // Filter modules and topics based on selected level
+  // Filter modules and topics based on selected level - only show current selected level
   const filteredModules = modules.filter(module => module.level === selectedLevel);
   const filteredTopics = topics.filter(topic => 
     filteredModules.some(module => module.topic_id === topic.id)

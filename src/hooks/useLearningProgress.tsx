@@ -48,7 +48,6 @@ export const useLearningProgress = () => {
         .order('sort_order');
       
       if (error) throw error;
-      // Convert questions from Json to array format and ensure they exist
       return data.map(module => ({
         ...module,
         questions: Array.isArray(module.questions) ? module.questions : []
@@ -71,7 +70,6 @@ export const useLearningProgress = () => {
 
       console.log('Updating progress for module:', moduleId, { score, xpEarned, completed });
 
-      // First check if progress already exists
       const { data: existingProgress } = await supabase
         .from('learning_progress')
         .select('*')
@@ -80,7 +78,6 @@ export const useLearningProgress = () => {
         .single();
 
       if (existingProgress) {
-        // Update existing record
         const { error } = await supabase
           .from('learning_progress')
           .update({
@@ -100,7 +97,6 @@ export const useLearningProgress = () => {
           throw error;
         }
       } else {
-        // Insert new record
         const { error } = await supabase
           .from('learning_progress')
           .insert({
@@ -126,7 +122,6 @@ export const useLearningProgress = () => {
     },
     onSuccess: () => {
       console.log('Mutation onSuccess called, invalidating queries');
-      // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['learning-progress'] });
       toast({ title: 'Progress saved!', description: 'Your learning progress has been updated.' });
     },
@@ -140,7 +135,7 @@ export const useLearningProgress = () => {
     }
   });
 
-  // Calculate user's current level and XP - SIMPLIFIED
+  // Calculate user's current level and XP - SIMPLIFIED AND FIXED
   const calculateUserStats = () => {
     if (!userProgress || !modules.length) return { 
       currentLevel: 'beginner', 
@@ -150,33 +145,38 @@ export const useLearningProgress = () => {
       nextLevelXP: 0 
     };
     
+    // Calculate total XP earned by user
     const totalXP = userProgress.reduce((sum, progress) => sum + (progress.xp_earned || 0), 0);
     
-    // Get completed modules by level
+    // Get completed modules by user
     const completedModuleIds = userProgress.filter(p => p.completed).map(p => p.module_id);
     
+    // Group modules by level
     const beginnerModules = modules.filter(m => m.level === 'beginner');
     const intermediateModules = modules.filter(m => m.level === 'intermediate');
     const advancedModules = modules.filter(m => m.level === 'advanced');
     const expertModules = modules.filter(m => m.level === 'expert');
     
+    // Count completed modules per level
     const completedBeginnerCount = beginnerModules.filter(m => completedModuleIds.includes(m.id)).length;
     const completedIntermediateCount = intermediateModules.filter(m => completedModuleIds.includes(m.id)).length;
     const completedAdvancedCount = advancedModules.filter(m => completedModuleIds.includes(m.id)).length;
     const completedExpertCount = expertModules.filter(m => completedModuleIds.includes(m.id)).length;
     
-    // Determine current level based on completion
+    // Calculate level progression based on completed modules
     let currentLevel = 'beginner';
     let levelProgress = 0;
     let nextLevel = 'intermediate';
     let nextLevelXP = 0;
     
-    // Check level progression
+    // Expert level (all modules completed)
     if (expertModules.length > 0 && completedExpertCount === expertModules.length) {
       currentLevel = 'expert';
       levelProgress = 100;
       nextLevel = null;
-    } else if (advancedModules.length > 0 && completedAdvancedCount === advancedModules.length) {
+    } 
+    // Advanced level (all advanced modules completed)
+    else if (advancedModules.length > 0 && completedAdvancedCount === advancedModules.length) {
       currentLevel = 'advanced';
       nextLevel = 'expert';
       if (expertModules.length > 0) {
@@ -186,7 +186,9 @@ export const useLearningProgress = () => {
         levelProgress = expertTotalXP > 0 ? (expertEarnedXP / expertTotalXP) * 100 : 0;
         nextLevelXP = expertTotalXP;
       }
-    } else if (intermediateModules.length > 0 && completedIntermediateCount === intermediateModules.length) {
+    } 
+    // Intermediate level (all intermediate modules completed)
+    else if (intermediateModules.length > 0 && completedIntermediateCount === intermediateModules.length) {
       currentLevel = 'intermediate';
       nextLevel = 'advanced';
       if (advancedModules.length > 0) {
@@ -196,9 +198,11 @@ export const useLearningProgress = () => {
         levelProgress = advancedTotalXP > 0 ? (advancedEarnedXP / advancedTotalXP) * 100 : 0;
         nextLevelXP = advancedTotalXP;
       }
-    } else if (beginnerModules.length > 0 && completedBeginnerCount === beginnerModules.length) {
-      currentLevel = 'beginner';
-      nextLevel = 'intermediate';
+    } 
+    // Beginner level completed (all beginner modules completed)
+    else if (beginnerModules.length > 0 && completedBeginnerCount === beginnerModules.length) {
+      currentLevel = 'intermediate';
+      nextLevel = 'advanced';
       if (intermediateModules.length > 0) {
         const intermediateTotalXP = intermediateModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
         const intermediateEarnedXP = intermediateModules.filter(m => completedModuleIds.includes(m.id))
@@ -206,8 +210,9 @@ export const useLearningProgress = () => {
         levelProgress = intermediateTotalXP > 0 ? (intermediateEarnedXP / intermediateTotalXP) * 100 : 0;
         nextLevelXP = intermediateTotalXP;
       }
-    } else {
-      // Still working on beginner level
+    } 
+    // Still working on beginner level
+    else {
       currentLevel = 'beginner';
       nextLevel = 'intermediate';
       const beginnerTotalXP = beginnerModules.reduce((sum, m) => sum + (m.xp_value || 0), 0);
@@ -241,12 +246,11 @@ export const useLearningProgress = () => {
     
     const { currentLevel } = calculateUserStats();
     
-    // Define level hierarchy
+    // Module must be at current level or below
     const levelHierarchy = ['beginner', 'intermediate', 'advanced', 'expert'];
     const currentLevelIndex = levelHierarchy.indexOf(currentLevel);
     const moduleLevelIndex = levelHierarchy.indexOf(module.level);
     
-    // If module is from a higher level than user's current level, it's locked
     if (moduleLevelIndex > currentLevelIndex) return false;
     
     // Get modules for the same topic and level, ordered by sort_order
@@ -255,9 +259,9 @@ export const useLearningProgress = () => {
       .sort((a, b) => a.sort_order - b.sort_order);
     
     const moduleIndex = topicModules.findIndex(m => m.id === moduleId);
-    if (moduleIndex === 0) return true; // First module of each topic/level is always unlocked
+    if (moduleIndex === 0) return true; // First module is always unlocked
     
-    // For subsequent modules, check if previous module is completed
+    // Check if previous module is completed
     if (!userProgress) return false;
     
     const previousModule = topicModules[moduleIndex - 1];
