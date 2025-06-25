@@ -40,11 +40,14 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     const discretionaryExamples = [
       { name: 'Dining Out', category: 'Entertainment', amount: 300, frequency: 'monthly' },
       { name: 'Gym Membership', category: 'Health & Fitness', amount: 50, frequency: 'monthly' },
-      { name: 'Streaming Services', category: 'Entertainment', amount: 45, frequency: 'monthly' },
+      { name: 'Netflix', category: 'Entertainment', amount: 15, frequency: 'monthly' },
+      { name: 'Spotify', category: 'Entertainment', amount: 10, frequency: 'monthly' },
+      { name: 'Hulu', category: 'Entertainment', amount: 12, frequency: 'monthly' },
       { name: 'Coffee Shop', category: 'Dining', amount: 80, frequency: 'monthly' },
       { name: 'Shopping', category: 'Personal', amount: 250, frequency: 'monthly' },
       { name: 'Travel', category: 'Travel', amount: 200, frequency: 'monthly' },
-      { name: 'Hobbies', category: 'Personal', amount: 100, frequency: 'monthly' },
+      { name: 'Golf', category: 'Recreation', amount: 150, frequency: 'monthly' },
+      { name: 'Bar', category: 'Entertainment', amount: 120, frequency: 'monthly' },
     ];
 
     // If user has provided expenses, use those, otherwise use examples
@@ -93,39 +96,47 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
   const totalDiscretionaryBudgeted = discretionaryExpenses.reduce((sum, exp) => sum + exp.monthlyAmount, 0);
   const totalDiscretionaryTracked = discretionaryExpenses.reduce((sum, exp) => sum + exp.trackedAmount, 0);
 
-  // Group expenses by category for the chart with better colors
-  const expensesByCategory = categorizedExpenses.reduce((acc, expense) => {
-    const category = expense.category || 'Other';
-    acc[category] = (acc[category] || 0) + expense.trackedAmount;
-    return acc;
-  }, {});
-
-  // Define a beautiful color palette for the pie chart
-  const colorPalette = [
-    '#3B82F6', // Blue
-    '#8B5CF6', // Purple
-    '#F59E0B', // Amber
-    '#EF4444', // Red
-    '#10B981', // Emerald
-    '#F97316', // Orange
-    '#84CC16', // Lime
-    '#EC4899', // Pink
-    '#06B6D4', // Cyan
-    '#6366F1', // Indigo
-    '#8B5A2B', // Brown
-    '#64748B', // Slate
-  ];
-
-  const chartData = Object.entries(expensesByCategory).map(([category, amount], index) => ({
-    name: category,
-    value: amount,
-    fill: colorPalette[index % colorPalette.length]
+  // Create chart data using individual expense names instead of categories
+  const chartData = categorizedExpenses.map((expense, index) => ({
+    name: expense.name,
+    value: expense.trackedAmount,
+    fill: getExpenseColor(index)
   }));
+
+  // Enhanced color palette with more colors for individual expenses
+  const getExpenseColor = (index: number) => {
+    const colors = [
+      '#3B82F6', // Blue
+      '#8B5CF6', // Purple  
+      '#F59E0B', // Amber
+      '#EF4444', // Red
+      '#10B981', // Emerald
+      '#F97316', // Orange
+      '#84CC16', // Lime
+      '#EC4899', // Pink
+      '#06B6D4', // Cyan
+      '#6366F1', // Indigo
+      '#8B5A2B', // Brown
+      '#64748B', // Slate
+      '#DC2626', // Red-600
+      '#7C2D12', // Orange-900
+      '#059669', // Emerald-600
+      '#7C3AED', // Violet-600
+      '#BE123C', // Rose-700
+      '#0369A1', // Sky-700
+      '#374151', // Gray-700
+      '#92400E', // Amber-700
+      '#1E40AF', // Blue-700
+      '#7E22CE', // Purple-700
+      '#166534', // Green-800
+    ];
+    return colors[index % colors.length];
+  };
 
   const chartConfig = chartData.reduce((config, item, index) => {
     config[item.name] = {
       label: item.name,
-      color: colorPalette[index % colorPalette.length]
+      color: getExpenseColor(index)
     };
     return config;
   }, {} as any);
@@ -222,38 +233,42 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
             {/* Spending Chart - Enhanced and larger */}
             {chartData.length > 0 && (
               <div className="mt-8">
-                <h4 className="font-semibold text-gray-900 mb-6">Spending by Category</h4>
-                <div className="h-96 w-full">
+                <h4 className="font-semibold text-gray-900 mb-6">Spending by Expense</h4>
+                <div className="h-[500px] w-full">
                   <ChartContainer config={chartConfig} className="w-full h-full">
-                    <PieChart width="100%" height="100%">
-                      <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent hideLabel />}
-                      />
-                      <Pie
-                        data={chartData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={140}
-                        innerRadius={60}
-                        paddingAngle={2}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
-                        labelLine={false}
-                        fontSize={12}
-                        fontWeight={500}
-                      >
-                        {chartData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.fill}
-                            stroke="#ffffff"
-                            strokeWidth={2}
-                          />
-                        ))}
-                      </Pie>
-                    </PieChart>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent hideLabel />}
+                        />
+                        <Pie
+                          data={chartData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={180}
+                          innerRadius={80}
+                          paddingAngle={1}
+                          label={({ name, percent }) => 
+                            percent > 0.05 ? `${name.length > 12 ? name.substring(0, 12) + '...' : name} ${(percent * 100).toFixed(0)}%` : ''
+                          }
+                          labelLine={false}
+                          fontSize={11}
+                          fontWeight={500}
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.fill}
+                              stroke="#ffffff"
+                              strokeWidth={2}
+                            />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </div>
               </div>
