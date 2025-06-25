@@ -172,7 +172,6 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                   <div key={index} className="grid grid-cols-3 gap-4 text-sm pl-4">
                     <div className="text-gray-900">
                       <div className="font-medium">{expense.name}</div>
-                      <div className="text-xs text-gray-500">{expense.category}</div>
                     </div>
                     <div className="text-center text-gray-600">{formatCurrency(expense.monthlyAmount)}</div>
                     <div className="text-center text-gray-600">{formatCurrency(expense.trackedAmount)}</div>
@@ -202,7 +201,6 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                   <div key={index} className="grid grid-cols-3 gap-4 text-sm pl-4">
                     <div className="text-gray-900">
                       <div className="font-medium">{expense.name}</div>
-                      <div className="text-xs text-gray-500">{expense.category}</div>
                     </div>
                     <div className="text-center text-gray-600">{formatCurrency(expense.monthlyAmount)}</div>
                     <div className="text-center text-gray-600">{formatCurrency(expense.trackedAmount)}</div>
