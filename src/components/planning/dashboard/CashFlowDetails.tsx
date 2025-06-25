@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 interface CashFlowDetailsProps {
   monthlyIncome: number;
@@ -34,12 +35,19 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     return acc;
   }, {});
 
-  const chartData = Object.entries(expensesByCategory).map(([category, amount]) => ({
+  const chartData = Object.entries(expensesByCategory).map(([category, amount], index) => ({
     name: category,
     value: amount,
+    fill: `hsl(${(index * 137.5) % 360}, 70%, 50%)`
   }));
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  const chartConfig = chartData.reduce((config, item, index) => {
+    config[item.name] = {
+      label: item.name,
+      color: `hsl(${(index * 137.5) % 360}, 70%, 50%)`
+    };
+    return config;
+  }, {} as any);
 
   return (
     <Card>
@@ -70,26 +78,31 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
           {/* Expenses Chart */}
           {chartData.length > 0 && (
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Spending by Category</h4>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
+              <h4 className="font-medium text-center mb-3">Spending by Category</h4>
+              <div className="h-64 flex justify-center">
+                <ChartContainer config={chartConfig}>
                   <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
                     <Pie
                       data={chartData}
+                      dataKey="value"
+                      nameKey="name"
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
+                      innerRadius={40}
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
                     >
                       {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Legend />
                   </PieChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
             </div>
           )}

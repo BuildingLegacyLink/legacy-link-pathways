@@ -59,31 +59,6 @@ const NetWorthBreakdown = ({ assets, totalAssets }: NetWorthBreakdownProps) => {
       <CardContent>
         {assets.length > 0 ? (
           <div className="space-y-6">
-            {/* Pie Chart */}
-            <div className="h-64">
-              <ChartContainer config={chartConfig}>
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={pieChartData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    innerRadius={40}
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </div>
-
             {/* Table */}
             <Table>
               <TableHeader>
@@ -118,6 +93,36 @@ const NetWorthBreakdown = ({ assets, totalAssets }: NetWorthBreakdownProps) => {
                 </TableRow>
               </TableBody>
             </Table>
+
+            {/* Pie Chart - moved below table */}
+            <div>
+              <h4 className="font-medium mb-3 text-center">Asset Distribution</h4>
+              <div className="h-64 flex justify-center">
+                <ChartContainer config={chartConfig}>
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                      data={pieChartData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      innerRadius={40}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">

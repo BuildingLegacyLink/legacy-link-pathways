@@ -82,8 +82,8 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
         <div className="space-y-6">
           {/* Main Asset Allocation Chart */}
           <div>
-            <h4 className="font-medium mb-3">Overall Allocation</h4>
-            <div className="h-64">
+            <h4 className="font-medium mb-3 text-center">Overall Allocation</h4>
+            <div className="h-64 flex justify-center">
               <ChartContainer config={mainChartConfig}>
                 <PieChart>
                   <ChartTooltip
@@ -99,6 +99,8 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
                     cy="50%"
                     outerRadius={80}
                     innerRadius={40}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
                   >
                     {mainAllocationData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -112,7 +114,7 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
           {/* Individual Account Charts */}
           {accountCharts.length > 0 && (
             <div>
-              <h4 className="font-medium mb-3">By Account</h4>
+              <h4 className="font-medium mb-3 text-center">By Account</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {accountCharts.map((account) => {
                   const accountConfig = account!.data.reduce((config, item, index) => {
@@ -129,7 +131,7 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
                         <h5 className="font-medium text-sm">{account!.displayName}</h5>
                         <span className="text-xs text-gray-600">{formatCurrency(account!.total)}</span>
                       </div>
-                      <div className="h-32">
+                      <div className="h-32 flex justify-center">
                         <ChartContainer config={accountConfig}>
                           <PieChart>
                             <ChartTooltip
@@ -145,6 +147,8 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
                               cy="50%"
                               outerRadius={40}
                               innerRadius={15}
+                              label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                              labelLine={false}
                             >
                               {account!.data.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -159,21 +163,6 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
               </div>
             </div>
           )}
-
-          {/* Diversification Summary */}
-          <div className="border-t pt-4">
-            <h4 className="font-medium mb-2">Diversification Analysis</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-600">Account Types</p>
-                <p className="font-medium">{accountCharts.length} accounts</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Asset Categories</p>
-                <p className="font-medium">{mainAllocationData.length} categories</p>
-              </div>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
