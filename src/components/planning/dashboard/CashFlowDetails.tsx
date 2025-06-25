@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 interface CashFlowDetailsProps {
@@ -18,20 +19,47 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     }).format(amount);
   };
 
+  // Categorize expenses as essential or discretionary
+  const categorizeExpenses = (expenses: any[]) => {
+    const essentialCategories = ['Housing', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Healthcare', 'Debt Payments'];
+    
+    return expenses.map(expense => {
+      const isEssential = essentialCategories.some(cat => 
+        expense.category?.toLowerCase().includes(cat.toLowerCase())
+      );
+      
+      // Convert to monthly amount
+      let monthlyAmount = Number(expense.amount);
+      if (expense.frequency === 'annual') {
+        monthlyAmount = monthlyAmount / 12;
+      } else if (expense.frequency === 'weekly') {
+        monthlyAmount = monthlyAmount * 4.33;
+      }
+      
+      return {
+        ...expense,
+        monthlyAmount,
+        isEssential,
+        // For demo purposes, add some variation to tracked amounts
+        trackedAmount: monthlyAmount * (0.85 + Math.random() * 0.3)
+      };
+    });
+  };
+
+  const categorizedExpenses = categorizeExpenses(expenses);
+  const essentialExpenses = categorizedExpenses.filter(exp => exp.isEssential);
+  const discretionaryExpenses = categorizedExpenses.filter(exp => !exp.isEssential);
+
+  // Calculate totals
+  const totalEssentialBudgeted = essentialExpenses.reduce((sum, exp) => sum + exp.monthlyAmount, 0);
+  const totalEssentialTracked = essentialExpenses.reduce((sum, exp) => sum + exp.trackedAmount, 0);
+  const totalDiscretionaryBudgeted = discretionaryExpenses.reduce((sum, exp) => sum + exp.monthlyAmount, 0);
+  const totalDiscretionaryTracked = discretionaryExpenses.reduce((sum, exp) => sum + exp.trackedAmount, 0);
+
   // Group expenses by category for the chart
-  const expensesByCategory = expenses.reduce((acc, expense) => {
+  const expensesByCategory = categorizedExpenses.reduce((acc, expense) => {
     const category = expense.category || 'Other';
-    const amount = Number(expense.amount);
-    
-    // Convert to monthly amount
-    let monthlyAmount = amount;
-    if (expense.frequency === 'annual') {
-      monthlyAmount = amount / 12;
-    } else if (expense.frequency === 'weekly') {
-      monthlyAmount = amount * 4.33;
-    }
-    
-    acc[category] = (acc[category] || 0) + monthlyAmount;
+    acc[category] = (acc[category] || 0) + expense.trackedAmount;
     return acc;
   }, {});
 
@@ -49,6 +77,44 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     return config;
   }, {} as any);
 
+  const ExpenseTable = ({ expenses, title }: { expenses: any[], title: string }) => (
+    <div className="space-y-3">
+      <h4 className="font-semibold text-gray-900">{title}</h4>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[40%]">Expense</TableHead>
+            <TableHead className="text-right">Budgeted</TableHead>
+            <TableHead className="text-right">Tracked</TableHead>
+            <TableHead className="text-right">Difference</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {expenses.map((expense, index) => {
+            const difference = expense.trackedAmount - expense.monthlyAmount;
+            return (
+              <TableRow key={index}>
+                <TableCell className="font-medium">
+                  <div>
+                    <div>{expense.name}</div>
+                    <div className="text-xs text-gray-500">{expense.category}</div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">{formatCurrency(expense.monthlyAmount)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(expense.trackedAmount)}</TableCell>
+                <TableCell className={`text-right font-medium ${
+                  difference > 0 ? 'text-red-600' : difference < 0 ? 'text-green-600' : 'text-gray-600'
+                }`}>
+                  {difference > 0 ? '+' : ''}{formatCurrency(difference)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -57,55 +123,91 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
       <CardContent>
         <div className="space-y-6">
           {/* Monthly Summary */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700">Monthly Income</span>
-              <span className="font-semibold text-green-600">{formatCurrency(monthlyIncome)}</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">Monthly Income</div>
+              <div className="text-xl font-bold text-green-600">{formatCurrency(monthlyIncome)}</div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700">Monthly Expenses</span>
-              <span className="font-semibold text-red-600">{formatCurrency(monthlyExpenses)}</span>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">Monthly Expenses</div>
+              <div className="text-xl font-bold text-red-600">{formatCurrency(monthlyExpenses)}</div>
             </div>
-            <hr />
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700 font-semibold">Net Cash Flow</span>
-              <span className={`font-bold ${monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">Net Cash Flow</div>
+              <div className={`text-xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(monthlyCashFlow)}
-              </span>
+              </div>
             </div>
           </div>
 
-          {/* Expenses Chart */}
-          {chartData.length > 0 && (
-            <div>
-              <h4 className="font-medium text-center mb-3">Spending by Category</h4>
-              <div className="h-64 flex justify-center">
-                <ChartContainer config={chartConfig}>
-                  <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Pie
-                      data={chartData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      innerRadius={40}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
+          {/* Budget vs Tracked Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h4 className="font-semibold text-gray-900">Budget Summary</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Essential (Budgeted)</span>
+                  <span className="font-medium">{formatCurrency(totalEssentialBudgeted)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Essential (Tracked)</span>
+                  <span className="font-medium">{formatCurrency(totalEssentialTracked)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Discretionary (Budgeted)</span>
+                  <span className="font-medium">{formatCurrency(totalDiscretionaryBudgeted)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Discretionary (Tracked)</span>
+                  <span className="font-medium">{formatCurrency(totalDiscretionaryTracked)}</span>
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Spending Chart */}
+            {chartData.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 text-center mb-3">Spending by Category</h4>
+                <div className="h-48 flex justify-center">
+                  <ChartContainer config={chartConfig}>
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Pie
+                        data={chartData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={70}
+                        innerRadius={30}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                        fontSize={10}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Detailed Expense Breakdown */}
+          <div className="space-y-6">
+            {essentialExpenses.length > 0 && (
+              <ExpenseTable expenses={essentialExpenses} title="Essential Expenses" />
+            )}
+            
+            {discretionaryExpenses.length > 0 && (
+              <ExpenseTable expenses={discretionaryExpenses} title="Discretionary Expenses" />
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
