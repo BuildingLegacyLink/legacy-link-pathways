@@ -6,6 +6,8 @@ import TopSnapshotCards from './dashboard/TopSnapshotCards';
 import GoalsOverview from './dashboard/GoalsOverview';
 import NetWorthBreakdown from './dashboard/NetWorthBreakdown';
 import CashFlowDetails from './dashboard/CashFlowDetails';
+import InvestmentOverview from './dashboard/InvestmentOverview';
+import AssetAllocation from './dashboard/AssetAllocation';
 import SmartMoneyMoves from './dashboard/SmartMoneyMoves';
 
 const PlanningDashboard = () => {
@@ -111,6 +113,15 @@ const PlanningDashboard = () => {
             monthlyCashFlow={monthlyCashFlow}
             expenses={expenses}
           />
+        </div>
+      </div>
+
+      {/* Investments + Asset Allocation Section */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">💼 Investments + Asset Allocation</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <InvestmentOverview totalAssets={totalAssets} />
+          <AssetAllocation assets={assets} totalAssets={totalAssets} />
         </div>
       </div>
 
