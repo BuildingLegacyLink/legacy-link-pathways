@@ -52,32 +52,32 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
   // Add example essential expenses if the expenses array is empty or lacks essential items
   const getExampleExpenses = () => {
     const essentialExamples = [
-      { name: 'Mortgage/Rent', category: 'Housing', amount: 2500, frequency: 'monthly' },
-      { name: 'Property Insurance', category: 'Insurance', amount: 150, frequency: 'monthly' },
-      { name: 'HOA Fees', category: 'Housing', amount: 200, frequency: 'monthly' },
-      { name: 'Electricity', category: 'Utilities', amount: 120, frequency: 'monthly' },
-      { name: 'Water/Sewer', category: 'Utilities', amount: 80, frequency: 'monthly' },
-      { name: 'Internet', category: 'Utilities', amount: 75, frequency: 'monthly' },
-      { name: 'Groceries', category: 'Groceries', amount: 600, frequency: 'monthly' },
-      { name: 'Car Payment', category: 'Transportation', amount: 450, frequency: 'monthly' },
-      { name: 'Gas', category: 'Transportation', amount: 200, frequency: 'monthly' },
-      { name: 'Car Insurance', category: 'Insurance', amount: 120, frequency: 'monthly' },
-      { name: 'Health Insurance', category: 'Insurance', amount: 350, frequency: 'monthly' },
-      { name: 'Student Loan', category: 'Debt Payments', amount: 300, frequency: 'monthly' },
-      { name: 'Credit Card Payment', category: 'Debt Payments', amount: 150, frequency: 'monthly' },
+      { name: 'Mortgage/Rent', category: 'Housing', amount: 2500, frequency: 'monthly', type: 'essential' },
+      { name: 'Property Insurance', category: 'Insurance', amount: 150, frequency: 'monthly', type: 'essential' },
+      { name: 'HOA Fees', category: 'Housing', amount: 200, frequency: 'monthly', type: 'essential' },
+      { name: 'Electricity', category: 'Utilities', amount: 120, frequency: 'monthly', type: 'essential' },
+      { name: 'Water/Sewer', category: 'Utilities', amount: 80, frequency: 'monthly', type: 'essential' },
+      { name: 'Internet', category: 'Utilities', amount: 75, frequency: 'monthly', type: 'essential' },
+      { name: 'Groceries', category: 'Groceries', amount: 600, frequency: 'monthly', type: 'essential' },
+      { name: 'Car Payment', category: 'Transportation', amount: 450, frequency: 'monthly', type: 'essential' },
+      { name: 'Gas', category: 'Transportation', amount: 200, frequency: 'monthly', type: 'essential' },
+      { name: 'Car Insurance', category: 'Insurance', amount: 120, frequency: 'monthly', type: 'essential' },
+      { name: 'Health Insurance', category: 'Insurance', amount: 350, frequency: 'monthly', type: 'essential' },
+      { name: 'Student Loan', category: 'Debt Payments', amount: 300, frequency: 'monthly', type: 'essential' },
+      { name: 'Credit Card Payment', category: 'Debt Payments', amount: 150, frequency: 'monthly', type: 'essential' },
     ];
 
     const discretionaryExamples = [
-      { name: 'Dining Out', category: 'Entertainment', amount: 300, frequency: 'monthly' },
-      { name: 'Gym Membership', category: 'Health & Fitness', amount: 50, frequency: 'monthly' },
-      { name: 'Netflix', category: 'Entertainment', amount: 15, frequency: 'monthly' },
-      { name: 'Spotify', category: 'Entertainment', amount: 10, frequency: 'monthly' },
-      { name: 'Hulu', category: 'Entertainment', amount: 12, frequency: 'monthly' },
-      { name: 'Coffee Shop', category: 'Dining', amount: 80, frequency: 'monthly' },
-      { name: 'Shopping', category: 'Personal', amount: 250, frequency: 'monthly' },
-      { name: 'Travel', category: 'Travel', amount: 200, frequency: 'monthly' },
-      { name: 'Golf', category: 'Recreation', amount: 150, frequency: 'monthly' },
-      { name: 'Bar', category: 'Entertainment', amount: 120, frequency: 'monthly' },
+      { name: 'Dining Out', category: 'Entertainment', amount: 300, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Gym Membership', category: 'Health & Fitness', amount: 50, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Netflix', category: 'Entertainment', amount: 15, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Spotify', category: 'Entertainment', amount: 10, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Hulu', category: 'Entertainment', amount: 12, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Coffee Shop', category: 'Dining', amount: 80, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Shopping', category: 'Personal', amount: 250, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Travel', category: 'Travel', amount: 200, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Golf', category: 'Recreation', amount: 150, frequency: 'monthly', type: 'discretionary' },
+      { name: 'Bar', category: 'Entertainment', amount: 120, frequency: 'monthly', type: 'discretionary' },
     ];
 
     // If user has provided expenses, use those, otherwise use examples
@@ -88,15 +88,9 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     return [...essentialExamples, ...discretionaryExamples];
   };
 
-  // Categorize expenses as essential or discretionary
+  // Categorize expenses using the actual type field from the database
   const categorizeExpenses = (expenses: any[]) => {
-    const essentialCategories = ['Housing', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Healthcare', 'Debt Payments'];
-    
     return expenses.map(expense => {
-      const isEssential = essentialCategories.some(cat => 
-        expense.category?.toLowerCase().includes(cat.toLowerCase())
-      );
-      
       // Convert to monthly amount
       let monthlyAmount = Number(expense.amount);
       if (expense.frequency === 'annual') {
@@ -108,7 +102,8 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
       return {
         ...expense,
         monthlyAmount,
-        isEssential,
+        // Use the actual type field from the database, not category-based logic
+        isEssential: expense.type === 'essential',
         // For demo purposes, add some variation to tracked amounts
         trackedAmount: monthlyAmount * (0.85 + Math.random() * 0.3)
       };
