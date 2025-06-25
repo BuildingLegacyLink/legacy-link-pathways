@@ -181,11 +181,6 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                 <div className="font-semibold text-gray-900 text-center">Budgeted</div>
                 <div className="font-semibold text-gray-900 text-center">Tracked</div>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-left pb-2 border-b border-gray-200">
-                <div className="font-medium text-gray-700">Total</div>
-                <div className="text-center text-gray-700">{formatCurrency(totalEssentialBudgeted)}</div>
-                <div className="text-center text-gray-700">{formatCurrency(totalEssentialTracked)}</div>
-              </div>
               
               {/* Essential Expense Line Items */}
               <div className="space-y-2">
@@ -200,6 +195,13 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                   </div>
                 ))}
               </div>
+
+              {/* Essential Total */}
+              <div className="grid grid-cols-3 gap-4 text-left pt-2 border-t border-gray-200">
+                <div className="font-medium text-gray-700 pl-4">Total Essential</div>
+                <div className="text-center font-medium text-gray-700">{formatCurrency(totalEssentialBudgeted)}</div>
+                <div className="text-center font-medium text-gray-700">{formatCurrency(totalEssentialTracked)}</div>
+              </div>
             </div>
 
             {/* Discretionary Expenses Summary */}
@@ -208,11 +210,6 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                 <div className="font-semibold text-gray-900">Discretionary Expenses</div>
                 <div className="font-semibold text-gray-900 text-center">Budgeted</div>
                 <div className="font-semibold text-gray-900 text-center">Tracked</div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-left pb-2 border-b border-gray-200">
-                <div className="font-medium text-gray-700">Total</div>
-                <div className="text-center text-gray-700">{formatCurrency(totalDiscretionaryBudgeted)}</div>
-                <div className="text-center text-gray-700">{formatCurrency(totalDiscretionaryTracked)}</div>
               </div>
               
               {/* Discretionary Expense Line Items */}
@@ -227,6 +224,13 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                     <div className="text-center text-gray-600">{formatCurrency(expense.trackedAmount)}</div>
                   </div>
                 ))}
+              </div>
+
+              {/* Discretionary Total */}
+              <div className="grid grid-cols-3 gap-4 text-left pt-2 border-t border-gray-200">
+                <div className="font-medium text-gray-700 pl-4">Total Discretionary</div>
+                <div className="text-center font-medium text-gray-700">{formatCurrency(totalDiscretionaryBudgeted)}</div>
+                <div className="text-center font-medium text-gray-700">{formatCurrency(totalDiscretionaryTracked)}</div>
               </div>
             </div>
 
