@@ -25,21 +25,41 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
     }).format(amount);
   };
 
-  // Group assets by type for the main allocation chart
-  const assetsByType = assets.reduce((acc, asset) => {
-    const type = asset.type;
-    if (!acc[type]) {
-      acc[type] = { type, value: 0, accounts: [] };
+  // Map account types to asset categories
+  const getAssetCategory = (accountType: string, assetName: string) => {
+    switch (accountType) {
+      case 'checking':
+      case 'savings':
+        return 'Cash';
+      case 'roth_ira':
+      case 'brokerage':
+        // For investment accounts, we could categorize based on asset name
+        // For now, treating them as equity, but this could be enhanced
+        if (assetName.toLowerCase().includes('bond')) return 'Bonds';
+        if (assetName.toLowerCase().includes('real estate') || assetName.toLowerCase().includes('reit')) return 'Real Estate';
+        return 'Equity';
+      case 'crypto_wallet':
+        return 'Cryptocurrency';
+      default:
+        return 'Other';
     }
-    acc[type].value += asset.value;
-    acc[type].accounts.push(asset);
+  };
+
+  // Group assets by asset category for the main allocation chart
+  const assetsByCategory = assets.reduce((acc, asset) => {
+    const category = getAssetCategory(asset.type, asset.name);
+    if (!acc[category]) {
+      acc[category] = { category, value: 0, accounts: [] };
+    }
+    acc[category].value += asset.value;
+    acc[category].accounts.push(asset);
     return acc;
-  }, {} as Record<string, { type: string; value: number; accounts: Asset[] }>);
+  }, {} as Record<string, { category: string; value: number; accounts: Asset[] }>);
 
   // Prepare data for main pie chart
-  const mainAllocationData = Object.values(assetsByType).map((typeData, index) => ({
-    name: typeData.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value: typeData.value,
+  const mainAllocationData = Object.values(assetsByCategory).map((categoryData, index) => ({
+    name: categoryData.category,
+    value: categoryData.value,
     fill: `hsl(${(index * 137.5) % 360}, 70%, 50%)`
   }));
 
@@ -49,9 +69,16 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
     const accountAssets = assets.filter(asset => asset.type === accountType);
     if (accountAssets.length === 0) return null;
 
-    const accountData = accountAssets.map((asset, index) => ({
-      name: asset.name,
-      value: asset.value,
+    // Group by asset category within this account
+    const accountCategories = accountAssets.reduce((acc, asset) => {
+      const category = getAssetCategory(asset.type, asset.name);
+      acc[category] = (acc[category] || 0) + asset.value;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const accountData = Object.entries(accountCategories).map(([category, value], index) => ({
+      name: category,
+      value: value,
       fill: `hsl(${(index * 137.5 + 60) % 360}, 60%, 45%)`
     }));
 
@@ -82,7 +109,7 @@ const AssetAllocation = ({ assets, totalAssets }: AssetAllocationProps) => {
         <div className="space-y-6">
           {/* Main Asset Allocation Chart */}
           <div>
-            <h4 className="font-medium mb-3 text-center">Overall Allocation</h4>
+            <h4 className="font-medium mb-3 text-center">By Asset Type</h4>
             <div className="h-64 flex justify-center">
               <ChartContainer config={mainChartConfig}>
                 <PieChart>
