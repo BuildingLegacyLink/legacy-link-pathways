@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,6 +17,35 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  };
+
+  // Add example essential expenses if the expenses array is empty or lacks essential items
+  const getExampleExpenses = () => {
+    const essentialExamples = [
+      { name: 'Mortgage/Rent', category: 'Housing', amount: 2500, frequency: 'monthly' },
+      { name: 'Electricity', category: 'Utilities', amount: 120, frequency: 'monthly' },
+      { name: 'Water/Sewer', category: 'Utilities', amount: 80, frequency: 'monthly' },
+      { name: 'Groceries', category: 'Groceries', amount: 600, frequency: 'monthly' },
+      { name: 'Car Payment', category: 'Transportation', amount: 450, frequency: 'monthly' },
+      { name: 'Gas', category: 'Transportation', amount: 200, frequency: 'monthly' },
+      { name: 'Health Insurance', category: 'Insurance', amount: 350, frequency: 'monthly' },
+      { name: 'Student Loan', category: 'Debt Payments', amount: 300, frequency: 'monthly' },
+    ];
+
+    const discretionaryExamples = [
+      { name: 'Dining Out', category: 'Entertainment', amount: 300, frequency: 'monthly' },
+      { name: 'Gym Membership', category: 'Health & Fitness', amount: 50, frequency: 'monthly' },
+      { name: 'Streaming Services', category: 'Entertainment', amount: 45, frequency: 'monthly' },
+      { name: 'Coffee Shop', category: 'Dining', amount: 80, frequency: 'monthly' },
+      { name: 'Shopping', category: 'Personal', amount: 250, frequency: 'monthly' },
+    ];
+
+    // If user has provided expenses, use those, otherwise use examples
+    if (expenses && expenses.length > 0) {
+      return expenses;
+    }
+
+    return [...essentialExamples, ...discretionaryExamples];
   };
 
   // Categorize expenses as essential or discretionary
@@ -45,7 +75,8 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     });
   };
 
-  const categorizedExpenses = categorizeExpenses(expenses);
+  const allExpenses = getExampleExpenses();
+  const categorizedExpenses = categorizeExpenses(allExpenses);
   const essentialExpenses = categorizedExpenses.filter(exp => exp.isEssential);
   const discretionaryExpenses = categorizedExpenses.filter(exp => !exp.isEssential);
 
@@ -140,21 +171,26 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
           </div>
 
           {/* Budget Summary - Reorganized */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h4 className="font-semibold text-gray-900">Budget Summary</h4>
             
             {/* Essential Expenses Summary */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-3 gap-4 text-center mb-3">
-                <div className="font-medium text-gray-900">Essential Expenses</div>
-                <div className="font-medium text-gray-600">Budgeted: {formatCurrency(totalEssentialBudgeted)}</div>
-                <div className="font-medium text-gray-600">Tracked: {formatCurrency(totalEssentialTracked)}</div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-4 text-left">
+                <div className="font-semibold text-gray-900">Essential Expenses</div>
+                <div className="font-semibold text-gray-900 text-center">Budgeted</div>
+                <div className="font-semibold text-gray-900 text-center">Tracked</div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-left pb-2 border-b border-gray-200">
+                <div className="font-medium text-gray-700">Total</div>
+                <div className="text-center text-gray-700">{formatCurrency(totalEssentialBudgeted)}</div>
+                <div className="text-center text-gray-700">{formatCurrency(totalEssentialTracked)}</div>
               </div>
               
               {/* Essential Expense Line Items */}
               <div className="space-y-2">
                 {essentialExpenses.map((expense, index) => (
-                  <div key={index} className="grid grid-cols-3 gap-4 text-sm py-2 border-t border-gray-200">
+                  <div key={index} className="grid grid-cols-3 gap-4 text-sm pl-4">
                     <div className="text-gray-900">
                       <div className="font-medium">{expense.name}</div>
                       <div className="text-xs text-gray-500">{expense.category}</div>
@@ -167,17 +203,22 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
             </div>
 
             {/* Discretionary Expenses Summary */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-3 gap-4 text-center mb-3">
-                <div className="font-medium text-gray-900">Discretionary Expenses</div>
-                <div className="font-medium text-gray-600">Budgeted: {formatCurrency(totalDiscretionaryBudgeted)}</div>
-                <div className="font-medium text-gray-600">Tracked: {formatCurrency(totalDiscretionaryTracked)}</div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-4 text-left">
+                <div className="font-semibold text-gray-900">Discretionary Expenses</div>
+                <div className="font-semibold text-gray-900 text-center">Budgeted</div>
+                <div className="font-semibold text-gray-900 text-center">Tracked</div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-left pb-2 border-b border-gray-200">
+                <div className="font-medium text-gray-700">Total</div>
+                <div className="text-center text-gray-700">{formatCurrency(totalDiscretionaryBudgeted)}</div>
+                <div className="text-center text-gray-700">{formatCurrency(totalDiscretionaryTracked)}</div>
               </div>
               
               {/* Discretionary Expense Line Items */}
               <div className="space-y-2">
                 {discretionaryExpenses.map((expense, index) => (
-                  <div key={index} className="grid grid-cols-3 gap-4 text-sm py-2 border-t border-gray-200">
+                  <div key={index} className="grid grid-cols-3 gap-4 text-sm pl-4">
                     <div className="text-gray-900">
                       <div className="font-medium">{expense.name}</div>
                       <div className="text-xs text-gray-500">{expense.category}</div>
@@ -191,7 +232,7 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
 
             {/* Spending Chart - Moved under budget summary */}
             {chartData.length > 0 && (
-              <div className="mt-6">
+              <div className="mt-8">
                 <h4 className="font-semibold text-gray-900 text-center mb-3">Spending by Category</h4>
                 <div className="h-48 flex justify-center">
                   <ChartContainer config={chartConfig}>
