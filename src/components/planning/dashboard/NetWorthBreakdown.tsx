@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { formatCurrency } from '@/utils/currency';
 
 interface Asset {
   id: string;
@@ -25,15 +26,6 @@ interface NetWorthBreakdownProps {
 }
 
 const NetWorthBreakdown = ({ assets, totalAssets, liabilities = [] }: NetWorthBreakdownProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const formatPercent = (value: number, total: number) => {
     if (total === 0) return '0%';
     return `${((value / total) * 100).toFixed(1)}%`;

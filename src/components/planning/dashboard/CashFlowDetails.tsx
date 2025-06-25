@@ -1,8 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { formatCurrency } from '@/utils/currency';
 
 interface CashFlowDetailsProps {
   monthlyIncome: number;
@@ -12,13 +12,6 @@ interface CashFlowDetailsProps {
 }
 
 const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expenses }: CashFlowDetailsProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
   // Enhanced color palette with more colors for individual expenses
   const getExpenseColor = (index: number) => {
     const colors = [
@@ -229,7 +222,7 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
             {chartData.length > 0 && (
               <div className="mt-8">
                 <h4 className="font-semibold text-gray-900 mb-6">Spending by Expense</h4>
-                <div className="h-[350px] w-full">
+                <div className="h-[300px] w-full">
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -243,8 +236,8 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                           nameKey="name"
                           cx="50%"
                           cy="50%"
-                          outerRadius={120}
-                          innerRadius={60}
+                          outerRadius={100}
+                          innerRadius={50}
                           paddingAngle={1}
                           label={({ name, percent }) => 
                             percent > 0.05 ? `${name.length > 12 ? name.substring(0, 12) + '...' : name} ${(percent * 100).toFixed(0)}%` : ''

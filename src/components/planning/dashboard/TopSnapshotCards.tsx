@@ -1,6 +1,7 @@
 
 import { TrendingUp, DollarSign, Target } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatCurrency } from '@/utils/currency';
 
 interface TopSnapshotCardsProps {
   netWorth: number;
@@ -9,13 +10,6 @@ interface TopSnapshotCardsProps {
 }
 
 const TopSnapshotCards = ({ netWorth, monthlyCashFlow, financialScore }: TopSnapshotCardsProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
     if (score >= 60) return 'text-yellow-600';
