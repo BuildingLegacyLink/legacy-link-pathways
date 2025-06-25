@@ -19,6 +19,36 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     }).format(amount);
   };
 
+  // Enhanced color palette with more colors for individual expenses
+  const getExpenseColor = (index: number) => {
+    const colors = [
+      '#3B82F6', // Blue
+      '#8B5CF6', // Purple  
+      '#F59E0B', // Amber
+      '#EF4444', // Red
+      '#10B981', // Emerald
+      '#F97316', // Orange
+      '#84CC16', // Lime
+      '#EC4899', // Pink
+      '#06B6D4', // Cyan
+      '#6366F1', // Indigo
+      '#8B5A2B', // Brown
+      '#64748B', // Slate
+      '#DC2626', // Red-600
+      '#7C2D12', // Orange-900
+      '#059669', // Emerald-600
+      '#7C3AED', // Violet-600
+      '#BE123C', // Rose-700
+      '#0369A1', // Sky-700
+      '#374151', // Gray-700
+      '#92400E', // Amber-700
+      '#1E40AF', // Blue-700
+      '#7E22CE', // Purple-700
+      '#166534', // Green-800
+    ];
+    return colors[index % colors.length];
+  };
+
   // Add example essential expenses if the expenses array is empty or lacks essential items
   const getExampleExpenses = () => {
     const essentialExamples = [
@@ -102,36 +132,6 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
     value: expense.trackedAmount,
     fill: getExpenseColor(index)
   }));
-
-  // Enhanced color palette with more colors for individual expenses
-  const getExpenseColor = (index: number) => {
-    const colors = [
-      '#3B82F6', // Blue
-      '#8B5CF6', // Purple  
-      '#F59E0B', // Amber
-      '#EF4444', // Red
-      '#10B981', // Emerald
-      '#F97316', // Orange
-      '#84CC16', // Lime
-      '#EC4899', // Pink
-      '#06B6D4', // Cyan
-      '#6366F1', // Indigo
-      '#8B5A2B', // Brown
-      '#64748B', // Slate
-      '#DC2626', // Red-600
-      '#7C2D12', // Orange-900
-      '#059669', // Emerald-600
-      '#7C3AED', // Violet-600
-      '#BE123C', // Rose-700
-      '#0369A1', // Sky-700
-      '#374151', // Gray-700
-      '#92400E', // Amber-700
-      '#1E40AF', // Blue-700
-      '#7E22CE', // Purple-700
-      '#166534', // Green-800
-    ];
-    return colors[index % colors.length];
-  };
 
   const chartConfig = chartData.reduce((config, item, index) => {
     config[item.name] = {
