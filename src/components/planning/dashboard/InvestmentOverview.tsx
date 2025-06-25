@@ -2,8 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { useState } from 'react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface InvestmentOverviewProps {
   totalAssets: number;
@@ -48,21 +49,28 @@ const InvestmentOverview = ({ totalAssets }: InvestmentOverviewProps) => {
   const previousValue = performanceData[0]?.value || 0;
   const change = currentValue - previousValue;
   const changePercent = previousValue ? ((change / previousValue) * 100).toFixed(2) : '0.00';
+  const isPositive = change >= 0;
 
   const chartConfig = {
     value: {
       label: "Portfolio Value",
-      color: "hsl(var(--chart-1))",
+      color: isPositive ? "hsl(142, 76%, 36%)" : "hsl(0, 84%, 60%)",
     },
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-green-50/50" />
+      <CardHeader className="relative">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">Investment Overview</CardTitle>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+            </div>
+            <CardTitle className="text-lg">Investment Overview</CardTitle>
+          </div>
           <Select value={timeframe} onValueChange={setTimeframe}>
-            <SelectTrigger className="w-20">
+            <SelectTrigger className="w-24 border-gray-200 bg-white/80 backdrop-blur-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -76,60 +84,81 @@ const InvestmentOverview = ({ totalAssets }: InvestmentOverviewProps) => {
           </Select>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="relative">
+        <div className="space-y-6">
           {/* Portfolio Value Summary */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Portfolio Value</p>
-              <p className="text-2xl font-bold">{formatCurrency(currentValue)}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <p className="text-sm font-medium text-gray-600 mb-1">Portfolio Value</p>
+              <p className="text-3xl font-bold text-gray-900">{formatCurrency(currentValue)}</p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Change ({timeframe})</p>
-              <p className={`text-lg font-semibold ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {change >= 0 ? '+' : ''}{formatCurrency(change)} ({changePercent}%)
-              </p>
+            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <p className="text-sm font-medium text-gray-600 mb-1">Change ({timeframe})</p>
+              <div className="flex items-center gap-2">
+                {isPositive ? (
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                )}
+                <p className={`text-xl font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {isPositive ? '+' : ''}{formatCurrency(change)}
+                </p>
+                <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                  isPositive 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {changePercent}%
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Performance Chart */}
-          <div className="h-64">
-            <ChartContainer config={chartConfig}>
-              <LineChart data={performanceData}>
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false}
-                  tickLine={false}
-                  fontSize={12}
-                />
-                <YAxis 
-                  hide
-                />
-                <ChartTooltip
-                  content={<ChartTooltipContent />}
-                  labelFormatter={(value) => `Date: ${value}`}
-                  formatter={(value) => [formatCurrency(Number(value)), 'Portfolio Value']}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="var(--color-value)"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ChartContainer>
-          </div>
-
-          {/* Risk & Performance Metrics */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-            <div>
-              <p className="text-sm text-gray-600">Risk Tolerance</p>
-              <p className="font-medium">Moderate</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Asset Allocation</p>
-              <p className="font-medium">70% Stocks, 30% Bonds</p>
+          <div className="bg-white/40 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+            <h4 className="font-semibold text-gray-900 mb-4">Performance Trend</h4>
+            <div className="h-64">
+              <ChartContainer config={chartConfig}>
+                <AreaChart data={performanceData}>
+                  <defs>
+                    <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop 
+                        offset="5%" 
+                        stopColor={isPositive ? "hsl(142, 76%, 36%)" : "hsl(0, 84%, 60%)"} 
+                        stopOpacity={0.3}
+                      />
+                      <stop 
+                        offset="95%" 
+                        stopColor={isPositive ? "hsl(142, 76%, 36%)" : "hsl(0, 84%, 60%)"} 
+                        stopOpacity={0.05}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false}
+                    tickLine={false}
+                    fontSize={12}
+                    tick={{ fill: '#6B7280' }}
+                  />
+                  <YAxis 
+                    hide
+                  />
+                  <ChartTooltip
+                    content={<ChartTooltipContent />}
+                    labelFormatter={(value) => `Date: ${value}`}
+                    formatter={(value) => [formatCurrency(Number(value)), 'Portfolio Value']}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke={isPositive ? "hsl(142, 76%, 36%)" : "hsl(0, 84%, 60%)"}
+                    strokeWidth={3}
+                    fill="url(#valueGradient)"
+                    dot={false}
+                  />
+                </AreaChart>
+              </ChartContainer>
             </div>
           </div>
         </div>
