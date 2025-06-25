@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -140,33 +139,59 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
             </div>
           </div>
 
-          {/* Budget vs Tracked Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900">Budget Summary</h4>
+          {/* Budget Summary - Reorganized */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-gray-900">Budget Summary</h4>
+            
+            {/* Essential Expenses Summary */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-3 gap-4 text-center mb-3">
+                <div className="font-medium text-gray-900">Essential Expenses</div>
+                <div className="font-medium text-gray-600">Budgeted: {formatCurrency(totalEssentialBudgeted)}</div>
+                <div className="font-medium text-gray-600">Tracked: {formatCurrency(totalEssentialTracked)}</div>
+              </div>
+              
+              {/* Essential Expense Line Items */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Essential (Budgeted)</span>
-                  <span className="font-medium">{formatCurrency(totalEssentialBudgeted)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Essential (Tracked)</span>
-                  <span className="font-medium">{formatCurrency(totalEssentialTracked)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Discretionary (Budgeted)</span>
-                  <span className="font-medium">{formatCurrency(totalDiscretionaryBudgeted)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Discretionary (Tracked)</span>
-                  <span className="font-medium">{formatCurrency(totalDiscretionaryTracked)}</span>
-                </div>
+                {essentialExpenses.map((expense, index) => (
+                  <div key={index} className="grid grid-cols-3 gap-4 text-sm py-2 border-t border-gray-200">
+                    <div className="text-gray-900">
+                      <div className="font-medium">{expense.name}</div>
+                      <div className="text-xs text-gray-500">{expense.category}</div>
+                    </div>
+                    <div className="text-center text-gray-600">{formatCurrency(expense.monthlyAmount)}</div>
+                    <div className="text-center text-gray-600">{formatCurrency(expense.trackedAmount)}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Spending Chart */}
+            {/* Discretionary Expenses Summary */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-3 gap-4 text-center mb-3">
+                <div className="font-medium text-gray-900">Discretionary Expenses</div>
+                <div className="font-medium text-gray-600">Budgeted: {formatCurrency(totalDiscretionaryBudgeted)}</div>
+                <div className="font-medium text-gray-600">Tracked: {formatCurrency(totalDiscretionaryTracked)}</div>
+              </div>
+              
+              {/* Discretionary Expense Line Items */}
+              <div className="space-y-2">
+                {discretionaryExpenses.map((expense, index) => (
+                  <div key={index} className="grid grid-cols-3 gap-4 text-sm py-2 border-t border-gray-200">
+                    <div className="text-gray-900">
+                      <div className="font-medium">{expense.name}</div>
+                      <div className="text-xs text-gray-500">{expense.category}</div>
+                    </div>
+                    <div className="text-center text-gray-600">{formatCurrency(expense.monthlyAmount)}</div>
+                    <div className="text-center text-gray-600">{formatCurrency(expense.trackedAmount)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Spending Chart - Moved under budget summary */}
             {chartData.length > 0 && (
-              <div>
+              <div className="mt-6">
                 <h4 className="font-semibold text-gray-900 text-center mb-3">Spending by Category</h4>
                 <div className="h-48 flex justify-center">
                   <ChartContainer config={chartConfig}>
@@ -195,17 +220,6 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                   </ChartContainer>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Detailed Expense Breakdown */}
-          <div className="space-y-6">
-            {essentialExpenses.length > 0 && (
-              <ExpenseTable expenses={essentialExpenses} title="Essential Expenses" />
-            )}
-            
-            {discretionaryExpenses.length > 0 && (
-              <ExpenseTable expenses={discretionaryExpenses} title="Discretionary Expenses" />
             )}
           </div>
         </div>
