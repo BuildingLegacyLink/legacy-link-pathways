@@ -23,13 +23,18 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
   const getExampleExpenses = () => {
     const essentialExamples = [
       { name: 'Mortgage/Rent', category: 'Housing', amount: 2500, frequency: 'monthly' },
+      { name: 'Property Insurance', category: 'Insurance', amount: 150, frequency: 'monthly' },
+      { name: 'HOA Fees', category: 'Housing', amount: 200, frequency: 'monthly' },
       { name: 'Electricity', category: 'Utilities', amount: 120, frequency: 'monthly' },
       { name: 'Water/Sewer', category: 'Utilities', amount: 80, frequency: 'monthly' },
+      { name: 'Internet', category: 'Utilities', amount: 75, frequency: 'monthly' },
       { name: 'Groceries', category: 'Groceries', amount: 600, frequency: 'monthly' },
       { name: 'Car Payment', category: 'Transportation', amount: 450, frequency: 'monthly' },
       { name: 'Gas', category: 'Transportation', amount: 200, frequency: 'monthly' },
+      { name: 'Car Insurance', category: 'Insurance', amount: 120, frequency: 'monthly' },
       { name: 'Health Insurance', category: 'Insurance', amount: 350, frequency: 'monthly' },
       { name: 'Student Loan', category: 'Debt Payments', amount: 300, frequency: 'monthly' },
+      { name: 'Credit Card Payment', category: 'Debt Payments', amount: 150, frequency: 'monthly' },
     ];
 
     const discretionaryExamples = [
@@ -38,6 +43,8 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
       { name: 'Streaming Services', category: 'Entertainment', amount: 45, frequency: 'monthly' },
       { name: 'Coffee Shop', category: 'Dining', amount: 80, frequency: 'monthly' },
       { name: 'Shopping', category: 'Personal', amount: 250, frequency: 'monthly' },
+      { name: 'Travel', category: 'Travel', amount: 200, frequency: 'monthly' },
+      { name: 'Hobbies', category: 'Personal', amount: 100, frequency: 'monthly' },
     ];
 
     // If user has provided expenses, use those, otherwise use examples
@@ -86,64 +93,42 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
   const totalDiscretionaryBudgeted = discretionaryExpenses.reduce((sum, exp) => sum + exp.monthlyAmount, 0);
   const totalDiscretionaryTracked = discretionaryExpenses.reduce((sum, exp) => sum + exp.trackedAmount, 0);
 
-  // Group expenses by category for the chart
+  // Group expenses by category for the chart with better colors
   const expensesByCategory = categorizedExpenses.reduce((acc, expense) => {
     const category = expense.category || 'Other';
     acc[category] = (acc[category] || 0) + expense.trackedAmount;
     return acc;
   }, {});
 
+  // Define a beautiful color palette for the pie chart
+  const colorPalette = [
+    '#3B82F6', // Blue
+    '#8B5CF6', // Purple
+    '#F59E0B', // Amber
+    '#EF4444', // Red
+    '#10B981', // Emerald
+    '#F97316', // Orange
+    '#84CC16', // Lime
+    '#EC4899', // Pink
+    '#06B6D4', // Cyan
+    '#6366F1', // Indigo
+    '#8B5A2B', // Brown
+    '#64748B', // Slate
+  ];
+
   const chartData = Object.entries(expensesByCategory).map(([category, amount], index) => ({
     name: category,
     value: amount,
-    fill: `hsl(${(index * 137.5) % 360}, 70%, 50%)`
+    fill: colorPalette[index % colorPalette.length]
   }));
 
   const chartConfig = chartData.reduce((config, item, index) => {
     config[item.name] = {
       label: item.name,
-      color: `hsl(${(index * 137.5) % 360}, 70%, 50%)`
+      color: colorPalette[index % colorPalette.length]
     };
     return config;
   }, {} as any);
-
-  const ExpenseTable = ({ expenses, title }: { expenses: any[], title: string }) => (
-    <div className="space-y-3">
-      <h4 className="font-semibold text-gray-900">{title}</h4>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[40%]">Expense</TableHead>
-            <TableHead className="text-right">Budgeted</TableHead>
-            <TableHead className="text-right">Tracked</TableHead>
-            <TableHead className="text-right">Difference</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {expenses.map((expense, index) => {
-            const difference = expense.trackedAmount - expense.monthlyAmount;
-            return (
-              <TableRow key={index}>
-                <TableCell className="font-medium">
-                  <div>
-                    <div>{expense.name}</div>
-                    <div className="text-xs text-gray-500">{expense.category}</div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">{formatCurrency(expense.monthlyAmount)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(expense.trackedAmount)}</TableCell>
-                <TableCell className={`text-right font-medium ${
-                  difference > 0 ? 'text-red-600' : difference < 0 ? 'text-green-600' : 'text-gray-600'
-                }`}>
-                  {difference > 0 ? '+' : ''}{formatCurrency(difference)}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
 
   return (
     <Card>
@@ -170,7 +155,7 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
             </div>
           </div>
 
-          {/* Budget Summary - Reorganized */}
+          {/* Budget Summary */}
           <div className="space-y-6">
             <h4 className="font-semibold text-gray-900">Budget Summary</h4>
             
@@ -234,13 +219,13 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
               </div>
             </div>
 
-            {/* Spending Chart - Moved under budget summary */}
+            {/* Spending Chart - Enhanced and larger */}
             {chartData.length > 0 && (
               <div className="mt-8">
-                <h4 className="font-semibold text-gray-900 text-center mb-3">Spending by Category</h4>
-                <div className="h-48 flex justify-center">
-                  <ChartContainer config={chartConfig}>
-                    <PieChart>
+                <h4 className="font-semibold text-gray-900 mb-6">Spending by Category</h4>
+                <div className="h-96 w-full">
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <PieChart width="100%" height="100%">
                       <ChartTooltip
                         cursor={false}
                         content={<ChartTooltipContent hideLabel />}
@@ -251,14 +236,21 @@ const CashFlowDetails = ({ monthlyIncome, monthlyExpenses, monthlyCashFlow, expe
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={70}
-                        innerRadius={30}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={140}
+                        innerRadius={60}
+                        paddingAngle={2}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
                         labelLine={false}
-                        fontSize={10}
+                        fontSize={12}
+                        fontWeight={500}
                       >
                         {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.fill}
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
                     </PieChart>
