@@ -1,63 +1,78 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, DollarSign, PieChart, Target } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import TopSnapshotCards from './dashboard/TopSnapshotCards';
+import GoalsOverview from './dashboard/GoalsOverview';
+import NetWorthBreakdown from './dashboard/NetWorthBreakdown';
+import CashFlowDetails from './dashboard/CashFlowDetails';
+import SmartMoneyMoves from './dashboard/SmartMoneyMoves';
 
 const PlanningDashboard = () => {
-  const { data: assets } = useQuery({
-    queryKey: ['assets'],
+  const { user } = useAuth();
+
+  const { data: assets = [] } = useQuery({
+    queryKey: ['assets', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('assets').select('*');
+      if (!user) return [];
+      const { data, error } = await supabase.from('assets').select('*').eq('user_id', user.id);
       if (error) throw error;
       return data;
     },
+    enabled: !!user
   });
 
-  const { data: liabilities } = useQuery({
-    queryKey: ['liabilities'],
+  const { data: liabilities = [] } = useQuery({
+    queryKey: ['liabilities', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('liabilities').select('*');
+      if (!user) return [];
+      const { data, error } = await supabase.from('liabilities').select('*').eq('user_id', user.id);
       if (error) throw error;
       return data;
     },
+    enabled: !!user
   });
 
-  const { data: income } = useQuery({
-    queryKey: ['income'],
+  const { data: income = [] } = useQuery({
+    queryKey: ['income', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('income').select('*');
+      if (!user) return [];
+      const { data, error } = await supabase.from('income').select('*').eq('user_id', user.id);
       if (error) throw error;
       return data;
     },
+    enabled: !!user
   });
 
-  const { data: expenses } = useQuery({
-    queryKey: ['expenses'],
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('expenses').select('*');
+      if (!user) return [];
+      const { data, error } = await supabase.from('expenses').select('*').eq('user_id', user.id);
       if (error) throw error;
       return data;
     },
+    enabled: !!user
   });
 
   // Calculate metrics
-  const totalAssets = assets?.reduce((sum, asset) => sum + Number(asset.value), 0) || 0;
-  const totalLiabilities = liabilities?.reduce((sum, liability) => sum + Number(liability.balance), 0) || 0;
+  const totalAssets = assets.reduce((sum, asset) => sum + Number(asset.value), 0);
+  const totalLiabilities = liabilities.reduce((sum, liability) => sum + Number(liability.balance), 0);
   const netWorth = totalAssets - totalLiabilities;
   
-  const monthlyIncome = income?.reduce((sum, inc) => {
+  const monthlyIncome = income.reduce((sum, inc) => {
     const amount = Number(inc.amount);
     if (inc.frequency === 'annual') return sum + (amount / 12);
     if (inc.frequency === 'weekly') return sum + (amount * 4.33);
     return sum + amount; // monthly
-  }, 0) || 0;
+  }, 0);
 
-  const monthlyExpenses = expenses?.reduce((sum, exp) => {
+  const monthlyExpenses = expenses.reduce((sum, exp) => {
     const amount = Number(exp.amount);
     if (exp.frequency === 'annual') return sum + (amount / 12);
     if (exp.frequency === 'weekly') return sum + (amount * 4.33);
     return sum + amount; // monthly
-  }, 0) || 0;
+  }, 0);
 
   const monthlyCashFlow = monthlyIncome - monthlyExpenses;
 
@@ -71,96 +86,36 @@ const PlanningDashboard = () => {
     return score;
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const metrics = [
-    {
-      title: 'Net Worth',
-      value: formatCurrency(netWorth),
-      icon: TrendingUp,
-      color: netWorth >= 0 ? 'text-green-600' : 'text-red-600',
-    },
-    {
-      title: 'Monthly Cash Flow',
-      value: formatCurrency(monthlyCashFlow),
-      icon: DollarSign,
-      color: monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600',
-    },
-    {
-      title: 'Total Assets',
-      value: formatCurrency(totalAssets),
-      icon: PieChart,
-      color: 'text-blue-600',
-    },
-    {
-      title: 'Financial Score',
-      value: `${getFinancialScore()}/100`,
-      icon: Target,
-      color: 'text-purple-600',
-    },
-  ];
+  const financialScore = getFinancialScore();
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Financial Dashboard</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric) => (
-          <div key={metric.title} className="bg-white p-6 rounded-lg shadow border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{metric.title}</p>
-                <p className={`text-2xl font-bold ${metric.color}`}>{metric.value}</p>
-              </div>
-              <metric.icon className={`h-8 w-8 ${metric.color}`} />
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="space-y-8">
+      {/* Top Snapshot Cards */}
+      <TopSnapshotCards 
+        netWorth={netWorth}
+        monthlyCashFlow={monthlyCashFlow}
+        financialScore={financialScore}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <h3 className="text-lg font-semibold mb-4">Asset Allocation</h3>
-          {assets && assets.length > 0 ? (
-            <div className="space-y-3">
-              {assets.map((asset) => (
-                <div key={asset.id} className="flex justify-between items-center">
-                  <span className="text-gray-700">{asset.name}</span>
-                  <span className="font-semibold">{formatCurrency(Number(asset.value))}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">No assets recorded yet. Add your first asset in the Facts section.</p>
-          )}
-        </div>
+      {/* Goals Section */}
+      <GoalsOverview />
 
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <h3 className="text-lg font-semibold mb-4">Monthly Cash Flow</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700">Income</span>
-              <span className="font-semibold text-green-600">{formatCurrency(monthlyIncome)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700">Expenses</span>
-              <span className="font-semibold text-red-600">{formatCurrency(monthlyExpenses)}</span>
-            </div>
-            <hr />
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700 font-semibold">Net Cash Flow</span>
-              <span className={`font-bold ${monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(monthlyCashFlow)}
-              </span>
-            </div>
-          </div>
+      {/* Financial Overview Section */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">📑 Financial Overview</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <NetWorthBreakdown assets={assets} totalAssets={totalAssets} />
+          <CashFlowDetails 
+            monthlyIncome={monthlyIncome}
+            monthlyExpenses={monthlyExpenses}
+            monthlyCashFlow={monthlyCashFlow}
+            expenses={expenses}
+          />
         </div>
       </div>
+
+      {/* Smart Money Moves */}
+      <SmartMoneyMoves />
     </div>
   );
 };
