@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -61,7 +62,10 @@ const PlanningDashboard = () => {
   const totalLiabilities = liabilities.reduce((sum, liability) => sum + Number(liability.balance), 0);
   const netWorth = totalAssets - totalLiabilities;
   
-  const monthlyIncome = income.reduce((sum, inc) => {
+  // Filter to only current income for monthly cash flow calculation
+  const currentIncome = income.filter(inc => inc.is_current);
+  
+  const monthlyIncome = currentIncome.reduce((sum, inc) => {
     const amount = Number(inc.amount);
     if (inc.frequency === 'annual') return sum + (amount / 12);
     if (inc.frequency === 'weekly') return sum + (amount * 4.33);
