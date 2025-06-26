@@ -111,7 +111,7 @@ const ChatBot = () => {
       {/* Chat Widget */}
       {isOpen && (
         <Card className="fixed bottom-20 right-4 w-80 h-96 shadow-lg z-50 flex flex-col">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 flex-shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Link - AI Assistant</CardTitle>
               <Button
@@ -124,9 +124,9 @@ const ChatBot = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col p-4 pt-0">
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-3">
+          <CardContent className="flex-1 flex flex-col p-4 pt-0 min-h-0">
+            <ScrollArea className="flex-1 pr-2">
+              <div className="space-y-3 pb-4">
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -145,7 +145,7 @@ const ChatBot = () => {
                 ))}
               </div>
             </ScrollArea>
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-3 flex-shrink-0">
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
