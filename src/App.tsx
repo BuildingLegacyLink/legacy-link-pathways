@@ -12,6 +12,7 @@ import Tools from "./pages/Tools";
 import Vault from "./pages/Vault";
 import Quiz from "./pages/Quiz";
 import NotFound from "./pages/NotFound";
+import ChatBot from "./components/ChatBot";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/quiz" element={<Quiz />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <ChatBot />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
