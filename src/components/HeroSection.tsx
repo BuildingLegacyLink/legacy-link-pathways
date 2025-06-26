@@ -11,8 +11,13 @@ const HeroSection = () => {
   const [showQuiz, setShowQuiz] = useState(false);
 
   const handleTakeQuiz = () => {
-    console.log('Take the 1-Minute Fit Quiz clicked');
+    console.log('Take the Fit Quiz clicked');
     setShowQuiz(true);
+  };
+
+  const handleGuidedSetup = () => {
+    console.log('Start Guided Setup clicked');
+    navigate('/quiz');
   };
 
   const handleExploreOwn = () => {
@@ -33,30 +38,57 @@ const HeroSection = () => {
               <br />
               — One Step at a Time
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-12">
               The next-gen personal finance platform designed for young adults. 
               Learn, plan, and grow your wealth without traditional fees. 
               Make financial planning as engaging as your favorite app.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
-                onClick={handleTakeQuiz}
-              >
-                Take the 1-Minute Fit Quiz
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-            
-            <div className="mb-12">
-              <button 
-                onClick={handleExploreOwn}
-                className="text-gray-600 hover:text-gray-800 underline text-lg transition-colors"
-              >
-                Or Explore On Your Own
-              </button>
+            {/* Two Action Blocks */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
+              {/* Block 1: Fit Quiz */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  Not sure if Legacy Link is the right fit?
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Take our quick quiz to see if we're a good match based on your needs.
+                </p>
+                <Button 
+                  size="lg" 
+                  className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
+                  onClick={handleTakeQuiz}
+                >
+                  Take the Fit Quiz
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Block 2: Onboarding Paths */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  Already know you're in?
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Start planning now with a guided setup or explore on your own.
+                </p>
+                <div className="space-y-3">
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
+                    onClick={handleGuidedSetup}
+                  >
+                    Start Guided Setup
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                  <button 
+                    onClick={handleExploreOwn}
+                    className="w-full text-gray-600 hover:text-gray-800 underline text-lg transition-colors"
+                  >
+                    Explore On Your Own
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Feature Pills */}
