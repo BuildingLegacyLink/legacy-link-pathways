@@ -12,12 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowRight, ArrowLeft, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from '@/components/AuthModal';
 
 const Quiz = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const questions = [
     {
@@ -144,10 +146,22 @@ const Quiz = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      // Quiz complete - save data
+      // Quiz complete - check if user is signed in
+      if (!user) {
+        setShowAuthModal(true);
+        return;
+      }
+      // Save data if user is authenticated
       console.log('Quiz completed with answers:', answers);
       saveDataMutation.mutate(answers);
     }
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    // Save data after successful authentication
+    console.log('Quiz completed with answers:', answers);
+    saveDataMutation.mutate(answers);
   };
 
   const handleBack = () => {
@@ -575,6 +589,17 @@ const Quiz = () => {
           </CardContent>
         </Card>
       </div>
+
+      <AuthModal 
+        open={showAuthModal} 
+        onOpenChange={(open) => {
+          setShowAuthModal(open);
+          // If user successfully authenticated and modal is closing, save data
+          if (!open && user) {
+            handleAuthSuccess();
+          }
+        }} 
+      />
     </div>
   );
 };
