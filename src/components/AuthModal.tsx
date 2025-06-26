@@ -11,9 +11,10 @@ import { toast } from '@/hooks/use-toast';
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultTab?: 'signin' | 'signup';
 }
 
-export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
+export const AuthModal = ({ open, onOpenChange, defaultTab = 'signin' }: AuthModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
 
@@ -83,7 +84,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="signin" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>

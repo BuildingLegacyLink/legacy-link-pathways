@@ -9,6 +9,7 @@ import { AuthModal } from '@/components/AuthModal';
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin');
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
@@ -26,6 +27,7 @@ const Header = () => {
 
   const handleNavClick = (path: string, name: string) => {
     if (!user) {
+      setAuthModalTab('signin');
       setShowAuthModal(true);
       return;
     }
@@ -39,7 +41,13 @@ const Header = () => {
     navigate('/');
   };
 
-  const handleAuthClick = () => {
+  const handleSignInClick = () => {
+    setAuthModalTab('signin');
+    setShowAuthModal(true);
+  };
+
+  const handleSignUpClick = () => {
+    setAuthModalTab('signup');
     setShowAuthModal(true);
   };
 
@@ -84,12 +92,20 @@ const Header = () => {
                   </Button>
                 </>
               ) : (
-                <Button 
-                  variant="default" 
-                  onClick={handleAuthClick}
-                >
-                  Sign In
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSignInClick}
+                  >
+                    Sign In
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    onClick={handleSignUpClick}
+                  >
+                    Sign Up
+                  </Button>
+                </>
               )}
             </div>
 
@@ -132,13 +148,22 @@ const Header = () => {
                       </Button>
                     </>
                   ) : (
-                    <Button 
-                      variant="default" 
-                      className="mx-3"
-                      onClick={handleAuthClick}
-                    >
-                      Sign In
-                    </Button>
+                    <>
+                      <Button 
+                        variant="outline" 
+                        className="mx-3"
+                        onClick={handleSignInClick}
+                      >
+                        Sign In
+                      </Button>
+                      <Button 
+                        variant="default" 
+                        className="mx-3"
+                        onClick={handleSignUpClick}
+                      >
+                        Sign Up
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -147,7 +172,11 @@ const Header = () => {
         </div>
       </header>
 
-      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+      <AuthModal 
+        open={showAuthModal} 
+        onOpenChange={setShowAuthModal}
+        defaultTab={authModalTab}
+      />
     </>
   );
 };
