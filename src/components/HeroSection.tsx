@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, TrendingUp, BookOpen } from 'lucide-react';
 import SmartFitQuiz from './SmartFitQuiz';
+import DashboardPreview from './DashboardPreview';
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -73,22 +74,11 @@ const HeroSection = () => {
                 <span className="text-sm font-medium text-gray-700">Secure Vault</span>
               </div>
             </div>
-
-            {/* Hero Image Placeholder */}
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto transform hover:scale-105 transition-transform duration-300">
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-64 md:h-96 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <TrendingUp className="h-8 w-8 text-white" />
-                  </div>
-                  <p className="text-gray-600 font-medium">Dashboard Preview Coming Soon</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
+      <DashboardPreview />
       <SmartFitQuiz isOpen={showQuiz} onClose={() => setShowQuiz(false)} />
     </>
   );
