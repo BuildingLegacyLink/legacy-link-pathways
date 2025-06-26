@@ -17,6 +17,8 @@ interface SmartFitQuizProps {
 const SmartFitQuiz = ({ isOpen, onClose }: SmartFitQuizProps) => {
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const [resultType, setResultType] = useState<'good-fit' | 'not-fit'>('good-fit');
   const [answers, setAnswers] = useState({
     q1: '',
     q2: [] as string[],
@@ -30,9 +32,9 @@ const SmartFitQuiz = ({ isOpen, onClose }: SmartFitQuizProps) => {
       title: 'When you think about improving your finances, which statement sounds most like you?',
       type: 'radio' as const,
       options: [
-        { value: 'single', label: 'I just want help with one thing, like investing or budgeting', score: 1 },
-        { value: 'full', label: 'I want help seeing the full picture (budgeting, saving, taxes, estate, etc.)', score: 3 },
-        { value: 'learning', label: "I'm not sure yet — I'm open to learning what I might be missing", score: 2 }
+        { value: 'single', label: 'I just want help with one thing, like investing or budgeting' },
+        { value: 'full', label: 'I want help seeing the full picture (budgeting, saving, taxes, estate, etc.)' },
+        { value: 'learning', label: "I'm not sure yet — I'm open to learning what I might be missing" }
       ]
     },
     {
@@ -40,10 +42,10 @@ const SmartFitQuiz = ({ isOpen, onClose }: SmartFitQuizProps) => {
       title: 'Are you dealing with any of the following situations?',
       type: 'checkbox' as const,
       options: [
-        { value: 'divorce', label: 'Divorce or separation', score: 0 },
-        { value: 'inheritance', label: 'Inheriting a large sum of money', score: 0 },
-        { value: 'business', label: 'Complex business ownership', score: 0 },
-        { value: 'none', label: 'None of these', score: 2 }
+        { value: 'divorce', label: 'Divorce or separation' },
+        { value: 'inheritance', label: 'Inheriting a large sum of money' },
+        { value: 'business', label: 'Complex business ownership' },
+        { value: 'none', label: 'None of these' }
       ]
     },
     {
@@ -51,10 +53,10 @@ const SmartFitQuiz = ({ isOpen, onClose }: SmartFitQuizProps) => {
       title: 'Which best describes your approach to financial planning?',
       type: 'radio' as const,
       options: [
-        { value: 'simple', label: "I'm looking for simple tools to solve one problem", score: 1 },
-        { value: 'guided', label: 'I want a guided platform to help build a full plan over time', score: 3 },
-        { value: 'beginner', label: "I've never done financial planning, but I want to get better at it", score: 3 },
-        { value: 'handover', label: "I'd rather hand over control and have someone tell me what to do", score: 1 }
+        { value: 'simple', label: "I'm looking for simple tools to solve one problem" },
+        { value: 'guided', label: 'I want a guided platform to help build a full plan over time' },
+        { value: 'beginner', label: "I've never done financial planning, but I want to get better at it" },
+        { value: 'handover', label: "I'd rather hand over control and have someone tell me what to do" }
       ]
     },
     {
@@ -62,22 +64,59 @@ const SmartFitQuiz = ({ isOpen, onClose }: SmartFitQuizProps) => {
       title: 'Would you prefer to start with a guided setup or go your own way?',
       type: 'radio' as const,
       options: [
-        { value: 'guided', label: 'Show me the steps', score: 2 },
-        { value: 'explore', label: "I'll explore on my own", score: 1 }
+        { value: 'guided', label: 'Show me the steps' },
+        { value: 'explore', label: "I'll explore on my own" }
       ]
     }
   ];
 
+  const checkForEarlyExit = () => {
+    // Check after Q2 and Q3
+    if (currentQuestion === 1) { // After Q2
+      const hasComplexSituation = answers.q2.some(answer => 
+        ['divorce', 'inheritance', 'business'].includes(answer)
+      );
+      if (hasComplexSituation) {
+        setResultType('not-fit');
+        setShowResult(true);
+        return true;
+      }
+    }
+    
+    if (currentQuestion === 2) { // After Q3
+      const wantsHandover = answers.q3 === 'handover';
+      const hasComplexSituation = answers.q2.some(answer => 
+        ['divorce', 'inheritance', 'business'].includes(answer)
+      );
+      
+      if (wantsHandover || hasComplexSituation) {
+        setResultType('not-fit');
+        setShowResult(true);
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+      const shouldExit = checkForEarlyExit();
+      if (!shouldExit) {
+        setCurrentQuestion(currentQuestion + 1);
+      }
     } else {
-      calculateResult();
+      // Final question - show good fit result
+      setResultType('good-fit');
+      setShowResult(true);
     }
   };
 
   const handleBack = () => {
-    if (currentQuestion > 0) {
+    if (showResult) {
+      setShowResult(false);
+      setCurrentQuestion(currentQuestion === 3 ? 2 : currentQuestion); // Go back to appropriate question
+    } else if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
     }
   };
@@ -90,46 +129,122 @@ const SmartFitQuiz = ({ isOpen, onClose }: SmartFitQuizProps) => {
     setAnswers(prev => {
       const currentAnswers = prev[questionId as keyof typeof prev] as string[];
       if (checked) {
-        return { ...prev, [questionId]: [...currentAnswers, value] };
+        // If selecting "none", clear other options
+        if (value === 'none') {
+          return { ...prev, [questionId]: ['none'] };
+        }
+        // If selecting other options, remove "none"
+        const filteredAnswers = currentAnswers.filter(a => a !== 'none');
+        return { ...prev, [questionId]: [...filteredAnswers, value] };
       } else {
         return { ...prev, [questionId]: currentAnswers.filter(v => v !== value) };
       }
     });
   };
 
-  const calculateResult = () => {
-    let score = 0;
-    
-    // Calculate score based on answers
-    const q1Answer = questions[0].options.find(opt => opt.value === answers.q1);
-    if (q1Answer) score += q1Answer.score;
-
-    const q2Answers = answers.q2;
-    q2Answers.forEach(answer => {
-      const option = questions[1].options.find(opt => opt.value === answer);
-      if (option) score += option.score;
-    });
-
-    const q3Answer = questions[2].options.find(opt => opt.value === answers.q3);
-    if (q3Answer) score += q3Answer.score;
-
-    const q4Answer = questions[3].options.find(opt => opt.value === answers.q4);
-    if (q4Answer) score += q4Answer.score;
-
-    // Determine result based on score
-    if (score >= 8) {
-      // Ideal fit - route to guided setup
-      navigate('/quiz');
-    } else if (score >= 5) {
-      // Good fit - show dashboard preview
-      navigate('/dashboard');
-    } else {
-      // Might not be ideal - but still allow exploration
-      navigate('/dashboard');
-    }
-    
+  const handleGuidedSetup = () => {
+    navigate('/quiz');
     onClose();
   };
+
+  const handleExploreOwn = () => {
+    navigate('/dashboard');
+    onClose();
+  };
+
+  const handleExploreAnyway = () => {
+    navigate('/dashboard');
+    onClose();
+  };
+
+  const resetQuiz = () => {
+    setCurrentQuestion(0);
+    setShowResult(false);
+    setAnswers({ q1: '', q2: [], q3: '', q4: '' });
+  };
+
+  if (showResult) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Quiz Results</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="p-8 text-center">
+                {resultType === 'good-fit' ? (
+                  <>
+                    <h3 className="text-2xl font-bold text-green-600 mb-4">
+                      Legacy Link is a great fit for your goals!
+                    </h3>
+                    <p className="text-gray-600 mb-6 text-lg">
+                      We'll help you build a complete, personalized financial plan — one step at a time.
+                    </p>
+                    <div className="space-y-3">
+                      <Button 
+                        size="lg" 
+                        className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
+                        onClick={handleGuidedSetup}
+                      >
+                        Start Guided Setup
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                      <button 
+                        onClick={handleExploreOwn}
+                        className="w-full text-gray-600 hover:text-gray-800 underline text-lg transition-colors"
+                      >
+                        Explore On Your Own
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-2xl font-bold text-orange-600 mb-4">
+                      Not the Best Fit
+                    </h3>
+                    <p className="text-gray-600 mb-6 text-lg">
+                      It seems like you might have complex financial needs or are looking for a fully managed solution.
+                      <br /><br />
+                      Legacy Link is designed for people who want to take control of their finances in a simple, guided way.
+                      <br /><br />
+                      We might not be the best fit for your situation right now — but you're still welcome to explore the platform and learn more.
+                    </p>
+                    <Button 
+                      size="lg" 
+                      className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
+                      onClick={handleExploreAnyway}
+                    >
+                      Explore Anyway
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Navigation */}
+            <div className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={handleBack}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Quiz
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={resetQuiz}
+              >
+                Retake Quiz
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const currentQ = questions[currentQuestion];
   const canProceed = currentQ.type === 'radio' 
