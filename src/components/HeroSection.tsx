@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ const HeroSection = () => {
 
   const handleExploreOwn = () => {
     console.log('Explore On Your Own clicked');
-    navigate('/dashboard');
+    navigate('/planning?tab=facts');
   };
 
   return (

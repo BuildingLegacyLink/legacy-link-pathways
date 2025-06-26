@@ -1,6 +1,6 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useLocation } from 'react-router-dom';
 import { AuthModal } from '@/components/AuthModal';
 import Header from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,21 @@ import PlanningPlans from '@/components/planning/PlanningPlans';
 const Planning = () => {
   const { user, loading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const location = useLocation();
+  
+  // Get tab from URL params, default to 'dashboard'
+  const getInitialTab = () => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    return tab === 'facts' || tab === 'plans' ? tab : 'dashboard';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+
+  // Update tab when URL changes
+  useEffect(() => {
+    setActiveTab(getInitialTab());
+  }, [location.search]);
 
   if (loading) {
     return (
@@ -53,7 +68,7 @@ const Planning = () => {
           <div className="px-6 py-4">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Financial Planning</h1>
             
-            <Tabs defaultValue="dashboard" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3 max-w-md">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="facts">Facts</TabsTrigger>
