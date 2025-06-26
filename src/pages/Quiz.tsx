@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -134,7 +133,7 @@ const Quiz = () => {
     },
     onSuccess: () => {
       toast({ title: 'Success', description: 'Your financial profile has been created!' });
-      navigate('/dashboard');
+      navigate('/planning');
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Failed to save your data: ' + error.message, variant: 'destructive' });
