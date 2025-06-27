@@ -22,12 +22,12 @@ function AnimatedHero() {
 
   return (
     <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-      <div className="mb-2">Welcome to</div>
-      <div className="relative inline-block overflow-hidden h-16 md:h-20 flex items-center justify-center w-full mb-2">
+      Welcome to{' '}
+      <span className="relative inline-block overflow-hidden min-w-[280px] md:min-w-[400px] text-center">
         {titles.map((title, index) => (
           <motion.span
             key={index}
-            className="absolute bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent font-bold"
+            className="absolute inset-0 bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent font-bold flex items-center justify-center"
             initial={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", stiffness: 50 }}
             animate={
@@ -45,8 +45,9 @@ function AnimatedHero() {
             {title}
           </motion.span>
         ))}
-      </div>
-      <div>financial planning.</div>
+        <span className="invisible">{titles.reduce((a, b) => a.length > b.length ? a : b)}</span>
+      </span>
+      {' '}financial planning.
     </h1>
   );
 }
