@@ -27,7 +27,7 @@ const HeroSection = () => {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-[#08090a] dark:via-[#08090a] dark:to-[#08090a] py-20">
+      <section className="bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-[#08090a] dark:via-[#08090a] dark:to-[#08090a] py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <AnimatedHero />
@@ -49,7 +49,7 @@ const HeroSection = () => {
                 </p>
                 <Button 
                   size="lg" 
-                  className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-8 py-3 text-lg"
                   onClick={handleTakeQuiz}
                 >
                   Take the Fit Quiz
@@ -68,7 +68,7 @@ const HeroSection = () => {
                 <div className="space-y-3">
                   <Button 
                     size="lg" 
-                    className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white px-8 py-3 text-lg"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-8 py-3 text-lg"
                     onClick={handleGuidedSetup}
                   >
                     Start Guided Setup
@@ -87,11 +87,11 @@ const HeroSection = () => {
             {/* Feature Pills */}
             <div className="flex flex-wrap justify-center gap-4 mb-16">
               <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md dark:shadow-md dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow border border-gray-200/50 dark:border-gray-700/50">
-                <BookOpen className="h-4 w-4 text-blue-500" />
+                <BookOpen className="h-4 w-4 text-emerald-500" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Gamified Learning</span>
               </div>
               <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md dark:shadow-md dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow border border-gray-200/50 dark:border-gray-700/50">
-                <TrendingUp className="h-4 w-4 text-teal-500" />
+                <TrendingUp className="h-4 w-4 text-green-500" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">No AUM Fees</span>
               </div>
               <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md dark:shadow-md dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow border border-gray-200/50 dark:border-gray-700/50">

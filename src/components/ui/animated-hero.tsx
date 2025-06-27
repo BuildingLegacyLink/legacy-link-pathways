@@ -30,7 +30,7 @@ function AnimatedHero() {
           {titles.map((title, index) => (
             <motion.h1
               key={index}
-              className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent leading-tight whitespace-nowrap"
+              className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text text-transparent leading-tight whitespace-nowrap"
               initial={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", stiffness: 50 }}
               animate={

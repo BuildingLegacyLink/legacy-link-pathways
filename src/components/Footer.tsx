@@ -1,4 +1,3 @@
-
 const Footer = () => {
   const footerLinks = {
     Platform: ['Dashboard', 'Learning Path', 'Tools & Calculators', 'Document Vault'],
@@ -14,7 +13,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-green-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">L</span>
               </div>
               <span className="text-xl font-bold text-white">Legacy Link</span>
