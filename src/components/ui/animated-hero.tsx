@@ -22,15 +22,15 @@ function AnimatedHero() {
 
   return (
     <div className="text-center">
-      <div className="flex items-center justify-center gap-4 mb-2">
-        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
+      <div className="flex items-center justify-center mb-2">
+        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight mr-4">
           Welcome to
         </h1>
-        <div className="relative">
+        <div className="relative flex items-center">
           {titles.map((title, index) => (
             <motion.h1
               key={index}
-              className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent leading-tight"
+              className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent leading-tight whitespace-nowrap"
               initial={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", stiffness: 50 }}
               animate={
@@ -48,7 +48,6 @@ function AnimatedHero() {
                 position: titleNumber === index ? 'static' : 'absolute',
                 top: titleNumber === index ? 'auto' : 0,
                 left: titleNumber === index ? 'auto' : 0,
-                right: titleNumber === index ? 'auto' : 0,
               }}
             >
               {title}
