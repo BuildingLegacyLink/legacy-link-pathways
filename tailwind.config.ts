@@ -26,7 +26,7 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: '#10b981', // emerald-500
+					DEFAULT: '#3b82f6', // blue-500 for primary actions
 					foreground: '#ffffff'
 				},
 				secondary: {
@@ -34,8 +34,8 @@ export default {
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				destructive: {
-					DEFAULT: 'hsl(var(--destructive))',
-					foreground: 'hsl(var(--destructive-foreground))'
+					DEFAULT: '#f43f5e', // rose-500 for negative status
+					foreground: '#ffffff'
 				},
 				muted: {
 					DEFAULT: 'hsl(var(--muted))',
@@ -62,6 +62,27 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Semantic accent colors
+				action: {
+					DEFAULT: '#3b82f6', // blue-500 for primary actions
+					foreground: '#ffffff'
+				},
+				brand: {
+					DEFAULT: '#ec4899', // pink-500 for secondary CTAs
+					foreground: '#ffffff'
+				},
+				premium: {
+					DEFAULT: '#8b5cf6', // violet-500 for onboarding/premium
+					foreground: '#ffffff'
+				},
+				success: {
+					DEFAULT: '#10b981', // emerald-500 for positive status
+					foreground: '#ffffff'
+				},
+				error: {
+					DEFAULT: '#f43f5e', // rose-500 for negative status
+					foreground: '#ffffff'
 				}
 			},
 			borderRadius: {

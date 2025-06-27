@@ -65,19 +65,19 @@ const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocke
             <span className="text-3xl">{topic.icon}</span>
             <div>
               <h3 className="text-lg font-semibold">{topic.name}</h3>
-              <p className="text-sm text-gray-600">{topic.description}</p>
+              <p className="text-sm text-muted-foreground">{topic.description}</p>
             </div>
           </div>
         </div>
         
         <div className="mb-4">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <div className="flex justify-between text-sm text-muted-foreground mb-2">
             <span>Progress</span>
             <span>{completedModules.length} / {topicModules.length} modules</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div 
-              className="bg-gradient-to-r from-emerald-500 to-green-500 h-2 rounded-full transition-all duration-300"
+              className="bg-success h-2 rounded-full transition-all duration-300"
               style={{ width: `${topicModules.length > 0 ? (completedModules.length / topicModules.length) * 100 : 0}%` }}
             />
           </div>
@@ -91,25 +91,25 @@ const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocke
                 key={module.id}
                 className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                   status === 'locked' 
-                    ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed' 
+                    ? 'bg-muted/50 border-border opacity-60 cursor-not-allowed' 
                     : status === 'completed'
-                      ? 'bg-green-50 border-green-200 hover:bg-green-100 cursor-pointer'
-                      : 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
+                      ? 'bg-success/10 border-success/20 hover:bg-success/20 cursor-pointer'
+                      : 'bg-action/10 border-action/20 hover:bg-action/20 cursor-pointer'
                 }`}
                 onClick={() => status !== 'locked' && onStartQuiz(module)}
               >
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
-                    {status === 'completed' && <CheckCircle className="h-5 w-5 text-green-600" />}
-                    {status === 'unlocked' && <Play className="h-5 w-5 text-emerald-600" />}
-                    {status === 'locked' && <Lock className="h-5 w-5 text-gray-400" />}
+                    {status === 'completed' && <CheckCircle className="h-5 w-5 text-success" />}
+                    {status === 'unlocked' && <Play className="h-5 w-5 text-action" />}
+                    {status === 'locked' && <Lock className="h-5 w-5 text-muted-foreground" />}
                   </div>
                   <div>
                     <div className="font-medium text-sm">{module.name}</div>
-                    <div className="text-xs text-gray-600">{module.description}</div>
+                    <div className="text-xs text-muted-foreground">{module.description}</div>
                   </div>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   +{module.xp_value} XP
                 </div>
               </div>
