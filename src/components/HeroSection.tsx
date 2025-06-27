@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, TrendingUp, BookOpen } from 'lucide-react';
+import { AnimatedHero } from '@/components/ui/animated-hero';
 import SmartFitQuiz from './SmartFitQuiz';
 
 const HeroSection = () => {
@@ -29,14 +30,7 @@ const HeroSection = () => {
       <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-[#08090a] dark:via-[#08090a] dark:to-[#08090a] py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Build Your{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-                Financial Legacy
-              </span>
-              <br />
-              — One Step at a Time
-            </h1>
+            <AnimatedHero />
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-12">
               The next-gen personal finance platform designed for young adults. 
               Learn, plan, and grow your wealth without traditional fees. 
