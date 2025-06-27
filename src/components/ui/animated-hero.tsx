@@ -21,14 +21,14 @@ function AnimatedHero() {
   }, [titleNumber, titles]);
 
   return (
-    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-      Welcome to{' '}
-      <span className="relative inline-block overflow-hidden">
+    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+      <div className="mb-2">Welcome to</div>
+      <div className="relative inline-block overflow-hidden h-16 md:h-20 flex items-center justify-center w-full mb-2">
         {titles.map((title, index) => (
           <motion.span
             key={index}
-            className="absolute left-0 bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent font-bold"
-            initial={{ opacity: 0, y: "-100%" }}
+            className="absolute bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent font-bold"
+            initial={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", stiffness: 50 }}
             animate={
               titleNumber === index
@@ -37,7 +37,7 @@ function AnimatedHero() {
                     opacity: 1,
                   }
                 : {
-                    y: titleNumber > index ? -100 : 100,
+                    y: titleNumber > index ? "-100%" : "100%",
                     opacity: 0,
                   }
             }
@@ -45,10 +45,8 @@ function AnimatedHero() {
             {title}
           </motion.span>
         ))}
-        <span className="invisible">{titles[0]}</span>
-      </span>
-      <br />
-      financial planning.
+      </div>
+      <div>financial planning.</div>
     </h1>
   );
 }
