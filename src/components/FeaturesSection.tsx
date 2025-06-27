@@ -8,37 +8,37 @@ const FeaturesSection = () => {
       icon: BookOpen,
       title: 'Gamified Learning Path',
       description: 'Master personal finance through interactive lessons and earn XP points. Like Duolingo, but for your money.',
-      color: 'bg-premium text-white'
+      color: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
     },
     {
       icon: PieChart,
       title: 'Financial Dashboard',
       description: 'Track your net worth, expenses, and goals in one beautiful, easy-to-understand interface.',
-      color: 'bg-action text-white'
+      color: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
     },
     {
       icon: Shield,
       title: 'Secure Document Vault',
       description: 'Store your important financial documents safely and access them whenever you need.',
-      color: 'bg-success text-white'
+      color: 'bg-gradient-to-r from-emerald-500 to-green-500 text-white'
     },
     {
       icon: MessageCircle,
       title: 'Meet Link, Your AI Guide',
       description: 'Get personalized financial guidance from our friendly AI assistant available 24/7.',
-      color: 'bg-brand text-white'
+      color: 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
     },
     {
       icon: TrendingUp,
       title: 'Smart Financial Tools',
       description: 'Use powerful "What If?" simulators and calculators to plan your financial future.',
-      color: 'bg-gray-600 text-white'
+      color: 'bg-gradient-to-r from-gray-600 to-gray-700 text-white'
     },
     {
       icon: Award,
       title: 'Legacy Score & Rewards',
       description: 'Build your Legacy Score and earn advisor minutes for completing financial milestones.',
-      color: 'bg-gray-700 text-white'
+      color: 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
     }
   ];
 

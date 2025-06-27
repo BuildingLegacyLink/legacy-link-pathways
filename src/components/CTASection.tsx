@@ -51,7 +51,7 @@ const CTASection = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button 
             size="lg" 
-            className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 px-8 py-3 text-lg font-semibold"
             onClick={handleTakeQuizNow}
           >
             Take the Quiz Now
