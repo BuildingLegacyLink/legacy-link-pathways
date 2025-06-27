@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, TrendingUp, BookOpen } from 'lucide-react';
 import SmartFitQuiz from './SmartFitQuiz';
-import DashboardPreview from './DashboardPreview';
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -110,7 +109,6 @@ const HeroSection = () => {
         </div>
       </section>
 
-      <DashboardPreview />
       <SmartFitQuiz isOpen={showQuiz} onClose={() => setShowQuiz(false)} />
     </>
   );
