@@ -25,7 +25,7 @@ function AnimatedHero() {
       <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-2 leading-tight">
         Welcome to
       </h1>
-      <div className="relative h-[4rem] md:h-[5rem] mb-2">
+      <div className="relative h-[3rem] md:h-[4rem] mb-2">
         {titles.map((title, index) => (
           <motion.h1
             key={index}
