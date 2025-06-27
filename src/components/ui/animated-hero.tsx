@@ -24,11 +24,11 @@ function AnimatedHero() {
     <div className="text-center">
       <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-2 leading-tight">
         Welcome to{' '}
-        <span className="relative inline-block h-[1.2em] w-[280px] md:w-[400px]">
+        <span className="relative inline-block align-baseline w-[200px] md:w-[280px]">
           {titles.map((title, index) => (
             <motion.span
               key={index}
-              className="absolute inset-0 bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent font-bold flex items-center justify-center"
+              className="absolute left-0 top-0 w-full bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent font-bold text-center"
               initial={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", stiffness: 50 }}
               animate={
