@@ -22,31 +22,39 @@ function AnimatedHero() {
 
   return (
     <div className="text-center">
-      <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-2 leading-tight">
-        Welcome to
-      </h1>
-      <div className="relative h-[3rem] md:h-[4rem] mb-2">
-        {titles.map((title, index) => (
-          <motion.h1
-            key={index}
-            className="absolute inset-0 text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent leading-tight flex items-center justify-center"
-            initial={{ opacity: 0, y: "100%" }}
-            transition={{ type: "spring", stiffness: 50 }}
-            animate={
-              titleNumber === index
-                ? {
-                    y: 0,
-                    opacity: 1,
-                  }
-                : {
-                    y: titleNumber > index ? "-100%" : "100%",
-                    opacity: 0,
-                  }
-            }
-          >
-            {title}
-          </motion.h1>
-        ))}
+      <div className="flex items-center justify-center gap-4 mb-2">
+        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
+          Welcome to
+        </h1>
+        <div className="relative">
+          {titles.map((title, index) => (
+            <motion.h1
+              key={index}
+              className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent leading-tight"
+              initial={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", stiffness: 50 }}
+              animate={
+                titleNumber === index
+                  ? {
+                      y: 0,
+                      opacity: 1,
+                    }
+                  : {
+                      y: titleNumber > index ? "-100%" : "100%",
+                      opacity: 0,
+                    }
+              }
+              style={{
+                position: titleNumber === index ? 'static' : 'absolute',
+                top: titleNumber === index ? 'auto' : 0,
+                left: titleNumber === index ? 'auto' : 0,
+                right: titleNumber === index ? 'auto' : 0,
+              }}
+            >
+              {title}
+            </motion.h1>
+          ))}
+        </div>
       </div>
       <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
         financial planning.
