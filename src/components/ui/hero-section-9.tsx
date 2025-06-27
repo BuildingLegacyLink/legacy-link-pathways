@@ -55,20 +55,159 @@ export const HeroSection = () => {
                         <div className="[perspective:1200px] [mask-image:linear-gradient(to_right,black_50%,transparent_100%)] -mr-16 pl-16 lg:-mr-56 lg:pl-56">
                             <div className="[transform:rotateX(20deg);]">
                                 <div className="lg:h-[44rem] relative skew-x-[.36rad]">
-                                    <img
-                                        className="rounded-[--radius] z-[2] relative border dark:hidden shadow-2xl shadow-gray-300/20"
-                                        src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
-                                        alt="Legacy Link Financial Dashboard"
-                                        width={2880}
-                                        height={2074}
-                                    />
-                                    <img
-                                        className="rounded-[--radius] z-[2] relative hidden border dark:block shadow-2xl shadow-black/30"
-                                        src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
-                                        alt="Legacy Link Financial Dashboard Dark Mode"
-                                        width={2880}
-                                        height={2074}
-                                    />
+                                    {/* Create a mockup of the actual dashboard */}
+                                    <div className="rounded-[--radius] z-[2] relative border dark:hidden shadow-2xl shadow-gray-300/20 bg-gray-50 p-8 min-h-[500px]">
+                                        <div className="space-y-6">
+                                            {/* Dashboard Header */}
+                                            <div className="flex justify-between items-center">
+                                                <h2 className="text-2xl font-bold text-gray-900">Financial Planning</h2>
+                                                <div className="flex gap-2">
+                                                    <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Dashboard</div>
+                                                    <div className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">Facts</div>
+                                                    <div className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">Plans</div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Top Cards */}
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                                    <div className="text-sm text-gray-600">Net Worth</div>
+                                                    <div className="text-2xl font-bold text-gray-900">$75,200</div>
+                                                    <div className="text-xs text-green-600">+12% this month</div>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                                    <div className="text-sm text-gray-600">Cash Flow</div>
+                                                    <div className="text-2xl font-bold text-gray-900">+$620</div>
+                                                    <div className="text-xs text-green-600">Healthy surplus</div>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                                    <div className="text-sm text-gray-600">Financial Score</div>
+                                                    <div className="text-2xl font-bold text-gray-900">85</div>
+                                                    <div className="text-xs text-blue-600">Good progress</div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Goals Section */}
+                                            <div className="bg-white p-6 rounded-lg shadow-sm border">
+                                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                                    🎯 My Goals
+                                                </h3>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span>Emergency Fund</span>
+                                                            <span>$5,000 / $10,000</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                                            <div className="bg-blue-600 h-2 rounded-full" style={{width: '50%'}}></div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span>House Down Payment</span>
+                                                            <span>$15,000 / $60,000</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                                            <div className="bg-teal-600 h-2 rounded-full" style={{width: '25%'}}></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Charts Section */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                                    <h4 className="font-semibold mb-2">Net Worth Breakdown</h4>
+                                                    <div className="h-32 bg-gradient-to-r from-blue-100 to-teal-100 rounded flex items-center justify-center">
+                                                        <span className="text-gray-600">Assets vs Liabilities Chart</span>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                                    <h4 className="font-semibold mb-2">Cash Flow</h4>
+                                                    <div className="h-32 bg-gradient-to-r from-green-100 to-blue-100 rounded flex items-center justify-center">
+                                                        <span className="text-gray-600">Income vs Expenses</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Dark mode version */}
+                                    <div className="rounded-[--radius] z-[2] relative hidden border dark:block shadow-2xl shadow-black/30 bg-[#08090a] p-8 min-h-[500px]">
+                                        <div className="space-y-6">
+                                            {/* Dashboard Header */}
+                                            <div className="flex justify-between items-center">
+                                                <h2 className="text-2xl font-bold text-white">Financial Planning</h2>
+                                                <div className="flex gap-2">
+                                                    <div className="px-3 py-1 bg-blue-900/30 text-blue-300 rounded-full text-sm">Dashboard</div>
+                                                    <div className="px-3 py-1 bg-gray-800/50 text-gray-400 rounded-full text-sm">Facts</div>
+                                                    <div className="px-3 py-1 bg-gray-800/50 text-gray-400 rounded-full text-sm">Plans</div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Top Cards */}
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
+                                                    <div className="text-sm text-gray-400">Net Worth</div>
+                                                    <div className="text-2xl font-bold text-white">$75,200</div>
+                                                    <div className="text-xs text-green-400">+12% this month</div>
+                                                </div>
+                                                <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
+                                                    <div className="text-sm text-gray-400">Cash Flow</div>
+                                                    <div className="text-2xl font-bold text-white">+$620</div>
+                                                    <div className="text-xs text-green-400">Healthy surplus</div>
+                                                </div>
+                                                <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
+                                                    <div className="text-sm text-gray-400">Financial Score</div>
+                                                    <div className="text-2xl font-bold text-white">85</div>
+                                                    <div className="text-xs text-blue-400">Good progress</div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Goals Section */}
+                                            <div className="bg-gray-800/50 p-6 rounded-lg shadow-sm border border-gray-700/50">
+                                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+                                                    🎯 My Goals
+                                                </h3>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-300">Emergency Fund</span>
+                                                            <span className="text-gray-300">$5,000 / $10,000</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-700 rounded-full h-2">
+                                                            <div className="bg-blue-600 h-2 rounded-full" style={{width: '50%'}}></div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-300">House Down Payment</span>
+                                                            <span className="text-gray-300">$15,000 / $60,000</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-700 rounded-full h-2">
+                                                            <div className="bg-teal-600 h-2 rounded-full" style={{width: '25%'}}></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Charts Section */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
+                                                    <h4 className="font-semibold mb-2 text-white">Net Worth Breakdown</h4>
+                                                    <div className="h-32 bg-gradient-to-r from-blue-900/30 to-teal-900/30 rounded flex items-center justify-center">
+                                                        <span className="text-gray-400">Assets vs Liabilities Chart</span>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
+                                                    <h4 className="font-semibold mb-2 text-white">Cash Flow</h4>
+                                                    <div className="h-32 bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded flex items-center justify-center">
+                                                        <span className="text-gray-400">Income vs Expenses</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
