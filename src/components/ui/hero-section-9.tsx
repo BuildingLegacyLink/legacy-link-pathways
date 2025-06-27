@@ -117,15 +117,61 @@ export const HeroSection = () => {
                                             {/* Charts Section */}
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-white p-4 rounded-lg shadow-sm border">
-                                                    <h4 className="font-semibold mb-2">Net Worth Breakdown</h4>
-                                                    <div className="h-32 bg-gradient-to-r from-blue-100 to-teal-100 rounded flex items-center justify-center">
-                                                        <span className="text-gray-600">Assets vs Liabilities Chart</span>
+                                                    <h4 className="font-semibold mb-2">Assets vs Liabilities</h4>
+                                                    <div className="h-32 relative">
+                                                        {/* Pie Chart Mockup */}
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <div className="relative w-24 h-24">
+                                                                {/* Assets pie slice (larger) */}
+                                                                <div className="absolute inset-0 rounded-full" style={{
+                                                                    background: `conic-gradient(from 0deg, #3b82f6 0deg ${75 * 3.6}deg, #e5e7eb ${75 * 3.6}deg 360deg)`
+                                                                }}></div>
+                                                                {/* Inner circle */}
+                                                                <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
+                                                                    <span className="text-xs font-medium">75%</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {/* Legend */}
+                                                        <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-4 text-xs">
+                                                            <div className="flex items-center gap-1">
+                                                                <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                                                                <span>Assets $75K</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <div className="w-3 h-3 bg-gray-300 rounded"></div>
+                                                                <span>Liabilities $25K</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="bg-white p-4 rounded-lg shadow-sm border">
-                                                    <h4 className="font-semibold mb-2">Cash Flow</h4>
-                                                    <div className="h-32 bg-gradient-to-r from-green-100 to-blue-100 rounded flex items-center justify-center">
-                                                        <span className="text-gray-600">Income vs Expenses</span>
+                                                    <h4 className="font-semibold mb-2">Monthly Cash Flow</h4>
+                                                    <div className="h-32 relative">
+                                                        {/* Bar Chart Mockup */}
+                                                        <div className="absolute inset-0 flex items-end justify-center gap-2 pb-6">
+                                                            {/* Income bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-8 bg-gradient-to-t from-green-500 to-green-400 rounded-t" style={{height: '80px'}}></div>
+                                                                <span className="text-xs mt-1">Income</span>
+                                                            </div>
+                                                            {/* Expenses bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-8 bg-gradient-to-t from-red-500 to-red-400 rounded-t" style={{height: '60px'}}></div>
+                                                                <span className="text-xs mt-1">Expenses</span>
+                                                            </div>
+                                                            {/* Surplus bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t" style={{height: '20px'}}></div>
+                                                                <span className="text-xs mt-1">Surplus</span>
+                                                            </div>
+                                                        </div>
+                                                        {/* Values */}
+                                                        <div className="absolute top-0 left-0 right-0 flex justify-center gap-4 text-xs">
+                                                            <span className="text-green-600">+$4,200</span>
+                                                            <span className="text-red-600">-$3,580</span>
+                                                            <span className="text-blue-600">+$620</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -194,15 +240,61 @@ export const HeroSection = () => {
                                             {/* Charts Section */}
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
-                                                    <h4 className="font-semibold mb-2 text-white">Net Worth Breakdown</h4>
-                                                    <div className="h-32 bg-gradient-to-r from-blue-900/30 to-teal-900/30 rounded flex items-center justify-center">
-                                                        <span className="text-gray-400">Assets vs Liabilities Chart</span>
+                                                    <h4 className="font-semibold mb-2 text-white">Assets vs Liabilities</h4>
+                                                    <div className="h-32 relative">
+                                                        {/* Pie Chart Mockup - Dark Mode */}
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <div className="relative w-24 h-24">
+                                                                {/* Assets pie slice (larger) */}
+                                                                <div className="absolute inset-0 rounded-full" style={{
+                                                                    background: `conic-gradient(from 0deg, #3b82f6 0deg ${75 * 3.6}deg, #374151 ${75 * 3.6}deg 360deg)`
+                                                                }}></div>
+                                                                {/* Inner circle */}
+                                                                <div className="absolute inset-2 bg-gray-800 rounded-full flex items-center justify-center">
+                                                                    <span className="text-xs font-medium text-white">75%</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {/* Legend */}
+                                                        <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-4 text-xs">
+                                                            <div className="flex items-center gap-1">
+                                                                <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                                                                <span className="text-gray-300">Assets $75K</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <div className="w-3 h-3 bg-gray-600 rounded"></div>
+                                                                <span className="text-gray-300">Liabilities $25K</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
-                                                    <h4 className="font-semibold mb-2 text-white">Cash Flow</h4>
-                                                    <div className="h-32 bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded flex items-center justify-center">
-                                                        <span className="text-gray-400">Income vs Expenses</span>
+                                                    <h4 className="font-semibold mb-2 text-white">Monthly Cash Flow</h4>
+                                                    <div className="h-32 relative">
+                                                        {/* Bar Chart Mockup - Dark Mode */}
+                                                        <div className="absolute inset-0 flex items-end justify-center gap-2 pb-6">
+                                                            {/* Income bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-8 bg-gradient-to-t from-green-600 to-green-500 rounded-t" style={{height: '80px'}}></div>
+                                                                <span className="text-xs mt-1 text-gray-300">Income</span>
+                                                            </div>
+                                                            {/* Expenses bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-8 bg-gradient-to-t from-red-600 to-red-500 rounded-t" style={{height: '60px'}}></div>
+                                                                <span className="text-xs mt-1 text-gray-300">Expenses</span>
+                                                            </div>
+                                                            {/* Surplus bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-8 bg-gradient-to-t from-blue-600 to-blue-500 rounded-t" style={{height: '20px'}}></div>
+                                                                <span className="text-xs mt-1 text-gray-300">Surplus</span>
+                                                            </div>
+                                                        </div>
+                                                        {/* Values */}
+                                                        <div className="absolute top-0 left-0 right-0 flex justify-center gap-4 text-xs">
+                                                            <span className="text-green-400">+$4,200</span>
+                                                            <span className="text-red-400">-$3,580</span>
+                                                            <span className="text-blue-400">+$620</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -281,7 +373,7 @@ export const HeroSection = () => {
                                 height="16"
                                 width="auto"
                             />
-                            <img
+            <img
                                 className="h-5 w-fit dark:invert"
                                 src="https://html.tailus.io/blocks/customers/vercel.svg"
                                 alt="Vercel Logo"
