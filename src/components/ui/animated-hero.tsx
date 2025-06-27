@@ -21,9 +21,9 @@ function AnimatedHero() {
   }, [titleNumber, titles]);
 
   return (
-    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight text-center">
       Welcome to{' '}
-      <span className="relative inline-block overflow-hidden min-w-[280px] md:min-w-[400px] text-center">
+      <span className="relative inline-block h-[1.2em] w-[280px] md:w-[400px]">
         {titles.map((title, index) => (
           <motion.span
             key={index}
@@ -45,7 +45,6 @@ function AnimatedHero() {
             {title}
           </motion.span>
         ))}
-        <span className="invisible">{titles.reduce((a, b) => a.length > b.length ? a : b)}</span>
       </span>
       {' '}financial planning.
     </h1>
