@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'react-router-dom';
@@ -61,11 +60,11 @@ const Planning = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#08090a]">
       <Header />
       
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white dark:bg-black border-b dark:border-gray-800">
+        <div className="bg-white dark:bg-[#08090a] border-b dark:border-gray-800">
           <div className="px-6 py-4">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Financial Planning</h1>
             

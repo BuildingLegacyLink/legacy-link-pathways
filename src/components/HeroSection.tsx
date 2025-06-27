@@ -27,7 +27,7 @@ const HeroSection = () => {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-black py-20">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-[#08090a] dark:via-[#08090a] dark:to-[#08090a] py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
@@ -47,7 +47,7 @@ const HeroSection = () => {
             {/* Two Action Blocks */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
               {/* Block 1: Fit Quiz */}
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-white/80 dark:bg-[#08090a]/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   Not sure if Legacy Link is the right fit?
                 </h3>
@@ -65,7 +65,7 @@ const HeroSection = () => {
               </div>
 
               {/* Block 2: Onboarding Paths */}
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-white/80 dark:bg-[#08090a]/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   Already know you're in?
                 </h3>
@@ -93,15 +93,15 @@ const HeroSection = () => {
 
             {/* Feature Pills */}
             <div className="flex flex-wrap justify-center gap-4 mb-16">
-              <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-2 bg-white/80 dark:bg-[#08090a]/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
                 <BookOpen className="h-4 w-4 text-blue-500" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Gamified Learning</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-2 bg-white/80 dark:bg-[#08090a]/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
                 <TrendingUp className="h-4 w-4 text-teal-500" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">No AUM Fees</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-2 bg-white/80 dark:bg-[#08090a]/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
                 <Shield className="h-4 w-4 text-green-500" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Secure Vault</span>
               </div>

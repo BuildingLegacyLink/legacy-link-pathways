@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -178,9 +177,9 @@ const Learn = () => {
   // Main learning page
   console.log('Rendering main learning page');
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-[#08090a]">
       <Header />
-      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black">
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-[#08090a] dark:to-[#08090a]">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-12">

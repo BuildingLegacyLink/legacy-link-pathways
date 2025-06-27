@@ -5,7 +5,7 @@ import { Shield, Upload, FileText, Download } from 'lucide-react';
 
 const Vault = () => {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#08090a]">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -15,7 +15,7 @@ const Vault = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Card className="dark:bg-black dark:border-gray-800">
+            <Card className="dark:bg-[#08090a] dark:border-gray-800">
               <CardContent className="p-8 text-center">
                 <Shield className="h-16 w-16 text-blue-500 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2 dark:text-white">Your documents are secure</h3>
@@ -33,7 +33,7 @@ const Vault = () => {
           </div>
 
           <div>
-            <Card className="dark:bg-black dark:border-gray-800">
+            <Card className="dark:bg-[#08090a] dark:border-gray-800">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4 dark:text-white">Document Categories</h3>
                 <div className="space-y-3">
@@ -57,7 +57,7 @@ const Vault = () => {
               </CardContent>
             </Card>
 
-            <Card className="mt-6 dark:bg-black dark:border-gray-800">
+            <Card className="mt-6 dark:bg-[#08090a] dark:border-gray-800">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-4 dark:text-white">Quick Actions</h3>
                 <div className="space-y-2">
