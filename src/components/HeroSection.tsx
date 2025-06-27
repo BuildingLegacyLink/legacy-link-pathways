@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -26,10 +27,10 @@ const HeroSection = () => {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 py-20">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-black py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               Build Your{' '}
               <span className="bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
                 Financial Legacy
@@ -37,7 +38,7 @@ const HeroSection = () => {
               <br />
               — One Step at a Time
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-12">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-12">
               The next-gen personal finance platform designed for young adults. 
               Learn, plan, and grow your wealth without traditional fees. 
               Make financial planning as engaging as your favorite app.
@@ -46,11 +47,11 @@ const HeroSection = () => {
             {/* Two Action Blocks */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
               {/* Block 1: Fit Quiz */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   Not sure if Legacy Link is the right fit?
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
                   Take our quick quiz to see if we're a good match based on your needs.
                 </p>
                 <Button 
@@ -64,11 +65,11 @@ const HeroSection = () => {
               </div>
 
               {/* Block 2: Onboarding Paths */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   Already know you're in?
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
                   Start planning now with a guided setup or explore on your own.
                 </p>
                 <div className="space-y-3">
@@ -82,7 +83,7 @@ const HeroSection = () => {
                   </Button>
                   <button 
                     onClick={handleExploreOwn}
-                    className="w-full text-gray-600 hover:text-gray-800 underline text-lg transition-colors"
+                    className="w-full text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white underline text-lg transition-colors"
                   >
                     Explore On Your Own
                   </button>
@@ -92,17 +93,17 @@ const HeroSection = () => {
 
             {/* Feature Pills */}
             <div className="flex flex-wrap justify-center gap-4 mb-16">
-              <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
                 <BookOpen className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-medium text-gray-700">Gamified Learning</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Gamified Learning</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
                 <TrendingUp className="h-4 w-4 text-teal-500" />
-                <span className="text-sm font-medium text-gray-700">No AUM Fees</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">No AUM Fees</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center space-x-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
                 <Shield className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium text-gray-700">Secure Vault</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Secure Vault</span>
               </div>
             </div>
           </div>
