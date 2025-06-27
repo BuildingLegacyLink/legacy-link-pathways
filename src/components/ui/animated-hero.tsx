@@ -23,31 +23,31 @@ function AnimatedHero() {
   return (
     <div className="text-center">
       <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-2 leading-tight">
-        Welcome to{' '}
-        <span className="relative inline-block align-baseline w-[200px] md:w-[280px]">
-          {titles.map((title, index) => (
-            <motion.span
-              key={index}
-              className="absolute left-0 top-0 w-full bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent font-bold text-center"
-              initial={{ opacity: 0, y: "100%" }}
-              transition={{ type: "spring", stiffness: 50 }}
-              animate={
-                titleNumber === index
-                  ? {
-                      y: 0,
-                      opacity: 1,
-                    }
-                  : {
-                      y: titleNumber > index ? "-100%" : "100%",
-                      opacity: 0,
-                    }
-              }
-            >
-              {title}
-            </motion.span>
-          ))}
-        </span>
+        Welcome to
       </h1>
+      <div className="relative h-[1.2em] mb-2">
+        {titles.map((title, index) => (
+          <motion.h1
+            key={index}
+            className="absolute inset-0 text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent leading-tight flex items-center justify-center"
+            initial={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", stiffness: 50 }}
+            animate={
+              titleNumber === index
+                ? {
+                    y: 0,
+                    opacity: 1,
+                  }
+                : {
+                    y: titleNumber > index ? "-100%" : "100%",
+                    opacity: 0,
+                  }
+            }
+          >
+            {title}
+          </motion.h1>
+        ))}
+      </div>
       <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
         financial planning.
       </h1>
