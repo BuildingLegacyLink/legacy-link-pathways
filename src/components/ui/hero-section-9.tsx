@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { cn } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
@@ -55,10 +54,8 @@ export const HeroSection = () => {
                         <div className="[perspective:1200px] [mask-image:linear-gradient(to_right,black_50%,transparent_100%)] -mr-16 pl-16 lg:-mr-56 lg:pl-56">
                             <div className="[transform:rotateX(20deg);]">
                                 <div className="lg:h-[44rem] relative skew-x-[.36rad]">
-                                    {/* Create a mockup of the actual dashboard */}
                                     <div className="rounded-[--radius] z-[2] relative border dark:hidden shadow-2xl shadow-gray-300/20 bg-gray-50 p-8 min-h-[500px]">
                                         <div className="space-y-6">
-                                            {/* Dashboard Header */}
                                             <div className="flex justify-between items-center">
                                                 <h2 className="text-2xl font-bold text-gray-900">Financial Planning</h2>
                                                 <div className="flex gap-2">
@@ -68,7 +65,6 @@ export const HeroSection = () => {
                                                 </div>
                                             </div>
                                             
-                                            {/* Top Cards */}
                                             <div className="grid grid-cols-3 gap-4">
                                                 <div className="bg-white p-4 rounded-lg shadow-sm border">
                                                     <div className="text-sm text-gray-600">Net Worth</div>
@@ -87,7 +83,6 @@ export const HeroSection = () => {
                                                 </div>
                                             </div>
                                             
-                                            {/* Goals Section */}
                                             <div className="bg-white p-6 rounded-lg shadow-sm border">
                                                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                                                     🎯 My Goals
@@ -114,59 +109,48 @@ export const HeroSection = () => {
                                                 </div>
                                             </div>
                                             
-                                            {/* Charts Section */}
+                                            {/* Charts Section - Updated Assets vs Liabilities to Bar Chart */}
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-white p-4 rounded-lg shadow-sm border">
                                                     <h4 className="font-semibold mb-2">Assets vs Liabilities</h4>
                                                     <div className="h-32 relative">
-                                                        {/* Pie Chart Mockup */}
-                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                            <div className="relative w-24 h-24">
-                                                                {/* Assets pie slice (larger) */}
-                                                                <div className="absolute inset-0 rounded-full" style={{
-                                                                    background: `conic-gradient(from 0deg, #3b82f6 0deg ${75 * 3.6}deg, #e5e7eb ${75 * 3.6}deg 360deg)`
-                                                                }}></div>
-                                                                {/* Inner circle */}
-                                                                <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
-                                                                    <span className="text-xs font-medium">75%</span>
-                                                                </div>
+                                                        {/* Bar Chart Mockup */}
+                                                        <div className="absolute inset-0 flex items-end justify-center gap-3 pb-6">
+                                                            {/* Assets bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-12 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t" style={{height: '85px'}}></div>
+                                                                <span className="text-xs mt-1">Assets</span>
+                                                            </div>
+                                                            {/* Liabilities bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-12 bg-gradient-to-t from-red-500 to-red-400 rounded-t" style={{height: '25px'}}></div>
+                                                                <span className="text-xs mt-1">Liabilities</span>
                                                             </div>
                                                         </div>
-                                                        {/* Legend */}
-                                                        <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-4 text-xs">
-                                                            <div className="flex items-center gap-1">
-                                                                <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                                                                <span>Assets $75K</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1">
-                                                                <div className="w-3 h-3 bg-gray-300 rounded"></div>
-                                                                <span>Liabilities $25K</span>
-                                                            </div>
+                                                        {/* Values */}
+                                                        <div className="absolute top-0 left-0 right-0 flex justify-center gap-6 text-xs">
+                                                            <span className="text-blue-600">$75K</span>
+                                                            <span className="text-red-600">$25K</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="bg-white p-4 rounded-lg shadow-sm border">
                                                     <h4 className="font-semibold mb-2">Monthly Cash Flow</h4>
                                                     <div className="h-32 relative">
-                                                        {/* Bar Chart Mockup */}
                                                         <div className="absolute inset-0 flex items-end justify-center gap-2 pb-6">
-                                                            {/* Income bar */}
                                                             <div className="flex flex-col items-center">
                                                                 <div className="w-8 bg-gradient-to-t from-green-500 to-green-400 rounded-t" style={{height: '80px'}}></div>
                                                                 <span className="text-xs mt-1">Income</span>
                                                             </div>
-                                                            {/* Expenses bar */}
                                                             <div className="flex flex-col items-center">
                                                                 <div className="w-8 bg-gradient-to-t from-red-500 to-red-400 rounded-t" style={{height: '60px'}}></div>
                                                                 <span className="text-xs mt-1">Expenses</span>
                                                             </div>
-                                                            {/* Surplus bar */}
                                                             <div className="flex flex-col items-center">
                                                                 <div className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t" style={{height: '20px'}}></div>
                                                                 <span className="text-xs mt-1">Surplus</span>
                                                             </div>
                                                         </div>
-                                                        {/* Values */}
                                                         <div className="absolute top-0 left-0 right-0 flex justify-center gap-4 text-xs">
                                                             <span className="text-green-600">+$4,200</span>
                                                             <span className="text-red-600">-$3,580</span>
@@ -178,10 +162,8 @@ export const HeroSection = () => {
                                         </div>
                                     </div>
                                     
-                                    {/* Dark mode version */}
                                     <div className="rounded-[--radius] z-[2] relative hidden border dark:block shadow-2xl shadow-black/30 bg-[#08090a] p-8 min-h-[500px]">
                                         <div className="space-y-6">
-                                            {/* Dashboard Header */}
                                             <div className="flex justify-between items-center">
                                                 <h2 className="text-2xl font-bold text-white">Financial Planning</h2>
                                                 <div className="flex gap-2">
@@ -191,7 +173,6 @@ export const HeroSection = () => {
                                                 </div>
                                             </div>
                                             
-                                            {/* Top Cards */}
                                             <div className="grid grid-cols-3 gap-4">
                                                 <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
                                                     <div className="text-sm text-gray-400">Net Worth</div>
@@ -210,7 +191,6 @@ export const HeroSection = () => {
                                                 </div>
                                             </div>
                                             
-                                            {/* Goals Section */}
                                             <div className="bg-gray-800/50 p-6 rounded-lg shadow-sm border border-gray-700/50">
                                                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
                                                     🎯 My Goals
@@ -237,59 +217,48 @@ export const HeroSection = () => {
                                                 </div>
                                             </div>
                                             
-                                            {/* Charts Section */}
+                                            {/* Charts Section - Dark Mode Bar Chart */}
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
                                                     <h4 className="font-semibold mb-2 text-white">Assets vs Liabilities</h4>
                                                     <div className="h-32 relative">
-                                                        {/* Pie Chart Mockup - Dark Mode */}
-                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                            <div className="relative w-24 h-24">
-                                                                {/* Assets pie slice (larger) */}
-                                                                <div className="absolute inset-0 rounded-full" style={{
-                                                                    background: `conic-gradient(from 0deg, #3b82f6 0deg ${75 * 3.6}deg, #374151 ${75 * 3.6}deg 360deg)`
-                                                                }}></div>
-                                                                {/* Inner circle */}
-                                                                <div className="absolute inset-2 bg-gray-800 rounded-full flex items-center justify-center">
-                                                                    <span className="text-xs font-medium text-white">75%</span>
-                                                                </div>
+                                                        {/* Bar Chart Mockup - Dark Mode */}
+                                                        <div className="absolute inset-0 flex items-end justify-center gap-3 pb-6">
+                                                            {/* Assets bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-12 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t" style={{height: '85px'}}></div>
+                                                                <span className="text-xs mt-1 text-gray-300">Assets</span>
+                                                            </div>
+                                                            {/* Liabilities bar */}
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="w-12 bg-gradient-to-t from-red-600 to-red-500 rounded-t" style={{height: '25px'}}></div>
+                                                                <span className="text-xs mt-1 text-gray-300">Liabilities</span>
                                                             </div>
                                                         </div>
-                                                        {/* Legend */}
-                                                        <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-4 text-xs">
-                                                            <div className="flex items-center gap-1">
-                                                                <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                                                                <span className="text-gray-300">Assets $75K</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1">
-                                                                <div className="w-3 h-3 bg-gray-600 rounded"></div>
-                                                                <span className="text-gray-300">Liabilities $25K</span>
-                                                            </div>
+                                                        {/* Values */}
+                                                        <div className="absolute top-0 left-0 right-0 flex justify-center gap-6 text-xs">
+                                                            <span className="text-blue-400">$75K</span>
+                                                            <span className="text-red-400">$25K</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="bg-gray-800/50 p-4 rounded-lg shadow-sm border border-gray-700/50">
                                                     <h4 className="font-semibold mb-2 text-white">Monthly Cash Flow</h4>
                                                     <div className="h-32 relative">
-                                                        {/* Bar Chart Mockup - Dark Mode */}
                                                         <div className="absolute inset-0 flex items-end justify-center gap-2 pb-6">
-                                                            {/* Income bar */}
                                                             <div className="flex flex-col items-center">
                                                                 <div className="w-8 bg-gradient-to-t from-green-600 to-green-500 rounded-t" style={{height: '80px'}}></div>
                                                                 <span className="text-xs mt-1 text-gray-300">Income</span>
                                                             </div>
-                                                            {/* Expenses bar */}
                                                             <div className="flex flex-col items-center">
                                                                 <div className="w-8 bg-gradient-to-t from-red-600 to-red-500 rounded-t" style={{height: '60px'}}></div>
                                                                 <span className="text-xs mt-1 text-gray-300">Expenses</span>
                                                             </div>
-                                                            {/* Surplus bar */}
                                                             <div className="flex flex-col items-center">
                                                                 <div className="w-8 bg-gradient-to-t from-blue-600 to-blue-500 rounded-t" style={{height: '20px'}}></div>
                                                                 <span className="text-xs mt-1 text-gray-300">Surplus</span>
                                                             </div>
                                                         </div>
-                                                        {/* Values */}
                                                         <div className="absolute top-0 left-0 right-0 flex justify-center gap-4 text-xs">
                                                             <span className="text-green-400">+$4,200</span>
                                                             <span className="text-red-400">-$3,580</span>
