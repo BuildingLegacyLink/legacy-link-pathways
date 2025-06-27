@@ -27,7 +27,7 @@ const HeroSection = () => {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-20">
+      <section className="bg-black dark:bg-black py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <AnimatedHero />
@@ -49,7 +49,7 @@ const HeroSection = () => {
                 </p>
                 <Button 
                   size="lg" 
-                  className="w-full bg-brand hover:bg-pink-600 text-white px-8 py-3 text-lg"
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 px-8 py-3 text-lg font-semibold"
                   onClick={handleTakeQuiz}
                 >
                   Take the Fit Quiz
@@ -68,7 +68,7 @@ const HeroSection = () => {
                 <div className="space-y-3">
                   <Button 
                     size="lg" 
-                    className="w-full bg-action hover:bg-blue-600 text-white px-8 py-3 text-lg"
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 px-8 py-3 text-lg font-semibold"
                     onClick={handleGuidedSetup}
                   >
                     Start Guided Setup
