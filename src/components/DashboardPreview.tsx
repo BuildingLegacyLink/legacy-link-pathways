@@ -17,7 +17,7 @@ const DashboardPreview = () => {
         </div>
 
         {/* Dashboard Mockup */}
-        <div className="bg-white dark:bg-[#08090a] rounded-2xl shadow-2xl p-8 max-w-6xl mx-auto border dark:border-gray-800">
+        <div className="bg-white dark:bg-gray-800/50 rounded-2xl shadow-2xl dark:shadow-2xl dark:shadow-black/30 p-8 max-w-6xl mx-auto border border-gray-200/50 dark:border-gray-700/50">
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Your Financial Dashboard</h3>
             <p className="text-gray-600 dark:text-gray-300">Track your progress and build your legacy</p>
@@ -25,7 +25,7 @@ const DashboardPreview = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="hover:shadow-lg transition-shadow dark:bg-[#08090a] dark:border-gray-800">
+            <Card className="hover:shadow-lg dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -40,7 +40,7 @@ const DashboardPreview = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow dark:bg-[#08090a] dark:border-gray-800">
+            <Card className="hover:shadow-lg dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
@@ -55,7 +55,7 @@ const DashboardPreview = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow dark:bg-[#08090a] dark:border-gray-800">
+            <Card className="hover:shadow-lg dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
@@ -70,7 +70,7 @@ const DashboardPreview = () => {
               </CardContent>  
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow dark:bg-[#08090a] dark:border-gray-800">
+            <Card className="hover:shadow-lg dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
@@ -88,11 +88,11 @@ const DashboardPreview = () => {
 
           {/* Additional Features Preview */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="dark:bg-[#08090a] dark:border-gray-800">
+            <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50 dark:shadow-lg dark:shadow-black/20">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   <Shield className="h-6 w-6 text-green-500 mr-2" />
-                  <h4 className="text-lg font-semibold dark:text-white">Secure Vault</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Secure Vault</h4>
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-3">Keep your important documents safe and organized</p>
                 <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -102,11 +102,11 @@ const DashboardPreview = () => {
               </CardContent>
             </Card>
 
-            <Card className="dark:bg-[#08090a] dark:border-gray-800">
+            <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50 dark:shadow-lg dark:shadow-black/20">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   <TrendingUp className="h-6 w-6 text-blue-500 mr-2" />
-                  <h4 className="text-lg font-semibold dark:text-white">Smart Insights</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Smart Insights</h4>
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-3">AI-powered recommendations for your financial journey</p>
                 <div className="text-sm text-blue-600 font-medium">

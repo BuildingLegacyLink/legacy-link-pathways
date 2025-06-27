@@ -41,7 +41,7 @@ const TestimonialsSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow duration-300 dark:bg-[#08090a] dark:border-gray-800">
+            <Card key={index} className="hover:shadow-lg dark:shadow-xl dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow duration-300 dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
@@ -64,14 +64,14 @@ const TestimonialsSection = () => {
         <div className="mt-16 text-center">
           <p className="text-gray-500 dark:text-gray-400 mb-4">Trusted by young adults nationwide</p>
           <div className="flex justify-center items-center space-x-8 opacity-60">
-            <div className="text-2xl font-bold text-gray-400">10K+</div>
-            <div className="text-sm text-gray-400">Active Users</div>
+            <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">10K+</div>
+            <div className="text-sm text-gray-400 dark:text-gray-500">Active Users</div>
             <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
-            <div className="text-2xl font-bold text-gray-400">4.9★</div>
-            <div className="text-sm text-gray-400">App Rating</div>
+            <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">4.9★</div>
+            <div className="text-sm text-gray-400 dark:text-gray-500">App Rating</div>
             <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
-            <div className="text-2xl font-bold text-gray-400">$2M+</div>
-            <div className="text-sm text-gray-400">Wealth Tracked</div>
+            <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">$2M+</div>
+            <div className="text-sm text-gray-400 dark:text-gray-500">Wealth Tracked</div>
           </div>
         </div>
       </div>

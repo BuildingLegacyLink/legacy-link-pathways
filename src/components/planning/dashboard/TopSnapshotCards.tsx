@@ -18,7 +18,7 @@ const TopSnapshotCards = ({ netWorth, monthlyCashFlow, financialScore }: TopSnap
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer dark:bg-black dark:border-gray-800">
+      <Card className="hover:shadow-lg dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow cursor-pointer dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -32,7 +32,7 @@ const TopSnapshotCards = ({ netWorth, monthlyCashFlow, financialScore }: TopSnap
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer dark:bg-black dark:border-gray-800">
+      <Card className="hover:shadow-lg dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow cursor-pointer dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -46,7 +46,7 @@ const TopSnapshotCards = ({ netWorth, monthlyCashFlow, financialScore }: TopSnap
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer dark:bg-black dark:border-gray-800">
+      <Card className="hover:shadow-lg dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-black/30 transition-shadow cursor-pointer dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>

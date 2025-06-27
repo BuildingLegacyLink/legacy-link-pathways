@@ -70,50 +70,50 @@ const PlanningPlans = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Financial Planning Scenarios</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Financial Planning Scenarios</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Current Scenario */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50 dark:shadow-lg dark:shadow-black/20">
           <CardHeader>
-            <CardTitle>Current Scenario</CardTitle>
-            <CardDescription>Based on your current financial facts</CardDescription>
+            <CardTitle className="text-gray-900 dark:text-white">Current Scenario</CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-300">Based on your current financial facts</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Monthly Income:</span>
-                <span className="font-semibold">{formatCurrency(monthlyIncome)}</span>
+                <span className="text-gray-700 dark:text-gray-300">Monthly Income:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(monthlyIncome)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Monthly Expenses:</span>
-                <span className="font-semibold">{formatCurrency(monthlyExpenses)}</span>
+                <span className="text-gray-700 dark:text-gray-300">Monthly Expenses:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(monthlyExpenses)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Monthly Savings:</span>
+                <span className="text-gray-700 dark:text-gray-300">Monthly Savings:</span>
                 <span className="font-semibold text-green-600">{formatCurrency(currentSavings)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Current Savings Rate:</span>
-                <span className="font-semibold">{monthlyIncome > 0 ? ((currentSavings / monthlyIncome) * 100).toFixed(1) : 0}%</span>
+                <span className="text-gray-700 dark:text-gray-300">Current Savings Rate:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{monthlyIncome > 0 ? ((currentSavings / monthlyIncome) * 100).toFixed(1) : 0}%</span>
               </div>
-              <div className="flex justify-between border-t pt-2">
-                <span>Total Assets:</span>
-                <span className="font-bold">{formatCurrency(totalAssets)}</span>
+              <div className="flex justify-between border-t dark:border-gray-700 pt-2">
+                <span className="text-gray-700 dark:text-gray-300">Total Assets:</span>
+                <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(totalAssets)}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Scenario Planning */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50 dark:shadow-lg dark:shadow-black/20">
           <CardHeader>
-            <CardTitle>Scenario Planning</CardTitle>
-            <CardDescription>Adjust variables to see impact on your future</CardDescription>
+            <CardTitle className="text-gray-900 dark:text-white">Scenario Planning</CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-300">Adjust variables to see impact on your future</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
-              <Label>Target Savings Rate: {savingsRate[0]}%</Label>
+              <Label className="text-gray-900 dark:text-white">Target Savings Rate: {savingsRate[0]}%</Label>
               <Slider
                 value={savingsRate}
                 onValueChange={setSavingsRate}
@@ -125,7 +125,7 @@ const PlanningPlans = () => {
             </div>
             
             <div className="space-y-3">
-              <Label>Target Retirement Age: {retirementAge[0]}</Label>
+              <Label className="text-gray-900 dark:text-white">Target Retirement Age: {retirementAge[0]}</Label>
               <Slider
                 value={retirementAge}
                 onValueChange={setRetirementAge}
@@ -136,17 +136,17 @@ const PlanningPlans = () => {
               />
             </div>
 
-            <div className="space-y-2 pt-4 border-t">
+            <div className="space-y-2 pt-4 border-t dark:border-gray-700">
               <div className="flex justify-between">
-                <span>Projected Monthly Savings:</span>
+                <span className="text-gray-700 dark:text-gray-300">Projected Monthly Savings:</span>
                 <span className="font-semibold text-blue-600">{formatCurrency(projectedSavings)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Years to Retirement:</span>
-                <span className="font-semibold">{yearsToRetirement} years</span>
+                <span className="text-gray-700 dark:text-gray-300">Years to Retirement:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{yearsToRetirement} years</span>
               </div>
               <div className="flex justify-between">
-                <span>Projected Retirement Savings:</span>
+                <span className="text-gray-700 dark:text-gray-300">Projected Retirement Savings:</span>
                 <span className="font-bold text-green-600">{formatCurrency(projectedRetirementSavings)}</span>
               </div>
             </div>
@@ -155,10 +155,10 @@ const PlanningPlans = () => {
       </div>
 
       {/* Impact Analysis */}
-      <Card>
+      <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50 dark:shadow-lg dark:shadow-black/20">
         <CardHeader>
-          <CardTitle>Impact Analysis</CardTitle>
-          <CardDescription>How changes affect your financial future</CardDescription>
+          <CardTitle className="text-gray-900 dark:text-white">Impact Analysis</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-300">How changes affect your financial future</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -166,19 +166,19 @@ const PlanningPlans = () => {
               <div className="text-2xl font-bold text-blue-600">
                 {formatCurrency(projectedSavings - currentSavings)}
               </div>
-              <div className="text-sm text-gray-600">Monthly Savings Change</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Monthly Savings Change</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
                 {formatCurrency((projectedSavings - currentSavings) * 12 * yearsToRetirement)}
               </div>
-              <div className="text-sm text-gray-600">Additional Retirement Savings</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Additional Retirement Savings</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {retirementAge[0] - 67}
               </div>
-              <div className="text-sm text-gray-600">Years Earlier/Later Retirement</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Years Earlier/Later Retirement</div>
             </div>
           </div>
         </CardContent>
