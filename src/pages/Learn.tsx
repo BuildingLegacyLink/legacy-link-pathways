@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,13 +104,13 @@ const Learn = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-black">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 flex items-center justify-center">
-          <Card className="max-w-md mx-auto">
+        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black flex items-center justify-center">
+          <Card className="max-w-md mx-auto dark:bg-black dark:border-gray-800">
             <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Sign In Required</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Please sign in to access your personalized learning experience and track your progress.
               </p>
               <Button className="w-full bg-gradient-to-r from-blue-500 to-teal-500 text-white">
@@ -124,12 +125,12 @@ const Learn = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-black">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 flex items-center justify-center">
+        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading your learning journey...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading your learning journey...</p>
           </div>
         </div>
       </div>
@@ -142,9 +143,9 @@ const Learn = () => {
   if (showResults && selectedModule && quizResults) {
     console.log('Rendering quiz results');
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-black">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 p-6">
+        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black p-6">
           <QuizResults
             module={selectedModule}
             score={quizResults.score}
@@ -161,9 +162,9 @@ const Learn = () => {
   if (selectedModule && !showResults) {
     console.log('Rendering quiz component for module:', selectedModule);
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-black">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 p-6">
+        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black p-6">
           <QuizComponent
             module={selectedModule}
             onComplete={handleQuizComplete}
@@ -177,16 +178,16 @@ const Learn = () => {
   // Main learning page
   console.log('Rendering main learning page');
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-black">
       <Header />
-      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50">
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Your Financial Learning Journey
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Master personal finance through interactive lessons and quizzes. 
               Progress through levels to unlock advanced topics.
             </p>
@@ -214,7 +215,7 @@ const Learn = () => {
 
           {/* Topics Grid */}
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
               Learning Topics ({selectedLevel} level)
             </h2>
             
@@ -238,12 +239,12 @@ const Learn = () => {
 
           {/* Test Out Section */}
           <div className="max-w-4xl mx-auto mt-16">
-            <Card>
+            <Card className="dark:bg-black dark:border-gray-800">
               <CardContent className="p-8 text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   Ready for the Next Level?
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
                   Think you've mastered {userStats.currentLevel} level? Take a comprehensive test to advance to the next level faster.
                 </p>
                 <Button 
