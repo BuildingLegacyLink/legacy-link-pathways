@@ -107,7 +107,7 @@ const PlanningDashboard = () => {
 
       {/* Financial Overview Section */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">📑 Financial Overview</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">📑 Financial Overview</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <NetWorthBreakdown assets={assets} totalAssets={totalAssets} liabilities={liabilities} />
           <CashFlowDetails 
@@ -121,7 +121,7 @@ const PlanningDashboard = () => {
 
       {/* Investments + Asset Allocation Section */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">💼 Investments + Asset Allocation</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">💼 Investments + Asset Allocation</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <InvestmentOverview totalAssets={totalAssets} />
           <AssetAllocation assets={assets} totalAssets={totalAssets} />

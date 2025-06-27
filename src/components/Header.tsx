@@ -54,7 +54,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+      <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -87,7 +87,7 @@ const Header = () => {
                   </span>
                   <Button 
                     variant="outline" 
-                    className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                    className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-800"
                     onClick={handleSignOut}
                   >
                     Sign Out
@@ -126,7 +126,7 @@ const Header = () => {
           {/* Mobile Navigation */}
           {isMenuOpen && (
             <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700">
+              <div className="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800">
                 {navItems.map((item) => (
                   <button
                     key={item.name}
@@ -144,7 +144,7 @@ const Header = () => {
                       </span>
                       <Button 
                         variant="outline" 
-                        className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 mx-3"
+                        className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-800 mx-3"
                         onClick={handleSignOut}
                       >
                         Sign Out

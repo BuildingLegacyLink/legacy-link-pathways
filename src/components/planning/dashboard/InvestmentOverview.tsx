@@ -59,18 +59,18 @@ const InvestmentOverview = ({ totalAssets }: InvestmentOverviewProps) => {
   };
 
   return (
-    <Card className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-green-50/50" />
+    <Card className="relative overflow-hidden dark:bg-black dark:border-gray-800">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-green-50/50 dark:from-blue-950/20 dark:via-transparent dark:to-green-950/20" />
       <CardHeader className="relative">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
               <TrendingUp className="h-5 w-5 text-blue-600" />
             </div>
-            <CardTitle className="text-lg">Investment Overview</CardTitle>
+            <CardTitle className="text-lg dark:text-white">Investment Overview</CardTitle>
           </div>
           <Select value={timeframe} onValueChange={setTimeframe}>
-            <SelectTrigger className="w-24 border-gray-200 bg-white/80 backdrop-blur-sm">
+            <SelectTrigger className="w-24 border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-black/80 backdrop-blur-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -88,12 +88,12 @@ const InvestmentOverview = ({ totalAssets }: InvestmentOverviewProps) => {
         <div className="space-y-6">
           {/* Portfolio Value Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-              <p className="text-sm font-medium text-gray-600 mb-1">Portfolio Value</p>
-              <p className="text-3xl font-bold text-gray-900">{formatCurrency(currentValue)}</p>
+            <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 dark:border-gray-800/50">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Portfolio Value</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(currentValue)}</p>
             </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-              <p className="text-sm font-medium text-gray-600 mb-1">Change ({timeframe})</p>
+            <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 dark:border-gray-800/50">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Change ({timeframe})</p>
               <div className="flex items-center gap-2">
                 {isPositive ? (
                   <TrendingUp className="h-4 w-4 text-green-600" />
@@ -105,8 +105,8 @@ const InvestmentOverview = ({ totalAssets }: InvestmentOverviewProps) => {
                 </p>
                 <span className={`text-sm font-medium px-2 py-1 rounded-full ${
                   isPositive 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-red-100 text-red-700'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' 
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
                 }`}>
                   {changePercent}%
                 </span>
@@ -115,8 +115,8 @@ const InvestmentOverview = ({ totalAssets }: InvestmentOverviewProps) => {
           </div>
 
           {/* Performance Chart */}
-          <div className="bg-white/40 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-            <h4 className="font-semibold text-gray-900 mb-4">Performance Trend</h4>
+          <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm rounded-xl p-4 border border-white/20 dark:border-gray-800/50">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Performance Trend</h4>
             <div className="h-64">
               <ChartContainer config={chartConfig}>
                 <AreaChart data={performanceData}>
