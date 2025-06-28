@@ -33,32 +33,21 @@ const LevelProgressBar = ({ currentLevel, totalXP, levelProgress, nextLevel, nex
   };
 
   return (
-    <Card className="mb-8">
+    <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 bg-gradient-to-br ${getLevelColor(currentLevel)} rounded-lg flex items-center justify-center text-white`}>
-              {getLevelIcon(currentLevel)}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold capitalize">{currentLevel} Level</h2>
-              <p className="text-gray-600">You're on your {currentLevel} journey!</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">{totalXP} XP</div>
-            <div className="text-sm text-gray-500">Total earned</div>
-          </div>
-        </div>
-        
         {nextLevel && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progress to {nextLevel}</span>
-              <span>{totalXP} / {nextLevelXP} XP</span>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-white font-medium">Progress to {nextLevel}</span>
+              <span className="text-gray-400 text-sm">{totalXP} / {nextLevelXP} XP</span>
             </div>
-            <Progress value={levelProgress} className="h-3" />
-            <p className="text-sm text-gray-600 text-center">
+            <div className="w-full bg-gray-700/50 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(levelProgress, 100)}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-400 text-center">
               Complete modules and earn XP to unlock the next level!
             </p>
           </div>
@@ -66,7 +55,8 @@ const LevelProgressBar = ({ currentLevel, totalXP, levelProgress, nextLevel, nex
         
         {!nextLevel && (
           <div className="text-center">
-            <div className="text-lg font-semibold text-orange-600 mb-2">🎉 Expert Level Achieved!</div>
+            <div className="text-lg font-semibold text-orange-400 mb-2">🎉 Expert Level Achieved!</div>
+            <p className="text-gray-400">You've mastered all available levels!</p>
           </div>
         )}
       </CardContent>
