@@ -111,13 +111,13 @@ const Learn = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#08090a]">
+      <div className="min-h-screen bg-background">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] flex items-center justify-center">
-          <Card className="max-w-md mx-auto bg-gray-800/50 border-gray-700/50">
+        <div className="min-h-[calc(100vh-4rem)] bg-background flex items-center justify-center">
+          <Card className="max-w-md mx-auto bg-card border-border">
             <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-semibold text-white mb-4">Sign In Required</h2>
-              <p className="text-gray-300 mb-6 font-light">
+              <h2 className="text-2xl font-semibold text-foreground mb-4">Sign In Required</h2>
+              <p className="text-muted-foreground mb-6 font-light">
                 Please sign in to access your personalized learning experience and track your progress.
               </p>
               <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
@@ -132,12 +132,12 @@ const Learn = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#08090a]">
+      <div className="min-h-screen bg-background">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] flex items-center justify-center">
+        <div className="min-h-[calc(100vh-4rem)] bg-background flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-300">Loading your learning journey...</p>
+            <p className="mt-4 text-muted-foreground">Loading your learning journey...</p>
           </div>
         </div>
       </div>
@@ -150,9 +150,9 @@ const Learn = () => {
   if (showResults && selectedModule && quizResults) {
     console.log('Rendering quiz results');
     return (
-      <div className="min-h-screen bg-white dark:bg-[#08090a]">
+      <div className="min-h-screen bg-background">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] p-6">
+        <div className="min-h-[calc(100vh-4rem)] bg-background p-6">
           <QuizResults
             module={selectedModule}
             score={quizResults.score}
@@ -169,9 +169,9 @@ const Learn = () => {
   if (selectedModule && !showResults) {
     console.log('Rendering quiz component for module:', selectedModule);
     return (
-      <div className="min-h-screen bg-white dark:bg-[#08090a]">
+      <div className="min-h-screen bg-background">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] p-6">
+        <div className="min-h-[calc(100vh-4rem)] bg-background p-6">
           <QuizComponent
             module={selectedModule}
             onComplete={handleQuizComplete}
@@ -185,57 +185,57 @@ const Learn = () => {
   // Main learning page
   console.log('Rendering main learning page');
   return (
-    <div className="min-h-screen bg-[#0a0b0d] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <div className="min-h-[calc(100vh-4rem)] bg-[#0a0b0d]">
+      <div className="min-h-[calc(100vh-4rem)] bg-background">
         <div className="container mx-auto px-6 py-12">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Learning Hub</h1>
-              <p className="text-gray-400">Master personal finance through interactive lessons</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Learning Hub</h1>
+              <p className="text-muted-foreground">Master personal finance through interactive lessons</p>
             </div>
             <div className="flex items-center space-x-4">
               <Trophy className="h-8 w-8 text-purple-400" />
               <div className="text-right">
-                <div className="text-lg font-bold text-white capitalize">{userStats.currentLevel}</div>
-                <div className="text-sm text-gray-400">{userStats.totalXP} XP</div>
+                <div className="text-lg font-bold text-foreground capitalize">{userStats.currentLevel}</div>
+                <div className="text-sm text-muted-foreground">{userStats.totalXP} XP</div>
               </div>
             </div>
           </div>
 
           {/* Progress Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-3xl font-bold text-blue-400">{completedModules}</div>
-                    <div className="text-sm text-gray-400">Lessons Completed</div>
+                    <div className="text-sm text-muted-foreground">Lessons Completed</div>
                   </div>
                   <BookOpen className="h-8 w-8 text-blue-400" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-3xl font-bold text-pink-400">{averageScore}%</div>
-                    <div className="text-sm text-gray-400">Quiz Average</div>
+                    <div className="text-sm text-muted-foreground">Quiz Average</div>
                   </div>
                   <Target className="h-8 w-8 text-pink-400" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-3xl font-bold text-green-400">{achievements}</div>
-                    <div className="text-sm text-gray-400">Achievements</div>
+                    <div className="text-sm text-muted-foreground">Achievements</div>
                   </div>
                   <Award className="h-8 w-8 text-green-400" />
                 </div>
@@ -265,7 +265,7 @@ const Learn = () => {
 
           {/* Topics Section */}
           <div className="mb-16">
-            <h2 className="text-2xl font-bold text-white mb-8">
+            <h2 className="text-2xl font-bold text-foreground mb-8">
               {selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)} Level Courses
             </h2>
             
@@ -290,10 +290,10 @@ const Learn = () => {
           {/* Test Out Section */}
           <Card className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30 backdrop-blur-sm">
             <CardContent className="p-8 text-center">
-              <h3 className="text-2xl font-bold text-white mb-4">
+              <h3 className="text-2xl font-bold text-foreground mb-4">
                 Ready for the Next Level?
               </h3>
-              <p className="text-gray-300 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Take a comprehensive test to advance faster through the levels.
               </p>
               <Button 

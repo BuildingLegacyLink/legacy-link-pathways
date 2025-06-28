@@ -31,7 +31,7 @@ const LevelSelector = ({ currentLevel, selectedLevel, onLevelSelect }: LevelSele
 
   return (
     <div className="flex flex-wrap gap-3 justify-center mb-8">
-      <div className="text-sm text-gray-600 mb-2 w-full text-center">
+      <div className="text-sm text-muted-foreground mb-2 w-full text-center">
         Switch between unlocked levels:
       </div>
       {availableLevels.map((level) => {
@@ -44,8 +44,8 @@ const LevelSelector = ({ currentLevel, selectedLevel, onLevelSelect }: LevelSele
             className={`
               min-w-[120px] h-12 transition-all duration-200 font-medium
               ${isSelected 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' 
-                : 'bg-white hover:bg-blue-50 text-blue-600 border-2 border-blue-200 hover:border-blue-300'
+                ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' 
+                : 'bg-card hover:bg-accent text-foreground border-2 border-border hover:border-primary/20'
               }
             `}
             onClick={() => onLevelSelect(level)}

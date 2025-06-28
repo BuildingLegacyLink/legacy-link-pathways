@@ -58,24 +58,24 @@ const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocke
   });
 
   return (
-    <Card className="h-full bg-gray-800/50 border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-gray-800/70">
+    <Card className="h-full bg-card/50 border-border/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-card/70">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center space-x-3">
             <span className="text-3xl">{topic.icon}</span>
             <div>
-              <h3 className="text-lg font-semibold text-white">{topic.name}</h3>
-              <p className="text-sm text-gray-400 font-light">{topic.description}</p>
+              <h3 className="text-lg font-semibold text-foreground">{topic.name}</h3>
+              <p className="text-sm text-muted-foreground font-light">{topic.description}</p>
             </div>
           </div>
         </div>
         
         <div className="mb-6">
-          <div className="flex justify-between text-sm text-gray-400 mb-3">
+          <div className="flex justify-between text-sm text-muted-foreground mb-3">
             <span className="font-medium">Progress</span>
             <span>{completedModules.length} / {topicModules.length} modules</span>
           </div>
-          <div className="w-full bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-muted/30 rounded-full h-2">
             <div 
               className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
               style={{ width: `${topicModules.length > 0 ? (completedModules.length / topicModules.length) * 100 : 0}%` }}
@@ -91,10 +91,10 @@ const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocke
                 key={module.id}
                 className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ${
                   status === 'locked' 
-                    ? 'bg-gray-900/30 border-gray-700/30 opacity-60 cursor-not-allowed' 
+                    ? 'bg-muted/20 border-border/30 opacity-60 cursor-not-allowed' 
                     : status === 'completed'
-                      ? 'bg-green-900/20 border-green-500/20 hover:bg-green-900/30 cursor-pointer'
-                      : 'bg-blue-900/20 border-blue-500/20 hover:bg-blue-900/30 cursor-pointer'
+                      ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/20 cursor-pointer'
+                      : 'bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20 cursor-pointer'
                 }`}
                 onClick={() => status !== 'locked' && onStartQuiz(module)}
               >
@@ -102,14 +102,14 @@ const TopicCard = ({ topic, modules, userProgress, currentLevel, isModuleUnlocke
                   <div className="flex-shrink-0">
                     {status === 'completed' && <CheckCircle className="h-5 w-5 text-green-400" />}
                     {status === 'unlocked' && <Play className="h-5 w-5 text-blue-400" />}
-                    {status === 'locked' && <Lock className="h-5 w-5 text-gray-500" />}
+                    {status === 'locked' && <Lock className="h-5 w-5 text-muted-foreground" />}
                   </div>
                   <div>
-                    <div className="font-medium text-sm text-white">{module.name}</div>
-                    <div className="text-xs text-gray-400 font-light">{module.description}</div>
+                    <div className="font-medium text-sm text-foreground">{module.name}</div>
+                    <div className="text-xs text-muted-foreground font-light">{module.description}</div>
                   </div>
                 </div>
-                <div className="text-xs text-gray-400 font-medium">
+                <div className="text-xs text-muted-foreground font-medium">
                   +{module.xp_value} XP
                 </div>
               </div>
