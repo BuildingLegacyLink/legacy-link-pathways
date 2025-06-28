@@ -7,9 +7,9 @@ const CTASection = () => {
   const navigate = useNavigate();
 
   const stats = [
-    { icon: Clock, value: '5 min', label: 'Quick Setup' },
-    { icon: DollarSign, value: '$0', label: 'Getting Started' },
-    { icon: Users, value: '1000+', label: 'Young Adults' },
+    { icon: Clock, value: '5 min', label: 'Setup' },
+    { icon: DollarSign, value: '$0', label: 'Start' },
+    { icon: Users, value: '1000+', label: 'Users' },
   ];
 
   const handleTakeQuizNow = () => {
@@ -25,12 +25,11 @@ const CTASection = () => {
   return (
     <section className="py-20 bg-gray-900 dark:bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-          Ready to Start Building Your Legacy?
+        <h2 className="text-3xl md:text-4xl font-semibold text-white mb-6">
+          Ready to Build Your Legacy?
         </h2>
-        <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
-          Join thousands of young adults who are taking control of their financial future. 
-          No fees, no complexity, just smart tools to help you grow.
+        <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8 font-light">
+          Join thousands taking control of their financial future.
         </p>
 
         {/* Stats */}
@@ -41,8 +40,8 @@ const CTASection = () => {
                 <stat.icon className="h-5 w-5" />
               </div>
               <div className="text-left">
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-gray-300 text-sm">{stat.label}</div>
+                <div className="text-2xl font-semibold">{stat.value}</div>
+                <div className="text-gray-300 text-sm font-light">{stat.label}</div>
               </div>
             </div>
           ))}
@@ -51,7 +50,7 @@ const CTASection = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button 
             size="lg" 
-            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 px-8 py-3 text-lg font-semibold"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 px-8 py-3 text-lg font-medium"
             onClick={handleTakeQuizNow}
           >
             Take the Quiz Now
@@ -60,15 +59,15 @@ const CTASection = () => {
           <Button 
             variant="outline" 
             size="lg" 
-            className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 text-lg"
+            className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 text-lg font-light"
             onClick={handleChatWithLink}
           >
             Chat with Link
           </Button>
         </div>
 
-        <p className="text-gray-300 text-sm mt-6">
-          Free to start • No credit card required • 5-minute setup
+        <p className="text-gray-300 text-sm mt-6 font-light">
+          Free to start • No credit card required
         </p>
       </div>
     </section>
