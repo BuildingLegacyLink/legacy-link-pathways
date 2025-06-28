@@ -52,13 +52,6 @@ const LevelProgressBar = ({ currentLevel, totalXP, levelProgress, nextLevel, nex
             </p>
           </div>
         )}
-        
-        {!nextLevel && (
-          <div className="text-center">
-            <div className="text-lg font-semibold text-orange-400 mb-2">🎉 Expert Level Achieved!</div>
-            <p className="text-gray-400">You've mastered all available levels!</p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

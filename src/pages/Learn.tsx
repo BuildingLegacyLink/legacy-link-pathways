@@ -198,7 +198,7 @@ const Learn = () => {
             <div className="flex items-center space-x-4">
               <Trophy className="h-8 w-8 text-purple-400" />
               <div className="text-right">
-                <div className="text-lg font-bold text-white">Level {selectedLevel === 'beginner' ? '1' : selectedLevel === 'intermediate' ? '2' : selectedLevel === 'advanced' ? '3' : '4'}</div>
+                <div className="text-lg font-bold text-white capitalize">{userStats.currentLevel}</div>
                 <div className="text-sm text-gray-400">{userStats.totalXP} XP</div>
               </div>
             </div>
