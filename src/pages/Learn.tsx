@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,16 +104,16 @@ const Learn = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black">
+      <div className="min-h-screen bg-white dark:bg-[#08090a]">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black flex items-center justify-center">
-          <Card className="max-w-md mx-auto dark:bg-black dark:border-gray-800">
+        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] flex items-center justify-center">
+          <Card className="max-w-md mx-auto bg-gray-800/50 border-gray-700/50">
             <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Sign In Required</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+              <h2 className="text-2xl font-semibold text-white mb-4">Sign In Required</h2>
+              <p className="text-gray-300 mb-6 font-light">
                 Please sign in to access your personalized learning experience and track your progress.
               </p>
-              <Button className="w-full bg-gradient-to-r from-blue-500 to-teal-500 text-white">
+              <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
                 Sign In
               </Button>
             </CardContent>
@@ -124,12 +125,12 @@ const Learn = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black">
+      <div className="min-h-screen bg-white dark:bg-[#08090a]">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black flex items-center justify-center">
+        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading your learning journey...</p>
+            <p className="mt-4 text-gray-300">Loading your learning journey...</p>
           </div>
         </div>
       </div>
@@ -142,9 +143,9 @@ const Learn = () => {
   if (showResults && selectedModule && quizResults) {
     console.log('Rendering quiz results');
     return (
-      <div className="min-h-screen bg-white dark:bg-black">
+      <div className="min-h-screen bg-white dark:bg-[#08090a]">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black p-6">
+        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] p-6">
           <QuizResults
             module={selectedModule}
             score={quizResults.score}
@@ -161,9 +162,9 @@ const Learn = () => {
   if (selectedModule && !showResults) {
     console.log('Rendering quiz component for module:', selectedModule);
     return (
-      <div className="min-h-screen bg-white dark:bg-black">
+      <div className="min-h-screen bg-white dark:bg-[#08090a]">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-gray-900 dark:to-black p-6">
+        <div className="min-h-[calc(100vh-4rem)] bg-[#08090a] p-6">
           <QuizComponent
             module={selectedModule}
             onComplete={handleQuizComplete}
@@ -179,32 +180,36 @@ const Learn = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-[#08090a]">
       <Header />
-      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 to-teal-50 dark:from-[#08090a] dark:to-[#08090a]">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#08090a]">
+        <div className="container mx-auto px-6 py-16">
           {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Your Financial Learning Journey
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-semibold text-white mb-6">
+              Learn Smart, 
+              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Level Up</span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Master personal finance through interactive lessons and quizzes. 
-              Progress through levels to unlock advanced topics.
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto font-light">
+              Master personal finance through interactive lessons and quizzes. Progress through levels to unlock advanced topics.
             </p>
           </div>
 
           {/* User Progress */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <LevelProgressBar 
-              currentLevel={userStats.currentLevel}
-              totalXP={userStats.totalXP}
-              levelProgress={userStats.levelProgress}
-              nextLevel={userStats.nextLevel}
-              nextLevelXP={userStats.nextLevelXP}
-            />
+          <div className="max-w-4xl mx-auto mb-16">
+            <Card className="bg-gray-800/50 border-gray-700/50 shadow-2xl">
+              <CardContent className="p-8">
+                <LevelProgressBar 
+                  currentLevel={userStats.currentLevel}
+                  totalXP={userStats.totalXP}
+                  levelProgress={userStats.levelProgress}
+                  nextLevel={userStats.nextLevel}
+                  nextLevelXP={userStats.nextLevelXP}
+                />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Level Selector */}
-          <div className="max-w-4xl mx-auto mb-8">
+          <div className="max-w-4xl mx-auto mb-12">
             <LevelSelector
               currentLevel={userStats.currentLevel}
               selectedLevel={selectedLevel}
@@ -213,12 +218,13 @@ const Learn = () => {
           </div>
 
           {/* Topics Grid */}
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-              Learning Topics ({selectedLevel} level)
+          <div className="max-w-6xl mx-auto mb-16">
+            <h2 className="text-3xl font-semibold text-white mb-12 text-center">
+              Learning Topics
+              <span className="text-gray-400 font-light ml-2">({selectedLevel} level)</span>
             </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredTopics.map((topic) => {
                 const topicModules = filteredModules.filter(m => m.topic_id === topic.id);
                 return (
@@ -237,17 +243,17 @@ const Learn = () => {
           </div>
 
           {/* Test Out Section */}
-          <div className="max-w-4xl mx-auto mt-16">
-            <Card className="dark:bg-black dark:border-gray-800">
-              <CardContent className="p-8 text-center">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/20 shadow-2xl">
+              <CardContent className="p-12 text-center">
+                <h3 className="text-3xl font-semibold text-white mb-6">
                   Ready for the Next Level?
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Think you've mastered {userStats.currentLevel} level? Take a comprehensive test to advance to the next level faster.
+                <p className="text-gray-300 mb-8 text-lg font-light">
+                  Think you've mastered {userStats.currentLevel} level? Take a comprehensive test to advance faster.
                 </p>
                 <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 text-lg"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-12 py-4 text-lg font-medium"
                   disabled={userStats.currentLevel === 'expert'}
                 >
                   {userStats.currentLevel === 'expert' ? 'You\'ve Mastered All Levels!' : 'Take Level Test'}
