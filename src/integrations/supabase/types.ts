@@ -75,6 +75,60 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_plans: {
+        Row: {
+          assets_last_until_age: number
+          created_at: string
+          current_savings_rate: number
+          id: string
+          monthly_expenses: number
+          monthly_income: number
+          monthly_savings: number
+          name: string
+          projected_retirement_savings: number
+          status: string
+          target_retirement_age: number
+          target_savings_rate: number
+          total_assets: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assets_last_until_age?: number
+          created_at?: string
+          current_savings_rate?: number
+          id?: string
+          monthly_expenses?: number
+          monthly_income?: number
+          monthly_savings?: number
+          name?: string
+          projected_retirement_savings?: number
+          status?: string
+          target_retirement_age?: number
+          target_savings_rate?: number
+          total_assets?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assets_last_until_age?: number
+          created_at?: string
+          current_savings_rate?: number
+          id?: string
+          monthly_expenses?: number
+          monthly_income?: number
+          monthly_savings?: number
+          name?: string
+          projected_retirement_savings?: number
+          status?: string
+          target_retirement_age?: number
+          target_savings_rate?: number
+          total_assets?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
@@ -274,6 +328,50 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_projections: {
+        Row: {
+          age: number
+          annual_expenses: number
+          cash_flow: number
+          created_at: string
+          id: string
+          net_worth: number
+          plan_id: string
+          portfolio_value: number
+          year: number
+        }
+        Insert: {
+          age: number
+          annual_expenses?: number
+          cash_flow?: number
+          created_at?: string
+          id?: string
+          net_worth?: number
+          plan_id: string
+          portfolio_value?: number
+          year: number
+        }
+        Update: {
+          age?: number
+          annual_expenses?: number
+          cash_flow?: number
+          created_at?: string
+          id?: string
+          net_worth?: number
+          plan_id?: string
+          portfolio_value?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_projections_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plans"
             referencedColumns: ["id"]
           },
         ]
