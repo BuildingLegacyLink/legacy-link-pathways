@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ const SavingsSection = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [newSaving, setNewSaving] = useState({
     name: '',
-    goal_id: '',
+    goal_id: 'none',
     amount: '',
     frequency: 'monthly'
   });
@@ -64,7 +63,7 @@ const SavingsSection = () => {
           ...saving, 
           user_id: user.id, 
           amount: parseFloat(saving.amount),
-          goal_id: saving.goal_id || null
+          goal_id: saving.goal_id === 'none' ? null : saving.goal_id
         }]);
       
       if (error) throw error;
@@ -73,7 +72,7 @@ const SavingsSection = () => {
       queryClient.invalidateQueries({ queryKey: ['savings'] });
       setNewSaving({
         name: '',
-        goal_id: '',
+        goal_id: 'none',
         amount: '',
         frequency: 'monthly'
       });
@@ -195,7 +194,7 @@ const SavingsSection = () => {
                         <SelectValue placeholder="Select a goal..." />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
-                        <SelectItem value="">No specific goal</SelectItem>
+                        <SelectItem value="none" className="dark:text-white dark:hover:bg-gray-700">No specific goal</SelectItem>
                         {goals.map((goal) => (
                           <SelectItem key={goal.id} value={goal.id} className="dark:text-white dark:hover:bg-gray-700">
                             {goal.name}
