@@ -72,7 +72,7 @@ const Planning = () => {
               <TabsList className="grid w-full grid-cols-3 max-w-md">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="facts">Facts</TabsTrigger>
-                <TabsTrigger value="plans">Plans</TabsTrigger>
+                <TabsTrigger value="plans">Plan Builder</TabsTrigger>
               </TabsList>
               
               <div className="mt-6">

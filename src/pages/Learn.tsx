@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -188,122 +187,126 @@ const Learn = () => {
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <div className="min-h-[calc(100vh-4rem)] bg-background">
-        <div className="container mx-auto px-6 py-12">
-          {/* Header Section */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Learning Hub</h1>
-              <p className="text-muted-foreground">Master personal finance through interactive lessons</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Trophy className="h-8 w-8 text-purple-400" />
-              <div className="text-right">
-                <div className="text-lg font-bold text-foreground capitalize">{userStats.currentLevel}</div>
-                <div className="text-sm text-muted-foreground">{userStats.totalXP} XP</div>
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-background">
+            <div className="px-6 py-12">
+              {/* Header Section */}
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground mb-2">Learning Hub</h1>
+                  <p className="text-muted-foreground">Master personal finance through interactive lessons</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Trophy className="h-8 w-8 text-purple-400" />
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-foreground capitalize">{userStats.currentLevel}</div>
+                    <div className="text-sm text-muted-foreground">{userStats.totalXP} XP</div>
+                  </div>
+                </div>
               </div>
+
+              {/* Progress Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-3xl font-bold text-blue-400">{completedModules}</div>
+                        <div className="text-sm text-muted-foreground">Lessons Completed</div>
+                      </div>
+                      <BookOpen className="h-8 w-8 text-blue-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-3xl font-bold text-pink-400">{averageScore}%</div>
+                        <div className="text-sm text-muted-foreground">Quiz Average</div>
+                      </div>
+                      <Target className="h-8 w-8 text-pink-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-3xl font-bold text-green-400">{achievements}</div>
+                        <div className="text-sm text-muted-foreground">Achievements</div>
+                      </div>
+                      <Award className="h-8 w-8 text-green-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Level Progress */}
+              <div className="mb-8">
+                <LevelProgressBar 
+                  currentLevel={userStats.currentLevel}
+                  totalXP={userStats.totalXP}
+                  levelProgress={userStats.levelProgress}
+                  nextLevel={userStats.nextLevel}
+                  nextLevelXP={userStats.nextLevelXP}
+                />
+              </div>
+
+              {/* Level Selector */}
+              <div className="mb-12">
+                <LevelSelector
+                  currentLevel={userStats.currentLevel}
+                  selectedLevel={selectedLevel}
+                  onLevelSelect={handleLevelSelect}
+                />
+              </div>
+
+              {/* Topics Section */}
+              <div className="mb-16">
+                <h2 className="text-2xl font-bold text-foreground mb-8">
+                  {selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)} Level Courses
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredTopics.map((topic) => {
+                    const topicModules = filteredModules.filter(m => m.topic_id === topic.id);
+                    return (
+                      <TopicCard
+                        key={topic.id}
+                        topic={topic}
+                        modules={topicModules}
+                        userProgress={userProgress || []}
+                        currentLevel={selectedLevel}
+                        onStartQuiz={handleStartQuiz}
+                        isModuleUnlocked={isModuleUnlocked}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Test Out Section */}
+              <Card className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30 backdrop-blur-sm">
+                <CardContent className="p-8 text-center">
+                  <h3 className="text-2xl font-bold text-foreground mb-4">
+                    Ready for the Next Level?
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Take a comprehensive test to advance faster through the levels.
+                  </p>
+                  <Button 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3"
+                    disabled={userStats.currentLevel === 'expert'}
+                  >
+                    {userStats.currentLevel === 'expert' ? 'All Levels Complete!' : 'Take Level Test'}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
-
-          {/* Progress Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-bold text-blue-400">{completedModules}</div>
-                    <div className="text-sm text-muted-foreground">Lessons Completed</div>
-                  </div>
-                  <BookOpen className="h-8 w-8 text-blue-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-bold text-pink-400">{averageScore}%</div>
-                    <div className="text-sm text-muted-foreground">Quiz Average</div>
-                  </div>
-                  <Target className="h-8 w-8 text-pink-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-bold text-green-400">{achievements}</div>
-                    <div className="text-sm text-muted-foreground">Achievements</div>
-                  </div>
-                  <Award className="h-8 w-8 text-green-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Level Progress */}
-          <div className="mb-8">
-            <LevelProgressBar 
-              currentLevel={userStats.currentLevel}
-              totalXP={userStats.totalXP}
-              levelProgress={userStats.levelProgress}
-              nextLevel={userStats.nextLevel}
-              nextLevelXP={userStats.nextLevelXP}
-            />
-          </div>
-
-          {/* Level Selector */}
-          <div className="mb-12">
-            <LevelSelector
-              currentLevel={userStats.currentLevel}
-              selectedLevel={selectedLevel}
-              onLevelSelect={handleLevelSelect}
-            />
-          </div>
-
-          {/* Topics Section */}
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold text-foreground mb-8">
-              {selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)} Level Courses
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTopics.map((topic) => {
-                const topicModules = filteredModules.filter(m => m.topic_id === topic.id);
-                return (
-                  <TopicCard
-                    key={topic.id}
-                    topic={topic}
-                    modules={topicModules}
-                    userProgress={userProgress || []}
-                    currentLevel={selectedLevel}
-                    onStartQuiz={handleStartQuiz}
-                    isModuleUnlocked={isModuleUnlocked}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Test Out Section */}
-          <Card className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30 backdrop-blur-sm">
-            <CardContent className="p-8 text-center">
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Ready for the Next Level?
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Take a comprehensive test to advance faster through the levels.
-              </p>
-              <Button 
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3"
-                disabled={userStats.currentLevel === 'expert'}
-              >
-                {userStats.currentLevel === 'expert' ? 'All Levels Complete!' : 'Take Level Test'}
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
