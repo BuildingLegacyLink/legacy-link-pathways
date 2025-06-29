@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -121,8 +122,8 @@ const SavingsSection = () => {
       <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
         <CardHeader>
           <CardTitle className="text-lg flex justify-between items-center text-gray-900 dark:text-white">
-            Monthly Savings Contributions
-            <span className="text-green-600">{formatCurrency(totalSavings)}/month</span>
+            Savings Contributions
+            <span className="text-green-600">Total: {formatCurrency(totalSavings)}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
