@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -16,8 +15,18 @@ const NetWorthSection = () => {
   const queryClient = useQueryClient();
   const [isAddingAsset, setIsAddingAsset] = useState(false);
   const [isAddingLiability, setIsAddingLiability] = useState(false);
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
+  const [editingLiabilityId, setEditingLiabilityId] = useState<string | null>(null);
   const [newAsset, setNewAsset] = useState({ name: '', type: 'checking', value: '' });
   const [newLiability, setNewLiability] = useState({ 
+    name: '', 
+    type: 'credit_card', 
+    balance: '', 
+    interest_rate: '', 
+    minimum_payment: '' 
+  });
+  const [editAssetData, setEditAssetData] = useState({ name: '', type: 'checking', value: '' });
+  const [editLiabilityData, setEditLiabilityData] = useState({ 
     name: '', 
     type: 'credit_card', 
     balance: '', 
@@ -131,6 +140,49 @@ const NetWorthSection = () => {
     }
   });
 
+  const updateAssetMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof editAssetData }) => {
+      const { error } = await supabase
+        .from('assets')
+        .update({ ...data, value: parseFloat(data.value) })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      setEditingAssetId(null);
+      toast({ title: 'Success', description: 'Asset updated successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to update asset: ' + error.message, variant: 'destructive' });
+    }
+  });
+
+  const updateLiabilityMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof editLiabilityData }) => {
+      const { error } = await supabase
+        .from('liabilities')
+        .update({ 
+          ...data, 
+          balance: parseFloat(data.balance),
+          interest_rate: data.interest_rate ? parseFloat(data.interest_rate) : 0,
+          minimum_payment: data.minimum_payment ? parseFloat(data.minimum_payment) : 0
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      setEditingLiabilityId(null);
+      toast({ title: 'Success', description: 'Liability updated successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to update liability: ' + error.message, variant: 'destructive' });
+    }
+  });
+
   const handleAssetSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAsset.name || !newAsset.value) {
@@ -149,6 +201,42 @@ const NetWorthSection = () => {
     addLiabilityMutation.mutate(newLiability);
   };
 
+  const handleEditAsset = (asset: any) => {
+    setEditingAssetId(asset.id);
+    setEditAssetData({
+      name: asset.name,
+      type: asset.type,
+      value: asset.value.toString()
+    });
+  };
+
+  const handleEditLiability = (liability: any) => {
+    setEditingLiabilityId(liability.id);
+    setEditLiabilityData({
+      name: liability.name,
+      type: liability.type,
+      balance: liability.balance.toString(),
+      interest_rate: liability.interest_rate?.toString() || '',
+      minimum_payment: liability.minimum_payment?.toString() || ''
+    });
+  };
+
+  const handleUpdateAsset = (id: string) => {
+    if (!editAssetData.name || !editAssetData.value) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+    updateAssetMutation.mutate({ id, data: editAssetData });
+  };
+
+  const handleUpdateLiability = (id: string) => {
+    if (!editLiabilityData.name || !editLiabilityData.balance) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+    updateLiabilityMutation.mutate({ id, data: editLiabilityData });
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -162,13 +250,201 @@ const NetWorthSection = () => {
   const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.balance, 0);
   const netWorth = totalAssets - totalLiabilities;
 
+  const renderAssetItem = (asset: any) => (
+    <div key={asset.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+      {editingAssetId === asset.id ? (
+        <div className="space-y-3">
+          <div>
+            <Label className="text-gray-900 dark:text-white">Asset Name</Label>
+            <Input
+              value={editAssetData.name}
+              onChange={(e) => setEditAssetData({ ...editAssetData, name: e.target.value })}
+              className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-gray-900 dark:text-white">Type</Label>
+            <Select value={editAssetData.type} onValueChange={(value) => setEditAssetData({ ...editAssetData, type: value })}>
+              <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                <SelectItem value="checking" className="dark:text-white">Checking Account</SelectItem>
+                <SelectItem value="savings" className="dark:text-white">Savings Account</SelectItem>
+                <SelectItem value="investment" className="dark:text-white">Investment Account</SelectItem>
+                <SelectItem value="retirement" className="dark:text-white">Retirement Account</SelectItem>
+                <SelectItem value="real_estate" className="dark:text-white">Real Estate</SelectItem>
+                <SelectItem value="vehicle" className="dark:text-white">Vehicle</SelectItem>
+                <SelectItem value="other" className="dark:text-white">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-gray-900 dark:text-white">Value</Label>
+            <Input
+              type="number"
+              value={editAssetData.value}
+              onChange={(e) => setEditAssetData({ ...editAssetData, value: e.target.value })}
+              className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleUpdateAsset(asset.id)}
+              disabled={updateAssetMutation.isPending}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {updateAssetMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            <Button
+              onClick={() => setEditingAssetId(null)}
+              variant="outline"
+              size="sm"
+              className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-gray-900 dark:text-white">{asset.name}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 capitalize">
+              {asset.type} • {formatCurrency(asset.value)}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditAsset(asset)}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteAssetMutation.mutate(asset.id)}
+              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderLiabilityItem = (liability: any) => (
+    <div key={liability.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+      {editingLiabilityId === liability.id ? (
+        <div className="space-y-3">
+          <div>
+            <Label className="text-gray-900 dark:text-white">Liability Name</Label>
+            <Input
+              value={editLiabilityData.name}
+              onChange={(e) => setEditLiabilityData({ ...editLiabilityData, name: e.target.value })}
+              className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-gray-900 dark:text-white">Type</Label>
+            <Select value={editLiabilityData.type} onValueChange={(value) => setEditLiabilityData({ ...editLiabilityData, type: value })}>
+              <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                <SelectItem value="credit_card" className="dark:text-white">Credit Card</SelectItem>
+                <SelectItem value="mortgage" className="dark:text-white">Mortgage</SelectItem>
+                <SelectItem value="student_loan" className="dark:text-white">Student Loan</SelectItem>
+                <SelectItem value="auto_loan" className="dark:text-white">Auto Loan</SelectItem>
+                <SelectItem value="personal_loan" className="dark:text-white">Personal Loan</SelectItem>
+                <SelectItem value="other" className="dark:text-white">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-gray-900 dark:text-white">Balance</Label>
+            <Input
+              type="number"
+              value={editLiabilityData.balance}
+              onChange={(e) => setEditLiabilityData({ ...editLiabilityData, balance: e.target.value })}
+              className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-gray-900 dark:text-white">Interest Rate (%)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={editLiabilityData.interest_rate}
+              onChange={(e) => setEditLiabilityData({ ...editLiabilityData, interest_rate: e.target.value })}
+              className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleUpdateLiability(liability.id)}
+              disabled={updateLiabilityMutation.isPending}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {updateLiabilityMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            <Button
+              onClick={() => setEditingLiabilityId(null)}
+              variant="outline"
+              size="sm"
+              className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-gray-900 dark:text-white">{liability.name}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              {liability.type.replace('_', ' ')} • {formatCurrency(liability.balance)}
+              {liability.interest_rate > 0 && (
+                <span className="ml-1">@ {liability.interest_rate}%</span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditLiability(liability)}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteLiabilityMutation.mutate(liability.id)}
+              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   if (assetsLoading || liabilitiesLoading) {
-    return <div>Loading net worth data...</div>;
+    return <div className="text-gray-600 dark:text-gray-300">Loading net worth data...</div>;
   }
 
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-6">Net Worth</h3>
+      <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Net Worth</h3>
       
       {/* Net Worth Summary */}
       <Card className="mb-6">
@@ -202,10 +478,10 @@ const NetWorthSection = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Assets */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg">Assets</CardTitle>
+              <CardTitle className="text-lg text-gray-900 dark:text-white">Assets</CardTitle>
               <Button 
                 onClick={() => setIsAddingAsset(true)} 
                 size="sm"
@@ -218,27 +494,10 @@ const NetWorthSection = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {assets.map((asset) => (
-                <div key={asset.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{asset.name}</div>
-                    <div className="text-sm text-gray-600 capitalize">
-                      {asset.type} • {formatCurrency(asset.value)}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteAssetMutation.mutate(asset.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {assets.map(renderAssetItem)}
               
               {assets.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                   No assets added yet
                 </div>
               )}
@@ -303,10 +562,10 @@ const NetWorthSection = () => {
         </Card>
 
         {/* Liabilities */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg">Liabilities</CardTitle>
+              <CardTitle className="text-lg text-gray-900 dark:text-white">Liabilities</CardTitle>
               <Button 
                 onClick={() => setIsAddingLiability(true)} 
                 size="sm"
@@ -319,30 +578,10 @@ const NetWorthSection = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {liabilities.map((liability) => (
-                <div key={liability.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{liability.name}</div>
-                    <div className="text-sm text-gray-600">
-                      {liability.type.replace('_', ' ')} • {formatCurrency(liability.balance)}
-                      {liability.interest_rate > 0 && (
-                        <span className="ml-1">@ {liability.interest_rate}%</span>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteLiabilityMutation.mutate(liability.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {liabilities.map(renderLiabilityItem)}
               
               {liabilities.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                   No liabilities added yet
                 </div>
               )}

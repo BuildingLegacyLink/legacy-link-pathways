@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -16,7 +15,14 @@ const SavingsSection = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newSaving, setNewSaving] = useState({
+    name: '',
+    goal_id: 'none',
+    amount: '',
+    frequency: 'monthly'
+  });
+  const [editData, setEditData] = useState({
     name: '',
     goal_id: 'none',
     amount: '',
@@ -100,6 +106,29 @@ const SavingsSection = () => {
     }
   });
 
+  const updateSavingMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof editData }) => {
+      const { error } = await supabase
+        .from('savings')
+        .update({ 
+          ...data, 
+          amount: parseFloat(data.amount),
+          goal_id: data.goal_id === 'none' ? null : data.goal_id
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savings'] });
+      setEditingId(null);
+      toast({ title: 'Success', description: 'Savings contribution updated successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to update savings: ' + error.message, variant: 'destructive' });
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSaving.name || !newSaving.amount) {
@@ -110,6 +139,24 @@ const SavingsSection = () => {
   };
 
   const totalSavings = savings.reduce((sum, saving) => sum + saving.amount, 0);
+
+  const handleEdit = (saving: any) => {
+    setEditingId(saving.id);
+    setEditData({
+      name: saving.name,
+      goal_id: saving.goal_id || 'none',
+      amount: saving.amount.toString(),
+      frequency: saving.frequency
+    });
+  };
+
+  const handleUpdate = (id: string) => {
+    if (!editData.name || !editData.amount) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+    updateSavingMutation.mutate({ id, data: editData });
+  };
 
   if (savingsLoading) {
     return <div className="text-gray-600 dark:text-gray-300">Loading savings data...</div>;
@@ -129,24 +176,107 @@ const SavingsSection = () => {
         <CardContent>
           <div className="space-y-3">
             {savings.map((saving) => (
-              <div key={saving.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">{saving.name}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">
-                    {formatCurrency(saving.amount)} {saving.frequency}
-                    {saving.goals && (
-                      <span className="ml-2 text-blue-600 dark:text-blue-400">→ {saving.goals.name}</span>
-                    )}
+              <div key={saving.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                {editingId === saving.id ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-gray-900 dark:text-white">Name</Label>
+                        <Input
+                          value={editData.name}
+                          onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                          className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-gray-900 dark:text-white">Goal</Label>
+                        <Select value={editData.goal_id} onValueChange={(value) => setEditData({ ...editData, goal_id: value })}>
+                          <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                            <SelectItem value="none" className="dark:text-white">No specific goal</SelectItem>
+                            {goals.map((goal) => (
+                              <SelectItem key={goal.id} value={goal.id} className="dark:text-white">
+                                {goal.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-gray-900 dark:text-white">Amount</Label>
+                        <Input
+                          type="number"
+                          value={editData.amount}
+                          onChange={(e) => setEditData({ ...editData, amount: e.target.value })}
+                          className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-gray-900 dark:text-white">Frequency</Label>
+                        <Select value={editData.frequency} onValueChange={(value) => setEditData({ ...editData, frequency: value })}>
+                          <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                            <SelectItem value="weekly" className="dark:text-white">Weekly</SelectItem>
+                            <SelectItem value="monthly" className="dark:text-white">Monthly</SelectItem>
+                            <SelectItem value="annual" className="dark:text-white">Annual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleUpdate(saving.id)}
+                        disabled={updateSavingMutation.isPending}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {updateSavingMutation.isPending ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button
+                        onClick={() => setEditingId(null)}
+                        variant="outline"
+                        size="sm"
+                        className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deleteSavingMutation.mutate(saving.id)}
-                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">{saving.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
+                        {formatCurrency(saving.amount)} {saving.frequency}
+                        {saving.goals && (
+                          <span className="ml-2 text-blue-600 dark:text-blue-400">→ {saving.goals.name}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(saving)}
+                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteSavingMutation.mutate(saving.id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             

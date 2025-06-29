@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -15,7 +15,17 @@ const IncomeSection = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newIncome, setNewIncome] = useState({
+    name: '',
+    type: 'salary',
+    amount: '',
+    frequency: 'monthly',
+    start_date: '',
+    end_date: '',
+    is_current: true
+  });
+  const [editData, setEditData] = useState({
     name: '',
     type: 'salary',
     amount: '',
@@ -90,6 +100,30 @@ const IncomeSection = () => {
     }
   });
 
+  const updateIncomeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof editData }) => {
+      const { error } = await supabase
+        .from('income')
+        .update({ 
+          ...data, 
+          amount: parseFloat(data.amount),
+          start_date: data.start_date || null,
+          end_date: data.end_date || null
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['income'] });
+      setEditingId(null);
+      toast({ title: 'Success', description: 'Income updated successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to update income: ' + error.message, variant: 'destructive' });
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newIncome.name || !newIncome.amount) {
@@ -102,42 +136,165 @@ const IncomeSection = () => {
   const currentIncomes = incomes.filter(income => income.is_current);
   const futureIncomes = incomes.filter(income => !income.is_current);
 
+  const handleEdit = (income: any) => {
+    setEditingId(income.id);
+    setEditData({
+      name: income.name,
+      type: income.type,
+      amount: income.amount.toString(),
+      frequency: income.frequency,
+      start_date: income.start_date || '',
+      end_date: income.end_date || '',
+      is_current: income.is_current
+    });
+  };
+
+  const handleUpdate = (id: string) => {
+    if (!editData.name || !editData.amount) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+    updateIncomeMutation.mutate({ id, data: editData });
+  };
+
+  const renderIncomeItem = (income: any) => (
+    <div key={income.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+      {editingId === income.id ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-gray-900 dark:text-white">Name</Label>
+              <Input
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-900 dark:text-white">Type</Label>
+              <Select value={editData.type} onValueChange={(value) => setEditData({ ...editData, type: value })}>
+                <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                  <SelectItem value="salary" className="dark:text-white">Salary</SelectItem>
+                  <SelectItem value="bonus" className="dark:text-white">Bonus</SelectItem>
+                  <SelectItem value="rental" className="dark:text-white">Rental Income</SelectItem>
+                  <SelectItem value="business" className="dark:text-white">Business Income</SelectItem>
+                  <SelectItem value="investment" className="dark:text-white">Investment Income</SelectItem>
+                  <SelectItem value="social_security" className="dark:text-white">Social Security</SelectItem>
+                  <SelectItem value="pension" className="dark:text-white">Pension</SelectItem>
+                  <SelectItem value="other" className="dark:text-white">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-gray-900 dark:text-white">Amount</Label>
+              <Input
+                type="number"
+                value={editData.amount}
+                onChange={(e) => setEditData({ ...editData, amount: e.target.value })}
+                className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-900 dark:text-white">Frequency</Label>
+              <Select value={editData.frequency} onValueChange={(value) => setEditData({ ...editData, frequency: value })}>
+                <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                  <SelectItem value="weekly" className="dark:text-white">Weekly</SelectItem>
+                  <SelectItem value="monthly" className="dark:text-white">Monthly</SelectItem>
+                  <SelectItem value="annual" className="dark:text-white">Annual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <input
+              type="checkbox"
+              id={`is_current_${income.id}`}
+              checked={editData.is_current}
+              onChange={(e) => setEditData({ ...editData, is_current: e.target.checked })}
+              className="dark:bg-gray-600"
+            />
+            <Label htmlFor={`is_current_${income.id}`} className="text-gray-900 dark:text-white">Current Income</Label>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleUpdate(income.id)}
+              disabled={updateIncomeMutation.isPending}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {updateIncomeMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            <Button
+              onClick={() => setEditingId(null)}
+              variant="outline"
+              size="sm"
+              className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-gray-900 dark:text-white">{income.name}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              {formatCurrency(income.amount)} {income.frequency}
+            </div>
+            {income.start_date && (
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Starts: {new Date(income.start_date).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(income)}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteIncomeMutation.mutate(income.id)}
+              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   if (isLoading) {
-    return <div>Loading income data...</div>;
+    return <div className="text-gray-600 dark:text-gray-300">Loading income data...</div>;
   }
 
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-6">Income</h3>
+      <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Income</h3>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Current Income */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
           <CardHeader>
-            <CardTitle className="text-lg">Current Income</CardTitle>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">Current Income</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {currentIncomes.map((income) => (
-                <div key={income.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{income.name}</div>
-                    <div className="text-sm text-gray-600">
-                      {formatCurrency(income.amount)} {income.frequency}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteIncomeMutation.mutate(income.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {currentIncomes.map(renderIncomeItem)}
               {currentIncomes.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                   No current income entries
                 </div>
               )}
@@ -146,37 +303,15 @@ const IncomeSection = () => {
         </Card>
 
         {/* Future Income */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
           <CardHeader>
-            <CardTitle className="text-lg">Future Income</CardTitle>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">Future Income</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {futureIncomes.map((income) => (
-                <div key={income.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{income.name}</div>
-                    <div className="text-sm text-gray-600">
-                      {formatCurrency(income.amount)} {income.frequency}
-                    </div>
-                    {income.start_date && (
-                      <div className="text-xs text-gray-500">
-                        Starts: {new Date(income.start_date).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteIncomeMutation.mutate(income.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {futureIncomes.map(renderIncomeItem)}
               {futureIncomes.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                   No future income entries
                 </div>
               )}

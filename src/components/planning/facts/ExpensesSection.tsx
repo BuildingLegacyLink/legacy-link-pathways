@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -15,7 +14,15 @@ const ExpensesSection = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newExpense, setNewExpense] = useState({
+    name: '',
+    category: 'housing',
+    type: 'essential',
+    amount: '',
+    frequency: 'monthly'
+  });
+  const [editData, setEditData] = useState({
     name: '',
     category: 'housing',
     type: 'essential',
@@ -80,6 +87,25 @@ const ExpensesSection = () => {
     }
   });
 
+  const updateExpenseMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof editData }) => {
+      const { error } = await supabase
+        .from('expenses')
+        .update({ ...data, amount: parseFloat(data.amount) })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      setEditingId(null);
+      toast({ title: 'Success', description: 'Expense updated successfully!' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to update expense: ' + error.message, variant: 'destructive' });
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpense.name || !newExpense.amount) {
@@ -87,6 +113,25 @@ const ExpensesSection = () => {
       return;
     }
     addExpenseMutation.mutate(newExpense);
+  };
+
+  const handleEdit = (expense: any) => {
+    setEditingId(expense.id);
+    setEditData({
+      name: expense.name,
+      category: expense.category,
+      type: expense.type,
+      amount: expense.amount.toString(),
+      frequency: expense.frequency
+    });
+  };
+
+  const handleUpdate = (id: string) => {
+    if (!editData.name || !editData.amount) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+    updateExpenseMutation.mutate({ id, data: editData });
   };
 
   const formatCurrency = (amount: number) => {
@@ -104,45 +149,135 @@ const ExpensesSection = () => {
   const totalEssential = essentialExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const totalDiscretionary = discretionaryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
+  const renderExpenseItem = (expense: any) => (
+    <div key={expense.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+      {editingId === expense.id ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-gray-900 dark:text-white">Name</Label>
+              <Input
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-900 dark:text-white">Category</Label>
+              <Select value={editData.category} onValueChange={(value) => setEditData({ ...editData, category: value })}>
+                <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                  <SelectItem value="housing" className="dark:text-white">Housing</SelectItem>
+                  <SelectItem value="food" className="dark:text-white">Food</SelectItem>
+                  <SelectItem value="transportation" className="dark:text-white">Transportation</SelectItem>
+                  <SelectItem value="utilities" className="dark:text-white">Utilities</SelectItem>
+                  <SelectItem value="healthcare" className="dark:text-white">Healthcare</SelectItem>
+                  <SelectItem value="insurance" className="dark:text-white">Insurance</SelectItem>
+                  <SelectItem value="entertainment" className="dark:text-white">Entertainment</SelectItem>
+                  <SelectItem value="shopping" className="dark:text-white">Shopping</SelectItem>
+                  <SelectItem value="travel" className="dark:text-white">Travel</SelectItem>
+                  <SelectItem value="education" className="dark:text-white">Education</SelectItem>
+                  <SelectItem value="taxes" className="dark:text-white">Taxes</SelectItem>
+                  <SelectItem value="other" className="dark:text-white">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-gray-900 dark:text-white">Type</Label>
+              <Select value={editData.type} onValueChange={(value) => setEditData({ ...editData, type: value })}>
+                <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                  <SelectItem value="essential" className="dark:text-white">Essential</SelectItem>
+                  <SelectItem value="discretionary" className="dark:text-white">Discretionary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-gray-900 dark:text-white">Amount</Label>
+              <Input
+                type="number"
+                value={editData.amount}
+                onChange={(e) => setEditData({ ...editData, amount: e.target.value })}
+                className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleUpdate(expense.id)}
+              disabled={updateExpenseMutation.isPending}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {updateExpenseMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            <Button
+              onClick={() => setEditingId(null)}
+              variant="outline"
+              size="sm"
+              className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-gray-900 dark:text-white">{expense.name}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 capitalize">
+              {expense.category} • {formatCurrency(expense.amount)} {expense.frequency}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(expense)}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteExpenseMutation.mutate(expense.id)}
+              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   if (isLoading) {
-    return <div>Loading expenses data...</div>;
+    return <div className="text-gray-600 dark:text-gray-300">Loading expenses data...</div>;
   }
 
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-6">Expenses & Taxes</h3>
+      <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Expenses & Taxes</h3>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Essential Expenses */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
           <CardHeader>
-            <CardTitle className="text-lg flex justify-between">
+            <CardTitle className="text-lg flex justify-between text-gray-900 dark:text-white">
               Essential Expenses
               <span className="text-green-600">{formatCurrency(totalEssential)}/month</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {essentialExpenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{expense.name}</div>
-                    <div className="text-sm text-gray-600 capitalize">
-                      {expense.category} • {formatCurrency(expense.amount)} {expense.frequency}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteExpenseMutation.mutate(expense.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {essentialExpenses.map(renderExpenseItem)}
               {essentialExpenses.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                   No essential expenses
                 </div>
               )}
@@ -151,35 +286,18 @@ const ExpensesSection = () => {
         </Card>
 
         {/* Discretionary Expenses */}
-        <Card>
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
           <CardHeader>
-            <CardTitle className="text-lg flex justify-between">
+            <CardTitle className="text-lg flex justify-between text-gray-900 dark:text-white">
               Discretionary Expenses
               <span className="text-blue-600">{formatCurrency(totalDiscretionary)}/month</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {discretionaryExpenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{expense.name}</div>
-                    <div className="text-sm text-gray-600 capitalize">
-                      {expense.category} • {formatCurrency(expense.amount)} {expense.frequency}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteExpenseMutation.mutate(expense.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {discretionaryExpenses.map(renderExpenseItem)}
               {discretionaryExpenses.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                   No discretionary expenses
                 </div>
               )}
