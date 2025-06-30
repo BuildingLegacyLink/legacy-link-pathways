@@ -45,11 +45,12 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
   const fetchLivePrice = async (ticker: string) => {
     try {
       setIsLoadingPrice(true);
-      console.log(`Fetching live price for ${ticker}`);
+      const upperTicker = ticker.toUpperCase();
+      console.log(`Fetching live price for ${upperTicker}`);
       
-      // Use Yahoo Finance API for real-time price data
+      // Try Yahoo Finance API first
       const response = await fetch(
-        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}`,
+        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${upperTicker}`,
         {
           method: 'GET',
           headers: {
@@ -69,8 +70,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
         const quote = data.quoteResponse.result[0];
         const price = quote.regularMarketPrice || quote.bid || quote.ask || quote.previousClose;
         
-        if (price) {
-          console.log(`Live price for ${ticker}: $${price}`);
+        if (price && !isNaN(parseFloat(price))) {
+          console.log(`Live price for ${upperTicker}: $${price}`);
           return {
             price: parseFloat(price),
             timestamp: new Date().toISOString(),
@@ -79,37 +80,51 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
         }
       }
       
-      throw new Error('No price data found in response');
+      throw new Error('No valid price data found in response');
       
     } catch (error) {
       console.error(`Error fetching price for ${ticker}:`, error);
       
-      // Fallback to mock data with a warning
-      console.warn(`Using fallback price for ${ticker} - API fetch failed`);
-      const mockPrices: Record<string, number> = {
-        'AAPL': 201.08,
-        'GOOGL': 140.50,
-        'MSFT': 415.80,
-        'TSLA': 245.30,
-        'SPY': 485.60,
-        'QQQ': 395.40,
-        'VTI': 245.80,
-        'NVDA': 875.20,
-        'VOO': 485.60,
-        'BND': 72.50,
-        'VEA': 52.30,
-        'VWO': 45.80,
-        'VXUS': 63.40,
-        'SCHB': 62.10,
-        'SCHA': 56.90
+      // Since we can't reliably fetch live prices due to CORS restrictions,
+      // we'll use estimated prices based on typical market values
+      const estimatedPrices: Record<string, number> = {
+        'AAPL': 185.0,
+        'MSFT': 420.0,
+        'GOOGL': 140.0,
+        'TSLA': 250.0,
+        'NVDA': 880.0,
+        'SPY': 485.0,
+        'QQQ': 395.0,
+        'VTI': 246.0,
+        'VOO': 485.0,
+        'BND': 72.5,
+        'VEA': 52.0,
+        'VWO': 46.0,
+        'VXUS': 63.0,
+        'SCHB': 62.0,
+        'SCHA': 57.0,
+        'IWM': 195.0,
+        'TLT': 92.0,
+        'GLD': 185.0,
+        'SHY': 82.5,
+        'EFA': 75.0,
+        'EEM': 41.0
       };
       
-      const fallbackPrice = mockPrices[ticker] || Math.random() * 200 + 50;
-      return {
-        price: fallbackPrice,
-        timestamp: new Date().toISOString(),
-        source: 'Fallback (API unavailable)'
-      };
+      const upperTicker = ticker.toUpperCase();
+      const estimatedPrice = estimatedPrices[upperTicker];
+      
+      if (estimatedPrice) {
+        console.warn(`Using estimated price for ${upperTicker}: $${estimatedPrice}`);
+        return {
+          price: estimatedPrice,
+          timestamp: new Date().toISOString(),
+          source: 'Estimated (Live API unavailable)'
+        };
+      } else {
+        console.error(`No price available for ${upperTicker}`);
+        throw new Error(`Unable to fetch price for ${upperTicker}. Please enter market value manually.`);
+      }
     } finally {
       setIsLoadingPrice(false);
     }
@@ -126,15 +141,20 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
 
     // If units are entered, fetch live price and calculate market value
     if (newHolding.units && newHolding.units > 0) {
-      const priceData = await fetchLivePrice(ticker);
-      if (priceData) {
-        const marketValue = newHolding.units * priceData.price;
-        setNewHolding(prev => ({
-          ...prev,
-          market_value: marketValue,
-          current_price: priceData.price,
-          price_updated_at: priceData.timestamp
-        }));
+      try {
+        const priceData = await fetchLivePrice(ticker);
+        if (priceData) {
+          const marketValue = newHolding.units * priceData.price;
+          setNewHolding(prev => ({
+            ...prev,
+            market_value: marketValue,
+            current_price: priceData.price,
+            price_updated_at: priceData.timestamp
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching price:', error);
+        // Don't set market value if price fetch fails
       }
     }
   };
@@ -144,15 +164,20 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
     
     // If ticker is selected and units entered, fetch live price
     if (newHolding.ticker && units > 0) {
-      const priceData = await fetchLivePrice(newHolding.ticker);
-      if (priceData) {
-        const marketValue = units * priceData.price;
-        setNewHolding(prev => ({
-          ...prev,
-          market_value: marketValue,
-          current_price: priceData.price,
-          price_updated_at: priceData.timestamp
-        }));
+      try {
+        const priceData = await fetchLivePrice(newHolding.ticker);
+        if (priceData) {
+          const marketValue = units * priceData.price;
+          setNewHolding(prev => ({
+            ...prev,
+            market_value: marketValue,
+            current_price: priceData.price,
+            price_updated_at: priceData.timestamp
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching price:', error);
+        // Don't auto-fill market value if price fetch fails
       }
     }
   };
@@ -202,6 +227,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
               );
               onChange(finalUpdated);
             }
+          }).catch(error => {
+            console.error('Error updating price:', error);
           });
         }
         
@@ -305,7 +332,7 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
                       />
                       {holding.price_updated_at && (
                         <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                          Live price updated
+                          Price updated
                         </div>
                       )}
                     </TableCell>
@@ -447,7 +474,7 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
             />
             {newHolding.current_price && (
               <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                Live price: ${newHolding.current_price.toFixed(2)}
+                Price: ${newHolding.current_price.toFixed(2)}
               </div>
             )}
           </div>
