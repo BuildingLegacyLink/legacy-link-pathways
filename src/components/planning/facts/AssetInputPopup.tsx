@@ -112,6 +112,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     setAssetData(updatedAsset);
     
     // Only save to database if we're editing an existing asset
+    // DO NOT call the parent's onSave callback here as it closes the popup
     if (editingAsset) {
       try {
         const { error } = await supabase
