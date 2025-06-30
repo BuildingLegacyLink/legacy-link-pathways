@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -96,8 +95,8 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     setAssetData(prev => ({ ...prev, ...growthData }));
   };
 
-  // Handle immediate saving of holdings changes
-  const handleSaveHoldings = async (holdings: any[]) => {
+  // Handle immediate saving of holdings changes without closing popup
+  const handleSaveHoldingsOnly = async (holdings: any[]) => {
     if (editingAsset) {
       const updatedAsset = {
         ...assetData,
@@ -112,8 +111,22 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
       
       setAssetData(updatedAsset);
       
-      // Save immediately to database
-      await onSave(updatedAsset);
+      // Save to database but don't trigger onSave (which closes popup)
+      try {
+        const { error } = await supabase
+          .from('assets')
+          .update({
+            holdings: updatedAsset.holdings,
+            value: parseFloat(updatedAsset.value) || 0,
+            growth_rate: updatedAsset.growth_rate
+          })
+          .eq('id', editingAsset.id);
+          
+        if (error) throw error;
+        console.log('Holdings saved successfully');
+      } catch (error) {
+        console.error('Error saving holdings:', error);
+      }
     } else {
       // For new assets, just update state - will be saved when asset is created
       setAssetData(prev => ({ ...prev, holdings }));
@@ -176,7 +189,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
                 holdings={assetData.holdings}
                 onChange={(holdings) => updateAssetData('holdings', holdings)}
                 tickerReturns={tickerReturns}
-                onSaveHolding={handleSaveHoldings}
+                onSaveHolding={handleSaveHoldingsOnly}
               />
               
               {assetData.holdings.length > 0 && (
