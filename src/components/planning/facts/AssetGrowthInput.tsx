@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import HoldingsInput from './HoldingsInput';
 
 interface AssetGrowthInputProps {
   value: {
@@ -96,17 +95,10 @@ const AssetGrowthInput = ({ value, onChange, assetType }: AssetGrowthInputProps)
     });
   };
 
-  const handleHoldingsChange = (holdings: any[]) => {
-    onChange({
-      ...value,
-      holdings
-    });
-  };
-
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-gray-900 dark:text-white">Growth Method</Label>
+        <Label className="text-gray-900 dark:text-white">Entry Method</Label>
         <Select value={value.growth_method} onValueChange={handleMethodChange}>
           <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
             <SelectValue />
@@ -135,12 +127,6 @@ const AssetGrowthInput = ({ value, onChange, assetType }: AssetGrowthInputProps)
         </div>
       ) : (
         <div className="space-y-4">
-          <HoldingsInput 
-            value={value.holdings || []}
-            onChange={handleHoldingsChange}
-            tickerReturns={tickerReturns}
-          />
-          
           {value.holdings?.length > 0 && (
             <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="flex items-center justify-between">
