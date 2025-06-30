@@ -422,6 +422,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          destination_asset_id: string | null
           frequency: string
           goal_id: string | null
           id: string
@@ -432,6 +433,7 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          destination_asset_id?: string | null
           frequency?: string
           goal_id?: string | null
           id?: string
@@ -442,6 +444,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          destination_asset_id?: string | null
           frequency?: string
           goal_id?: string | null
           id?: string
@@ -450,6 +453,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "savings_destination_asset_id_fkey"
+            columns: ["destination_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "savings_goal_id_fkey"
             columns: ["goal_id"]

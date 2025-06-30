@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -20,13 +21,15 @@ const SavingsSection = () => {
     name: '',
     goal_id: 'none',
     amount: '',
-    frequency: 'monthly'
+    frequency: 'monthly',
+    destination_asset_id: 'none'
   });
   const [editData, setEditData] = useState({
     name: '',
     goal_id: 'none',
     amount: '',
-    frequency: 'monthly'
+    frequency: 'monthly',
+    destination_asset_id: 'none'
   });
 
   const { data: savings = [], isLoading: savingsLoading } = useQuery({
@@ -35,7 +38,7 @@ const SavingsSection = () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from('savings')
-        .select('*, goals(name)')
+        .select('*, goals(name), assets(name, type)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
@@ -61,6 +64,23 @@ const SavingsSection = () => {
     enabled: !!user
   });
 
+  const { data: assets = [] } = useQuery({
+    queryKey: ['assets', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('user_id', user.id)
+        .not('type', 'in', '(real_estate,vehicle,other)')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
   const addSavingMutation = useMutation({
     mutationFn: async (saving: typeof newSaving) => {
       if (!user) throw new Error('No user');
@@ -70,7 +90,8 @@ const SavingsSection = () => {
           ...saving, 
           user_id: user.id, 
           amount: parseFloat(saving.amount),
-          goal_id: saving.goal_id === 'none' ? null : saving.goal_id
+          goal_id: saving.goal_id === 'none' ? null : saving.goal_id,
+          destination_asset_id: saving.destination_asset_id === 'none' ? null : saving.destination_asset_id
         }]);
       
       if (error) throw error;
@@ -81,7 +102,8 @@ const SavingsSection = () => {
         name: '',
         goal_id: 'none',
         amount: '',
-        frequency: 'monthly'
+        frequency: 'monthly',
+        destination_asset_id: 'none'
       });
       setIsAdding(false);
       toast({ title: 'Success', description: 'Savings contribution added successfully!' });
@@ -113,7 +135,8 @@ const SavingsSection = () => {
         .update({ 
           ...data, 
           amount: parseFloat(data.amount),
-          goal_id: data.goal_id === 'none' ? null : data.goal_id
+          goal_id: data.goal_id === 'none' ? null : data.goal_id,
+          destination_asset_id: data.destination_asset_id === 'none' ? null : data.destination_asset_id
         })
         .eq('id', id);
       
@@ -146,7 +169,8 @@ const SavingsSection = () => {
       name: saving.name,
       goal_id: saving.goal_id || 'none',
       amount: saving.amount.toString(),
-      frequency: saving.frequency
+      frequency: saving.frequency,
+      destination_asset_id: saving.destination_asset_id || 'none'
     });
   };
 
@@ -226,6 +250,22 @@ const SavingsSection = () => {
                           </SelectContent>
                         </Select>
                       </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-gray-900 dark:text-white">Saving To</Label>
+                        <Select value={editData.destination_asset_id} onValueChange={(value) => setEditData({ ...editData, destination_asset_id: value })}>
+                          <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                            <SelectItem value="none" className="dark:text-white">No specific account</SelectItem>
+                            {assets.map((asset) => (
+                              <SelectItem key={asset.id} value={asset.id} className="dark:text-white">
+                                {asset.name} – {asset.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -254,6 +294,11 @@ const SavingsSection = () => {
                         {formatCurrency(saving.amount)} {saving.frequency}
                         {saving.goals && (
                           <span className="ml-2 text-blue-600 dark:text-blue-400">→ {saving.goals.name}</span>
+                        )}
+                        {saving.assets && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            ↳ Saved to: {saving.assets.name}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -357,6 +402,22 @@ const SavingsSection = () => {
                         <SelectItem value="weekly" className="dark:text-white dark:hover:bg-gray-700">Weekly</SelectItem>
                         <SelectItem value="monthly" className="dark:text-white dark:hover:bg-gray-700">Monthly</SelectItem>
                         <SelectItem value="annual" className="dark:text-white dark:hover:bg-gray-700">Annual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="destination_asset_id" className="text-gray-900 dark:text-white">Saving To</Label>
+                    <Select value={newSaving.destination_asset_id} onValueChange={(value) => setNewSaving({ ...newSaving, destination_asset_id: value })}>
+                      <SelectTrigger className="dark:bg-gray-700/50 dark:border-gray-600 dark:text-white">
+                        <SelectValue placeholder="Select an account..." />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                        <SelectItem value="none" className="dark:text-white dark:hover:bg-gray-700">No specific account</SelectItem>
+                        {assets.map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id} className="dark:text-white dark:hover:bg-gray-700">
+                            {asset.name} – {asset.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
