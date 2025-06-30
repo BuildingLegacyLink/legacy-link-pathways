@@ -26,41 +26,51 @@ serve(async (req) => {
     }
 
     const upperTicker = ticker.toUpperCase();
-    console.log(`Fetching price for ticker: ${upperTicker}`);
+    console.log(`Fetching price for ticker: ${upperTicker} via Finnhub`);
 
-    // Call Yahoo Finance API with proper headers to avoid bot detection
-    const response = await fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${upperTicker}`,
+    const FINNHUB_API_KEY = Deno.env.get('FINNHUB_API_KEY');
+    
+    if (!FINNHUB_API_KEY) {
+      console.error('FINNHUB_API_KEY not found in environment variables');
+      return new Response(
+        JSON.stringify({ error: "API configuration error" }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+
+    // Fetch current price quote from Finnhub
+    const quoteResponse = await fetch(
+      `https://finnhub.io/api/v1/quote?symbol=${upperTicker}`,
       {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          'Accept': 'application/json',
-          'Referer': 'https://finance.yahoo.com/',
-          'Origin': 'https://finance.yahoo.com/'
+          'X-Finnhub-Token': FINNHUB_API_KEY,
+          'Content-Type': 'application/json'
         }
       }
     );
 
-    if (!response.ok) {
-      console.error(`Yahoo Finance API error: ${response.status} ${response.statusText}`);
+    if (!quoteResponse.ok) {
+      console.error(`Finnhub quote API error: ${quoteResponse.status} ${quoteResponse.statusText}`);
       return new Response(
-        JSON.stringify({ error: `Yahoo Finance error: ${response.status}` }),
+        JSON.stringify({ error: `Finnhub quote error: ${quoteResponse.status}` }),
         { 
-          status: response.status,
+          status: quoteResponse.status,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         }
       );
     }
 
-    const data = await response.json();
-    console.log('Yahoo Finance response received');
+    const quoteData = await quoteResponse.json();
+    console.log('Finnhub quote response received:', quoteData);
 
-    const result = data.quoteResponse?.result?.[0];
-
-    if (!result) {
+    // Check if we have valid price data
+    if (!quoteData || !quoteData.c || quoteData.c === 0) {
       return new Response(
-        JSON.stringify({ error: "Invalid ticker or no data returned" }),
+        JSON.stringify({ error: "No valid price data found for ticker" }),
         { 
           status: 404,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -68,24 +78,30 @@ serve(async (req) => {
       );
     }
 
-    const price = result.regularMarketPrice || result.bid || result.ask || result.previousClose;
-    
-    if (!price || isNaN(parseFloat(price))) {
-      return new Response(
-        JSON.stringify({ error: 'No valid price data available' }),
-        { 
-          status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    // Fetch company profile for name
+    const profileResponse = await fetch(
+      `https://finnhub.io/api/v1/stock/profile2?symbol=${upperTicker}`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Finnhub-Token': FINNHUB_API_KEY,
+          'Content-Type': 'application/json'
         }
-      );
+      }
+    );
+
+    let companyName = 'Unknown Company';
+    if (profileResponse.ok) {
+      const profileData = await profileResponse.json();
+      companyName = profileData.name || companyName;
     }
 
     const responseData = {
-      ticker: result.symbol || upperTicker,
-      name: result.shortName || result.longName || 'Unknown',
-      price: parseFloat(price),
+      ticker: upperTicker,
+      name: companyName,
+      price: parseFloat(quoteData.c),
       timestamp: new Date().toISOString(),
-      source: 'Yahoo Finance'
+      source: 'Finnhub'
     };
 
     console.log(`Successfully fetched price for ${upperTicker}: $${responseData.price}`);
@@ -99,7 +115,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error fetching ticker price:', error);
+    console.error('Error fetching ticker price from Finnhub:', error);
     
     return new Response(
       JSON.stringify({ 
