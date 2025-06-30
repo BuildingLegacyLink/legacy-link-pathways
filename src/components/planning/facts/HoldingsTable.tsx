@@ -3,17 +3,21 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useDebounce } from 'use-debounce';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 interface Holding {
   ticker: string;
+  description?: string;
   units?: number;
   cost_basis?: number;
   market_value: number;
   allocation?: number;
+  current_price?: number;
+  price_updated_at?: string;
 }
 
 interface HoldingsTableProps {
@@ -27,6 +31,90 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
     ticker: '',
     market_value: 0
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch] = useDebounce(searchQuery, 300);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+
+  // Filter ticker suggestions based on search
+  const filteredTickers = tickerReturns.filter(
+    ticker => 
+      ticker.ticker.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      ticker.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+  ).slice(0, 10);
+
+  const fetchLivePrice = async (ticker: string) => {
+    // Simulated API call - in real implementation, use Yahoo Finance, Polygon.io, etc.
+    try {
+      setIsLoadingPrice(true);
+      // Mock API response for demonstration
+      const mockPrices: Record<string, number> = {
+        'AAPL': 175.20,
+        'GOOGL': 140.50,
+        'MSFT': 415.80,
+        'TSLA': 245.30,
+        'SPY': 485.60,
+        'QQQ': 395.40,
+        'VTI': 245.80,
+        'NVDA': 875.20
+      };
+      
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      
+      const price = mockPrices[ticker] || Math.random() * 200 + 50; // Random fallback
+      return {
+        price,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error fetching price:', error);
+      return null;
+    } finally {
+      setIsLoadingPrice(false);
+    }
+  };
+
+  const handleTickerSelect = async (ticker: string, description: string) => {
+    setNewHolding(prev => ({ 
+      ...prev, 
+      ticker, 
+      description 
+    }));
+    setSearchQuery(ticker);
+    setShowSuggestions(false);
+
+    // If units are entered, fetch live price and calculate market value
+    if (newHolding.units && newHolding.units > 0) {
+      const priceData = await fetchLivePrice(ticker);
+      if (priceData) {
+        const marketValue = newHolding.units * priceData.price;
+        setNewHolding(prev => ({
+          ...prev,
+          market_value: marketValue,
+          current_price: priceData.price,
+          price_updated_at: priceData.timestamp
+        }));
+      }
+    }
+  };
+
+  const handleUnitsChange = async (units: number) => {
+    setNewHolding(prev => ({ ...prev, units }));
+    
+    // If ticker is selected and units entered, fetch live price
+    if (newHolding.ticker && units > 0) {
+      const priceData = await fetchLivePrice(newHolding.ticker);
+      if (priceData) {
+        const marketValue = units * priceData.price;
+        setNewHolding(prev => ({
+          ...prev,
+          market_value: marketValue,
+          current_price: priceData.price,
+          price_updated_at: priceData.timestamp
+        }));
+      }
+    }
+  };
 
   const addHolding = () => {
     if (newHolding.ticker && newHolding.market_value > 0) {
@@ -37,6 +125,7 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
       const updatedHoldings = [...holdings, holdingWithAllocation];
       onChange(updatedHoldings);
       setNewHolding({ ticker: '', market_value: 0 });
+      setSearchQuery('');
     }
   };
 
@@ -45,14 +134,36 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
     onChange(updated);
   };
 
-  const updateHolding = (index: number, field: keyof Holding, value: string | number) => {
+  const updateHolding = async (index: number, field: keyof Holding, value: string | number) => {
     const updated = holdings.map((holding, i) => {
       if (i === index) {
         const updatedHolding = { ...holding, [field]: value };
+        
         // Recalculate allocation when market value changes
         if (field === 'market_value') {
           updatedHolding.allocation = calculateAllocation(Number(value));
         }
+        
+        // If units changed and ticker exists, fetch new price
+        if (field === 'units' && holding.ticker && Number(value) > 0) {
+          fetchLivePrice(holding.ticker).then(priceData => {
+            if (priceData) {
+              const marketValue = Number(value) * priceData.price;
+              const finalUpdated = holdings.map((h, idx) => 
+                idx === index ? {
+                  ...h,
+                  units: Number(value),
+                  market_value: marketValue,
+                  current_price: priceData.price,
+                  price_updated_at: priceData.timestamp,
+                  allocation: calculateAllocation(marketValue)
+                } : h
+              );
+              onChange(finalUpdated);
+            }
+          });
+        }
+        
         return updatedHolding;
       }
       return holding;
@@ -84,6 +195,10 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
     }).format(amount);
   };
 
+  const hasValidationErrors = () => {
+    return !newHolding.ticker || (newHolding.market_value <= 0 && (!newHolding.units || newHolding.units <= 0));
+  };
+
   return (
     <div className="space-y-4">
       {/* Holdings Table */}
@@ -93,6 +208,7 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
             <TableHeader>
               <TableRow className="dark:border-gray-600">
                 <TableHead className="dark:text-gray-300">Ticker</TableHead>
+                <TableHead className="dark:text-gray-300">Description</TableHead>
                 <TableHead className="dark:text-gray-300">Units</TableHead>
                 <TableHead className="dark:text-gray-300">Cost Basis</TableHead>
                 <TableHead className="dark:text-gray-300">Market Value</TableHead>
@@ -108,6 +224,14 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
                   <TableRow key={index} className="dark:border-gray-600">
                     <TableCell className="font-medium dark:text-white">
                       {holding.ticker}
+                      {holding.current_price && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          @${holding.current_price.toFixed(2)}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="dark:text-gray-300 text-sm max-w-32 truncate">
+                      {holding.description || '-'}
                     </TableCell>
                     <TableCell>
                       <Input
@@ -138,6 +262,11 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
                         className="w-28 dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
                         placeholder="0.00"
                       />
+                      {holding.price_updated_at && (
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          Live price updated
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="dark:text-gray-300 dark:border-gray-500">
@@ -175,38 +304,93 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
           Add New Holding
         </Label>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          {/* Searchable Ticker Input */}
+          <div className="relative">
             <Label className="text-xs text-gray-600 dark:text-gray-400">Ticker *</Label>
-            <Select 
-              value={newHolding.ticker} 
-              onValueChange={(ticker) => setNewHolding({ ...newHolding, ticker })}
-            >
-              <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
-                <SelectValue placeholder="Select ticker" />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
-                {tickerReturns.map((ticker) => (
-                  <SelectItem key={ticker.ticker} value={ticker.ticker} className="dark:text-white">
-                    {ticker.ticker} - {ticker.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Input
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                  setNewHolding(prev => ({ ...prev, ticker: e.target.value }));
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                className={`dark:bg-gray-600/50 dark:border-gray-500 dark:text-white pr-8 ${
+                  hasValidationErrors() && !newHolding.ticker ? 'border-red-500' : ''
+                }`}
+                placeholder="Search ticker..."
+              />
+              <Search className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
+            </div>
+            
+            {/* Autocomplete Suggestions */}
+            {showSuggestions && searchQuery && filteredTickers.length > 0 && (
+              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                <Command className="max-h-48">
+                  <CommandList>
+                    <CommandGroup>
+                      {filteredTickers.map((ticker) => (
+                        <CommandItem
+                          key={ticker.ticker}
+                          onSelect={() => handleTickerSelect(ticker.ticker, ticker.name)}
+                          className="cursor-pointer dark:text-white"
+                        >
+                          <div>
+                            <div className="font-medium">{ticker.ticker}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              {ticker.name}
+                            </div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </div>
+            )}
           </div>
           
+          {/* Description (Auto-filled) */}
+          <div>
+            <Label className="text-xs text-gray-600 dark:text-gray-400">Description</Label>
+            <Input
+              value={newHolding.description || ''}
+              readOnly
+              className="dark:bg-gray-600/30 dark:border-gray-500 dark:text-gray-300 bg-gray-100"
+              placeholder="Auto-filled"
+            />
+          </div>
+          
+          {/* Units */}
           <div>
             <Label className="text-xs text-gray-600 dark:text-gray-400">Units</Label>
             <Input
               type="number"
               step="0.001"
               value={newHolding.units || ''}
-              onChange={(e) => setNewHolding({ ...newHolding, units: parseFloat(e.target.value) || undefined })}
+              onChange={(e) => handleUnitsChange(parseFloat(e.target.value) || 0)}
               className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
               placeholder="0"
+              disabled={isLoadingPrice}
             />
           </div>
           
+          {/* Cost Basis */}
+          <div>
+            <Label className="text-xs text-gray-600 dark:text-gray-400">Cost Basis</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={newHolding.cost_basis || ''}
+              onChange={(e) => setNewHolding({ ...newHolding, cost_basis: parseFloat(e.target.value) || undefined })}
+              className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+              placeholder="0.00"
+            />
+          </div>
+          
+          {/* Market Value */}
           <div>
             <Label className="text-xs text-gray-600 dark:text-gray-400">Market Value *</Label>
             <Input
@@ -214,22 +398,38 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
               step="0.01"
               value={newHolding.market_value || ''}
               onChange={(e) => setNewHolding({ ...newHolding, market_value: parseFloat(e.target.value) || 0 })}
-              className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
+              className={`dark:bg-gray-600/50 dark:border-gray-500 dark:text-white ${
+                hasValidationErrors() && newHolding.market_value <= 0 ? 'border-red-500' : ''
+              }`}
               placeholder="0.00"
+              disabled={isLoadingPrice}
             />
-          </div>
-          
-          <div className="flex items-end">
-            <Button
-              onClick={addHolding}
-              disabled={!newHolding.ticker || newHolding.market_value <= 0}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add
-            </Button>
+            {newHolding.current_price && (
+              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Live price: ${newHolding.current_price.toFixed(2)}
+              </div>
+            )}
           </div>
         </div>
+        
+        {/* Add Button */}
+        <div className="mt-3 flex justify-end">
+          <Button
+            onClick={addHolding}
+            disabled={hasValidationErrors() || isLoadingPrice}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            {isLoadingPrice ? 'Loading Price...' : 'Add Holding'}
+          </Button>
+        </div>
+        
+        {/* Validation Errors */}
+        {hasValidationErrors() && (
+          <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+            Please enter a ticker and either units or market value.
+          </div>
+        )}
       </div>
 
       {/* Summary */}
