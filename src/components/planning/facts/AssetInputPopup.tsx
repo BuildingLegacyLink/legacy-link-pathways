@@ -89,7 +89,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('handleSubmit called with asset data:', assetData);
+    console.log('Form submitted - calling onSave with asset data:', assetData);
     onSave(assetData);
   };
 
@@ -179,12 +179,6 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
 
   // Check if the current asset type supports entry methods
   const supportsEntryMethods = assetData.type === 'investment' || assetData.type === 'retirement';
-
-  // Handle form action button clicks - prevent double submission
-  const handleFormAction = () => {
-    console.log('handleFormAction called - triggering onSave');
-    onSave(assetData);
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -278,7 +272,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
 
           {/* Action Buttons */}
           <AssetFormActions
-            onSubmit={handleFormAction}
+            onSubmit={() => {}} // Empty function since form submission handles the save
             onCancel={handleClose}
             isSubmitDisabled={isSubmitDisabled}
             isLoading={isLoading}
