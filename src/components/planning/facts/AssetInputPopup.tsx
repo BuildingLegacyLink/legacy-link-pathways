@@ -168,6 +168,22 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     }
   };
 
+  // Handle holdings changes for local state only (used by new assets and when not auto-saving)
+  const handleHoldingsChange = (holdings: any[]) => {
+    const updatedAsset = {
+      ...assetData,
+      holdings
+    };
+    
+    // Calculate total value from holdings if using holdings method
+    if (assetData.growth_method === 'holdings') {
+      const totalValue = holdings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
+      updatedAsset.value = totalValue.toString();
+    }
+    
+    setAssetData(updatedAsset);
+  };
+
   const calculateTotalValue = () => {
     if (assetData.growth_method === 'holdings' && assetData.holdings.length > 0) {
       return assetData.holdings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
@@ -259,7 +275,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
               </h3>
               <HoldingsTable
                 holdings={assetData.holdings}
-                onChange={(holdings) => updateAssetData('holdings', holdings)}
+                onChange={handleHoldingsChange}
                 tickerReturns={tickerReturns}
                 onSaveHolding={editingAsset?.id ? handleSaveHoldingsOnly : undefined}
               />
