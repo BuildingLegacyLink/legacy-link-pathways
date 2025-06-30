@@ -108,10 +108,11 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
       updatedAsset.value = totalValue.toString();
     }
     
+    // Always update local state first
     setAssetData(updatedAsset);
     
+    // Only save to database if we're editing an existing asset
     if (editingAsset) {
-      // Save to database but don't trigger onSave (which closes popup)
       try {
         const { error } = await supabase
           .from('assets')
@@ -128,6 +129,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
         console.error('Error saving holdings:', error);
       }
     }
+    // For new assets, we just keep the state updated - it will be saved when the user clicks "Add Asset"
   };
 
   const calculateTotalValue = () => {
