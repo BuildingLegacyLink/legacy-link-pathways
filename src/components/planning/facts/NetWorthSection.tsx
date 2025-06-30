@@ -9,6 +9,7 @@ import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import AssetGrowthInput from './AssetGrowthInput';
 
 const NetWorthSection = () => {
   const { user } = useAuth();
@@ -17,7 +18,14 @@ const NetWorthSection = () => {
   const [isAddingLiability, setIsAddingLiability] = useState(false);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [editingLiabilityId, setEditingLiabilityId] = useState<string | null>(null);
-  const [newAsset, setNewAsset] = useState({ name: '', type: 'checking', value: '' });
+  const [newAsset, setNewAsset] = useState({ 
+    name: '', 
+    type: 'checking', 
+    value: '',
+    growth_method: 'manual',
+    growth_rate: 0.06,
+    holdings: []
+  });
   const [newLiability, setNewLiability] = useState({ 
     name: '', 
     type: 'credit_card', 
@@ -25,7 +33,14 @@ const NetWorthSection = () => {
     interest_rate: '', 
     minimum_payment: '' 
   });
-  const [editAssetData, setEditAssetData] = useState({ name: '', type: 'checking', value: '' });
+  const [editAssetData, setEditAssetData] = useState({ 
+    name: '', 
+    type: 'checking', 
+    value: '',
+    growth_method: 'manual',
+    growth_rate: 0.06,
+    holdings: []
+  });
   const [editLiabilityData, setEditLiabilityData] = useState({ 
     name: '', 
     type: 'credit_card', 
@@ -71,13 +86,27 @@ const NetWorthSection = () => {
       if (!user) throw new Error('No user');
       const { error } = await supabase
         .from('assets')
-        .insert([{ ...asset, user_id: user.id, value: parseFloat(asset.value) }]);
+        .insert([{ 
+          ...asset, 
+          user_id: user.id, 
+          value: parseFloat(asset.value),
+          growth_rate: asset.growth_rate,
+          growth_method: asset.growth_method,
+          holdings: asset.holdings
+        }]);
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
-      setNewAsset({ name: '', type: 'checking', value: '' });
+      setNewAsset({ 
+        name: '', 
+        type: 'checking', 
+        value: '',
+        growth_method: 'manual',
+        growth_rate: 0.06,
+        holdings: []
+      });
       setIsAddingAsset(false);
       toast({ title: 'Success', description: 'Asset added successfully!' });
     },
@@ -144,7 +173,13 @@ const NetWorthSection = () => {
     mutationFn: async ({ id, data }: { id: string; data: typeof editAssetData }) => {
       const { error } = await supabase
         .from('assets')
-        .update({ ...data, value: parseFloat(data.value) })
+        .update({ 
+          ...data, 
+          value: parseFloat(data.value),
+          growth_rate: data.growth_rate,
+          growth_method: data.growth_method,
+          holdings: data.holdings
+        })
         .eq('id', id);
       
       if (error) throw error;
@@ -206,7 +241,10 @@ const NetWorthSection = () => {
     setEditAssetData({
       name: asset.name,
       type: asset.type,
-      value: asset.value.toString()
+      value: asset.value.toString(),
+      growth_method: asset.growth_method || 'manual',
+      growth_rate: asset.growth_rate || 0.06,
+      holdings: asset.holdings || []
     });
   };
 
@@ -288,6 +326,15 @@ const NetWorthSection = () => {
               className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
             />
           </div>
+          <AssetGrowthInput
+            value={{
+              growth_method: editAssetData.growth_method,
+              growth_rate: editAssetData.growth_rate,
+              holdings: editAssetData.holdings
+            }}
+            onChange={(growthData) => setEditAssetData({ ...editAssetData, ...growthData })}
+            assetType={editAssetData.type}
+          />
           <div className="flex gap-2">
             <Button
               onClick={() => handleUpdateAsset(asset.id)}
@@ -313,6 +360,11 @@ const NetWorthSection = () => {
             <div className="font-medium text-gray-900 dark:text-white">{asset.name}</div>
             <div className="text-sm text-gray-600 dark:text-gray-300 capitalize">
               {asset.type} • {formatCurrency(asset.value)}
+              {asset.growth_rate && (
+                <span className="ml-2 text-green-600 dark:text-green-400">
+                  ({(asset.growth_rate * 100).toFixed(1)}% growth)
+                </span>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
@@ -545,6 +597,15 @@ const NetWorthSection = () => {
                           required
                         />
                       </div>
+                      <AssetGrowthInput
+                        value={{
+                          growth_method: newAsset.growth_method,
+                          growth_rate: newAsset.growth_rate,
+                          holdings: newAsset.holdings
+                        }}
+                        onChange={(growthData) => setNewAsset({ ...newAsset, ...growthData })}
+                        assetType={newAsset.type}
+                      />
                       <div className="flex gap-2">
                         <Button type="submit" disabled={addAssetMutation.isPending}>
                           {addAssetMutation.isPending ? 'Adding...' : 'Add Asset'}

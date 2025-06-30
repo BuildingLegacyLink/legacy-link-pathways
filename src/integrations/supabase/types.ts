@@ -12,6 +12,9 @@ export type Database = {
       assets: {
         Row: {
           created_at: string
+          growth_method: string | null
+          growth_rate: number | null
+          holdings: Json | null
           id: string
           name: string
           type: string
@@ -21,6 +24,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          growth_method?: string | null
+          growth_rate?: number | null
+          holdings?: Json | null
           id?: string
           name: string
           type: string
@@ -30,6 +36,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          growth_method?: string | null
+          growth_rate?: number | null
+          holdings?: Json | null
           id?: string
           name?: string
           type?: string
@@ -490,6 +499,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ticker_returns: {
+        Row: {
+          avg_annual_return: number
+          created_at: string
+          name: string | null
+          ticker: string
+        }
+        Insert: {
+          avg_annual_return: number
+          created_at?: string
+          name?: string | null
+          ticker: string
+        }
+        Update: {
+          avg_annual_return?: number
+          created_at?: string
+          name?: string | null
+          ticker?: string
+        }
+        Relationships: []
       }
       topics: {
         Row: {
