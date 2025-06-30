@@ -121,7 +121,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
           {/* Asset Info Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
-              📘 Asset Information
+              Asset Information
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,10 +173,10 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
             )}
           </div>
 
-          {/* Growth Method Section */}
+          {/* Asset Growth Method Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
-              📈 Growth Settings
+              How this asset will grow
             </h3>
             <AssetGrowthInput
               value={{
@@ -193,7 +193,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
           {assetData.growth_method === 'holdings' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
-                📊 Holdings Breakdown
+                Holdings breakdown
               </h3>
               <HoldingsTable
                 holdings={assetData.holdings}
