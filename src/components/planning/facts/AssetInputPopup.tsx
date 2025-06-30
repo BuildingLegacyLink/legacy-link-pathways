@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -142,6 +143,9 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
 
   const isSubmitDisabled = !assetData.name || (!assetData.value && assetData.growth_method === 'manual');
 
+  // Check if the current asset type supports entry methods
+  const supportsEntryMethods = assetData.type === 'investment' || assetData.type === 'retirement';
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto dark:bg-gray-800 dark:border-gray-700">
@@ -163,24 +167,26 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
             onUpdate={updateAssetData}
           />
 
-          {/* Asset Entry Method Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
-              Entry Method
-            </h3>
-            <AssetGrowthInput
-              value={{
-                growth_method: assetData.growth_method,
-                growth_rate: assetData.growth_rate,
-                holdings: assetData.holdings
-              }}
-              onChange={handleGrowthChange}
-              assetType={assetData.type}
-            />
-          </div>
+          {/* Asset Entry Method Section - Only for investment accounts */}
+          {supportsEntryMethods && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
+                Entry Method
+              </h3>
+              <AssetGrowthInput
+                value={{
+                  growth_method: assetData.growth_method,
+                  growth_rate: assetData.growth_rate,
+                  holdings: assetData.holdings
+                }}
+                onChange={handleGrowthChange}
+                assetType={assetData.type}
+              />
+            </div>
+          )}
 
-          {/* Holdings Section */}
-          {assetData.growth_method === 'holdings' && (
+          {/* Holdings Section - Only for investment accounts using holdings method */}
+          {supportsEntryMethods && assetData.growth_method === 'holdings' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
                 Holdings breakdown
