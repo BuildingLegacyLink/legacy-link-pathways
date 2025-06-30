@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +38,52 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     enabled: !!planId,
   });
 
-  // Generate projections (simplified calculation)
+  // Fetch savings contributions
+  const { data: savingsContributions = [] } = useQuery({
+    queryKey: ['savings_contributions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('savings')
+        .select(`
+          *,
+          destination_asset:assets(id, name, type),
+          goal:goals(id, name)
+        `)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  // Fetch assets for destination routing
+  const { data: assets = [] } = useQuery({
+    queryKey: ['assets', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  // Helper function to convert frequency to annual multiplier
+  const getAnnualMultiplier = (frequency: string) => {
+    switch (frequency) {
+      case 'weekly': return 52;
+      case 'monthly': return 12;
+      case 'quarterly': return 4;
+      case 'annual': return 1;
+      default: return 12; // Default to monthly
+    }
+  };
+
+  // Generate projections with savings contributions factored in
   const generateProjections = (planData: any) => {
     const projections = [];
     const currentYear = new Date().getFullYear();
@@ -47,19 +91,71 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     const retirementAge = planData.target_retirement_age;
     const deathAge = planData.assets_last_until_age;
     
+    // Initialize asset balances from current assets
+    const assetBalances = new Map();
+    assets.forEach(asset => {
+      assetBalances.set(asset.id, Number(asset.value));
+    });
+    
+    // Calculate total annual contributions by destination
+    const contributionsByDestination = new Map();
+    let totalAnnualContributions = 0;
+    
+    savingsContributions.forEach(contribution => {
+      const annualAmount = Number(contribution.amount) * getAnnualMultiplier(contribution.frequency);
+      totalAnnualContributions += annualAmount;
+      
+      if (contribution.destination_asset_id) {
+        const current = contributionsByDestination.get(contribution.destination_asset_id) || 0;
+        contributionsByDestination.set(contribution.destination_asset_id, current + annualAmount);
+      }
+    });
+    
     for (let age = currentAge; age <= deathAge; age++) {
       const year = currentYear + (age - currentAge);
       const isRetired = age >= retirementAge;
-      
-      // Simplified projection calculations
       const yearsFromNow = age - currentAge;
-      const annualSavings = planData.monthly_savings * 12;
-      const annualExpenses = planData.monthly_expenses * 12;
-      const annualIncome = isRetired ? annualSavings * 0.04 : planData.monthly_income * 12; // 4% withdrawal rule
       
-      const portfolioValue = planData.total_assets + (annualSavings * yearsFromNow * 1.07); // 7% growth
+      // Base calculations from plan
+      const baseSavings = planData.monthly_savings * 12;
+      const annualExpenses = planData.monthly_expenses * 12;
+      const annualIncome = isRetired ? baseSavings * 0.04 : planData.monthly_income * 12; // 4% withdrawal rule
+      
+      // Calculate portfolio value with contributions
+      let portfolioValue = planData.total_assets;
+      
+      // Add base savings growth
+      portfolioValue += baseSavings * yearsFromNow * Math.pow(1.07, yearsFromNow);
+      
+      // Add savings contributions growth
+      if (yearsFromNow > 0) {
+        // Calculate contributions with compound growth
+        const contributionGrowth = totalAnnualContributions * 
+          ((Math.pow(1.07, yearsFromNow) - 1) / 0.07);
+        portfolioValue += contributionGrowth;
+      }
+      
+      // Calculate asset-specific values
+      let totalAssetValue = 0;
+      assetBalances.forEach((balance, assetId) => {
+        const asset = assets.find(a => a.id === assetId);
+        const growthRate = asset?.growth_rate || 0.07;
+        const annualContribution = contributionsByDestination.get(assetId) || 0;
+        
+        // Apply growth and contributions
+        let assetValue = balance * Math.pow(1 + growthRate, yearsFromNow);
+        if (yearsFromNow > 0 && annualContribution > 0) {
+          assetValue += annualContribution * ((Math.pow(1 + growthRate, yearsFromNow) - 1) / growthRate);
+        }
+        
+        totalAssetValue += assetValue;
+      });
+      
+      // Use the higher of calculated portfolio value or asset-specific calculation
+      portfolioValue = Math.max(portfolioValue, totalAssetValue);
+      
       const netWorth = portfolioValue;
-      const cashFlow = annualIncome - annualExpenses;
+      const cashFlow = annualIncome - annualExpenses + (isRetired ? 0 : totalAnnualContributions);
       
       projections.push({
         year,
