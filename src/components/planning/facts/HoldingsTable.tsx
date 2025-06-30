@@ -158,11 +158,11 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: Hol
       const updatedHoldings = [...holdings, holdingWithAllocation];
       const recalculatedHoldings = recalculateAllAllocations(updatedHoldings);
       
-      onChange(recalculatedHoldings);
-      
-      // Save immediately if callback provided
+      // Use onSaveHolding if available (which handles state internally), otherwise use onChange
       if (onSaveHolding) {
         await onSaveHolding(recalculatedHoldings);
+      } else {
+        onChange(recalculatedHoldings);
       }
       
       setNewHolding({ ticker: '', market_value: 0 });
@@ -173,11 +173,12 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: Hol
   const removeHolding = async (index: number) => {
     const updated = holdings.filter((_, i) => i !== index);
     const recalculatedHoldings = recalculateAllAllocations(updated);
-    onChange(recalculatedHoldings);
     
-    // Save immediately if callback provided
+    // Use onSaveHolding if available (which handles state internally), otherwise use onChange
     if (onSaveHolding) {
       await onSaveHolding(recalculatedHoldings);
+    } else {
+      onChange(recalculatedHoldings);
     }
   };
 
@@ -210,11 +211,12 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: Hol
     }
 
     const recalculatedHoldings = recalculateAllAllocations(updated);
-    onChange(recalculatedHoldings);
     
-    // Save immediately if callback provided
+    // Use onSaveHolding if available (which handles state internally), otherwise use onChange
     if (onSaveHolding) {
       await onSaveHolding(recalculatedHoldings);
+    } else {
+      onChange(recalculatedHoldings);
     }
   };
 
