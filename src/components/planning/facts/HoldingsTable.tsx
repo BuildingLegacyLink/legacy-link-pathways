@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -158,8 +159,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: Hol
       const updatedHoldings = [...holdings, holdingWithAllocation];
       const recalculatedHoldings = recalculateAllAllocations(updatedHoldings);
       
-      // ALWAYS use onSaveHolding if available (which handles state internally)
-      // Only use onChange as fallback for new assets
+      // For existing assets (when onSaveHolding is available), use it to prevent popup closure
+      // For new assets, use onChange to update local state
       if (onSaveHolding) {
         await onSaveHolding(recalculatedHoldings);
       } else {
