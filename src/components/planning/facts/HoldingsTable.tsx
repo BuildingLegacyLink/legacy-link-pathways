@@ -7,6 +7,7 @@ import { Plus, Trash2, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDebounce } from 'use-debounce';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Holding {
   ticker: string;
@@ -46,85 +47,34 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
     try {
       setIsLoadingPrice(true);
       const upperTicker = ticker.toUpperCase();
-      console.log(`Fetching live price for ${upperTicker}`);
+      console.log(`Fetching live price for ${upperTicker} via Edge Function`);
       
-      // Try Yahoo Finance API first
-      const response = await fetch(
-        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${upperTicker}`,
-        {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error(`API response not ok: ${response.status}`);
+      // Call our Supabase Edge Function instead of Yahoo Finance directly
+      const { data, error } = await supabase.functions.invoke('get-ticker-price', {
+        body: { ticker: upperTicker }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Price lookup failed: ${error.message}`);
       }
-      
-      const data = await response.json();
-      console.log('Yahoo Finance API response:', data);
-      
-      if (data.quoteResponse?.result?.length > 0) {
-        const quote = data.quoteResponse.result[0];
-        const price = quote.regularMarketPrice || quote.bid || quote.ask || quote.previousClose;
-        
-        if (price && !isNaN(parseFloat(price))) {
-          console.log(`Live price for ${upperTicker}: $${price}`);
-          return {
-            price: parseFloat(price),
-            timestamp: new Date().toISOString(),
-            source: 'Yahoo Finance'
-          };
-        }
+
+      if (data.error) {
+        console.error('API error:', data.error);
+        throw new Error(data.error);
       }
-      
-      throw new Error('No valid price data found in response');
+
+      console.log(`Live price for ${upperTicker}: $${data.price}`);
+      return {
+        price: data.price,
+        timestamp: data.timestamp,
+        source: data.source,
+        name: data.name
+      };
       
     } catch (error) {
       console.error(`Error fetching price for ${ticker}:`, error);
-      
-      // Since we can't reliably fetch live prices due to CORS restrictions,
-      // we'll use estimated prices based on typical market values
-      const estimatedPrices: Record<string, number> = {
-        'AAPL': 185.0,
-        'MSFT': 420.0,
-        'GOOGL': 140.0,
-        'TSLA': 250.0,
-        'NVDA': 880.0,
-        'SPY': 485.0,
-        'QQQ': 395.0,
-        'VTI': 246.0,
-        'VOO': 485.0,
-        'BND': 72.5,
-        'VEA': 52.0,
-        'VWO': 46.0,
-        'VXUS': 63.0,
-        'SCHB': 62.0,
-        'SCHA': 57.0,
-        'IWM': 195.0,
-        'TLT': 92.0,
-        'GLD': 185.0,
-        'SHY': 82.5,
-        'EFA': 75.0,
-        'EEM': 41.0
-      };
-      
-      const upperTicker = ticker.toUpperCase();
-      const estimatedPrice = estimatedPrices[upperTicker];
-      
-      if (estimatedPrice) {
-        console.warn(`Using estimated price for ${upperTicker}: $${estimatedPrice}`);
-        return {
-          price: estimatedPrice,
-          timestamp: new Date().toISOString(),
-          source: 'Estimated (Live API unavailable)'
-        };
-      } else {
-        console.error(`No price available for ${upperTicker}`);
-        throw new Error(`Unable to fetch price for ${upperTicker}. Please enter market value manually.`);
-      }
+      throw new Error(`Unable to fetch price for ${ticker}. ${error.message}`);
     } finally {
       setIsLoadingPrice(false);
     }
@@ -149,7 +99,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
             ...prev,
             market_value: marketValue,
             current_price: priceData.price,
-            price_updated_at: priceData.timestamp
+            price_updated_at: priceData.timestamp,
+            description: priceData.name
           }));
         }
       } catch (error) {
@@ -172,7 +123,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
             ...prev,
             market_value: marketValue,
             current_price: priceData.price,
-            price_updated_at: priceData.timestamp
+            price_updated_at: priceData.timestamp,
+            description: priceData.name
           }));
         }
       } catch (error) {
@@ -474,7 +426,7 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
             />
             {newHolding.current_price && (
               <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                Price: ${newHolding.current_price.toFixed(2)}
+                Live price: ${newHolding.current_price.toFixed(2)}
               </div>
             )}
           </div>
