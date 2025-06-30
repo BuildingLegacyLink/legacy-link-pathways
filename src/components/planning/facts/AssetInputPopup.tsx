@@ -10,6 +10,8 @@ import HoldingsTable from './HoldingsTable';
 import AssetBasicInfo from './AssetBasicInfo';
 import AssetSummary from './AssetSummary';
 import AssetFormActions from './AssetFormActions';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AssetData {
   name: string;
@@ -49,6 +51,20 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     }
   });
 
+  // Get default growth rates for different asset types
+  const getDefaultGrowthRate = (type: string) => {
+    const defaults: Record<string, number> = {
+      'savings': 0.01,      // 1% - low savings rate
+      'checking': 0.01,     // 1% - minimal growth
+      'real_estate': 0.035, // 3.5% - inflation + property appreciation
+      'retirement': 0.07,   // 7% - stock market average
+      'investment': 0.07,   // 7% - stock market average
+      'vehicle': -0.05,     // -5% - depreciation
+      'other': 0.025        // 2.5% - inflation rate
+    };
+    return defaults[type] || 0.025; // Default to inflation rate
+  };
+
   useEffect(() => {
     if (editingAsset) {
       setAssetData({
@@ -56,7 +72,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
         type: editingAsset.type,
         value: editingAsset.value.toString(),
         growth_method: editingAsset.growth_method || 'manual',
-        growth_rate: editingAsset.growth_rate || 0.06,
+        growth_rate: editingAsset.growth_rate || getDefaultGrowthRate(editingAsset.type),
         holdings: editingAsset.holdings || []
       });
     } else {
@@ -65,7 +81,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
         type: 'checking',
         value: '',
         growth_method: 'manual',
-        growth_rate: 0.06,
+        growth_rate: getDefaultGrowthRate('checking'),
         holdings: []
       });
     }
@@ -82,18 +98,34 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
       type: 'checking',
       value: '',
       growth_method: 'manual',
-      growth_rate: 0.06,
+      growth_rate: getDefaultGrowthRate('checking'),
       holdings: []
     });
     onClose();
   };
 
   const updateAssetData = (field: keyof AssetData, value: any) => {
-    setAssetData(prev => ({ ...prev, [field]: value }));
+    if (field === 'type') {
+      // Update growth rate to default for new asset type
+      setAssetData(prev => ({ 
+        ...prev, 
+        [field]: value,
+        growth_rate: getDefaultGrowthRate(value),
+        growth_method: 'manual',
+        holdings: []
+      }));
+    } else {
+      setAssetData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleGrowthChange = (growthData: { growth_method: string; growth_rate: number; holdings: any[] }) => {
     setAssetData(prev => ({ ...prev, ...growthData }));
+  };
+
+  const handleGrowthRateChange = (rate: string) => {
+    const numericRate = parseFloat(rate) / 100;
+    setAssetData(prev => ({ ...prev, growth_rate: isNaN(numericRate) ? 0 : numericRate }));
   };
 
   // Handle immediate saving of holdings changes without closing popup
@@ -182,6 +214,38 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
                 onChange={handleGrowthChange}
                 assetType={assetData.type}
               />
+            </div>
+          )}
+
+          {/* Growth Rate Section - For non-investment accounts */}
+          {!supportsEntryMethods && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
+                Growth Rate
+              </h3>
+              <div>
+                <Label className="text-gray-900 dark:text-white">Expected Annual Growth Rate (%)</Label>
+                <Select 
+                  value={(assetData.growth_rate * 100).toFixed(1)} 
+                  onValueChange={handleGrowthRateChange}
+                >
+                  <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                    <SelectItem value="0.0" className="dark:text-white">0.0% (No growth)</SelectItem>
+                    <SelectItem value="1.0" className="dark:text-white">1.0% (Low savings)</SelectItem>
+                    <SelectItem value="2.5" className="dark:text-white">2.5% (Inflation rate)</SelectItem>
+                    <SelectItem value="3.5" className="dark:text-white">3.5% (Real estate)</SelectItem>
+                    <SelectItem value="4.0" className="dark:text-white">4.0% (Conservative)</SelectItem>
+                    <SelectItem value="6.0" className="dark:text-white">6.0% (Moderate)</SelectItem>
+                    <SelectItem value="-5.0" className="dark:text-white">-5.0% (Depreciation)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Suggested for {assetData.type}: {(getDefaultGrowthRate(assetData.type) * 100).toFixed(1)}%
+                </div>
+              </div>
             </div>
           )}
 
