@@ -144,8 +144,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     // Always update local state first
     setAssetData(updatedAsset);
     
-    // Only save to database if we're editing an existing asset
-    // For new assets, just update the state - it will be saved when the user clicks "Add Asset"
+    // Only save to database if we're editing an existing asset with an ID
     if (editingAsset?.id) {
       try {
         const { error } = await supabase
@@ -260,7 +259,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
                 holdings={assetData.holdings}
                 onChange={(holdings) => updateAssetData('holdings', holdings)}
                 tickerReturns={tickerReturns}
-                onSaveHolding={handleSaveHoldingsOnly}
+                onSaveHolding={editingAsset?.id ? handleSaveHoldingsOnly : undefined}
               />
               
               {assetData.holdings.length > 0 && (
