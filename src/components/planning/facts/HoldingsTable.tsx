@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,31 +43,73 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
   ).slice(0, 10);
 
   const fetchLivePrice = async (ticker: string) => {
-    // Simulated API call - in real implementation, use Yahoo Finance, Polygon.io, etc.
     try {
       setIsLoadingPrice(true);
-      // Mock API response for demonstration
+      console.log(`Fetching live price for ${ticker}`);
+      
+      // Use Yahoo Finance API for real-time price data
+      const response = await fetch(
+        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}`,
+        {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API response not ok: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Yahoo Finance API response:', data);
+      
+      if (data.quoteResponse?.result?.length > 0) {
+        const quote = data.quoteResponse.result[0];
+        const price = quote.regularMarketPrice || quote.bid || quote.ask || quote.previousClose;
+        
+        if (price) {
+          console.log(`Live price for ${ticker}: $${price}`);
+          return {
+            price: parseFloat(price),
+            timestamp: new Date().toISOString(),
+            source: 'Yahoo Finance'
+          };
+        }
+      }
+      
+      throw new Error('No price data found in response');
+      
+    } catch (error) {
+      console.error(`Error fetching price for ${ticker}:`, error);
+      
+      // Fallback to mock data with a warning
+      console.warn(`Using fallback price for ${ticker} - API fetch failed`);
       const mockPrices: Record<string, number> = {
-        'AAPL': 175.20,
+        'AAPL': 201.08,
         'GOOGL': 140.50,
         'MSFT': 415.80,
         'TSLA': 245.30,
         'SPY': 485.60,
         'QQQ': 395.40,
         'VTI': 245.80,
-        'NVDA': 875.20
+        'NVDA': 875.20,
+        'VOO': 485.60,
+        'BND': 72.50,
+        'VEA': 52.30,
+        'VWO': 45.80,
+        'VXUS': 63.40,
+        'SCHB': 62.10,
+        'SCHA': 56.90
       };
       
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-      
-      const price = mockPrices[ticker] || Math.random() * 200 + 50; // Random fallback
+      const fallbackPrice = mockPrices[ticker] || Math.random() * 200 + 50;
       return {
-        price,
-        timestamp: new Date().toISOString()
+        price: fallbackPrice,
+        timestamp: new Date().toISOString(),
+        source: 'Fallback (API unavailable)'
       };
-    } catch (error) {
-      console.error('Error fetching price:', error);
-      return null;
     } finally {
       setIsLoadingPrice(false);
     }
