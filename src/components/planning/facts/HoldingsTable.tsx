@@ -24,9 +24,10 @@ interface HoldingsTableProps {
   holdings: Holding[];
   onChange: (holdings: Holding[]) => void;
   tickerReturns: Array<{ ticker: string; name: string; avg_annual_return: number }>;
+  onSaveHolding?: (holdings: Holding[]) => void;
 }
 
-const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps) => {
+const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: HoldingsTableProps) => {
   const [newHolding, setNewHolding] = useState<Holding>({
     ticker: '',
     market_value: 0
@@ -78,6 +79,20 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
     } finally {
       setIsLoadingPrice(false);
     }
+  };
+
+  const calculateAllocation = (marketValue: number, currentHoldings: Holding[] = holdings) => {
+    const totalValue = currentHoldings.reduce((sum, h) => sum + h.market_value, 0) + marketValue;
+    return totalValue > 0 ? (marketValue / totalValue) * 100 : 0;
+  };
+
+  const recalculateAllAllocations = (updatedHoldings: Holding[]) => {
+    const totalValue = updatedHoldings.reduce((sum, h) => sum + h.market_value, 0);
+    
+    return updatedHoldings.map(holding => ({
+      ...holding,
+      allocation: totalValue > 0 ? (holding.market_value / totalValue) * 100 : 0
+    }));
   };
 
   const handleTickerSelect = async (ticker: string, description: string) => {
@@ -134,66 +149,73 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns }: HoldingsTableProps
     }
   };
 
-  const addHolding = () => {
+  const addHolding = async () => {
     if (newHolding.ticker && newHolding.market_value > 0) {
       const holdingWithAllocation = {
         ...newHolding,
         allocation: calculateAllocation(newHolding.market_value)
       };
       const updatedHoldings = [...holdings, holdingWithAllocation];
-      onChange(updatedHoldings);
+      const recalculatedHoldings = recalculateAllAllocations(updatedHoldings);
+      
+      onChange(recalculatedHoldings);
+      
+      // Save immediately if callback provided
+      if (onSaveHolding) {
+        await onSaveHolding(recalculatedHoldings);
+      }
+      
       setNewHolding({ ticker: '', market_value: 0 });
       setSearchQuery('');
     }
   };
 
-  const removeHolding = (index: number) => {
+  const removeHolding = async (index: number) => {
     const updated = holdings.filter((_, i) => i !== index);
-    onChange(updated);
+    const recalculatedHoldings = recalculateAllAllocations(updated);
+    onChange(recalculatedHoldings);
+    
+    // Save immediately if callback provided
+    if (onSaveHolding) {
+      await onSaveHolding(recalculatedHoldings);
+    }
   };
 
   const updateHolding = async (index: number, field: keyof Holding, value: string | number) => {
     const updated = holdings.map((holding, i) => {
       if (i === index) {
         const updatedHolding = { ...holding, [field]: value };
-        
-        // Recalculate allocation when market value changes
-        if (field === 'market_value') {
-          updatedHolding.allocation = calculateAllocation(Number(value));
-        }
-        
-        // If units changed and ticker exists, fetch new price
-        if (field === 'units' && holding.ticker && Number(value) > 0) {
-          fetchLivePrice(holding.ticker).then(priceData => {
-            if (priceData) {
-              const marketValue = Number(value) * priceData.price;
-              const finalUpdated = holdings.map((h, idx) => 
-                idx === index ? {
-                  ...h,
-                  units: Number(value),
-                  market_value: marketValue,
-                  current_price: priceData.price,
-                  price_updated_at: priceData.timestamp,
-                  allocation: calculateAllocation(marketValue)
-                } : h
-              );
-              onChange(finalUpdated);
-            }
-          }).catch(error => {
-            console.error('Error updating price:', error);
-          });
-        }
-        
         return updatedHolding;
       }
       return holding;
     });
-    onChange(updated);
-  };
 
-  const calculateAllocation = (marketValue: number) => {
-    const totalValue = holdings.reduce((sum, h) => sum + h.market_value, 0) + marketValue;
-    return totalValue > 0 ? (marketValue / totalValue) * 100 : 0;
+    // If units changed and ticker exists, fetch new price
+    if (field === 'units' && holdings[index].ticker && Number(value) > 0) {
+      try {
+        const priceData = await fetchLivePrice(holdings[index].ticker);
+        if (priceData) {
+          const marketValue = Number(value) * priceData.price;
+          updated[index] = {
+            ...updated[index],
+            units: Number(value),
+            market_value: marketValue,
+            current_price: priceData.price,
+            price_updated_at: priceData.timestamp
+          };
+        }
+      } catch (error) {
+        console.error('Error updating price:', error);
+      }
+    }
+
+    const recalculatedHoldings = recalculateAllAllocations(updated);
+    onChange(recalculatedHoldings);
+    
+    // Save immediately if callback provided
+    if (onSaveHolding) {
+      await onSaveHolding(recalculatedHoldings);
+    }
   };
 
   const getTotalValue = () => {

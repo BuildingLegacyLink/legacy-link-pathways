@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AssetGrowthInputProps {
@@ -18,8 +17,6 @@ interface AssetGrowthInputProps {
 }
 
 const AssetGrowthInput = ({ value, onChange, assetType }: AssetGrowthInputProps) => {
-  const [estimatedRate, setEstimatedRate] = useState<number>(0);
-
   const { data: tickerReturns = [] } = useQuery({
     queryKey: ['ticker_returns'],
     queryFn: async () => {
@@ -61,7 +58,6 @@ const AssetGrowthInput = ({ value, onChange, assetType }: AssetGrowthInputProps)
 
       if (totalAllocation > 0) {
         const estimated = weightedReturn / totalAllocation;
-        setEstimatedRate(estimated);
         onChange({
           ...value,
           growth_rate: estimated
@@ -110,7 +106,7 @@ const AssetGrowthInput = ({ value, onChange, assetType }: AssetGrowthInputProps)
         </Select>
       </div>
 
-      {value.growth_method === 'manual' ? (
+      {value.growth_method === 'manual' && (
         <div>
           <Label className="text-gray-900 dark:text-white">Expected Annual Growth Rate (%)</Label>
           <Input
@@ -124,21 +120,6 @@ const AssetGrowthInput = ({ value, onChange, assetType }: AssetGrowthInputProps)
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Suggested for {assetType}: {(getDefaultGrowthRate(assetType) * 100).toFixed(1)}%
           </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {value.holdings?.length > 0 && (
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-green-700 dark:text-green-300">
-                  Estimated Annual Growth Rate:
-                </span>
-                <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300">
-                  {(estimatedRate * 100).toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

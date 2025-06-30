@@ -96,6 +96,30 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     setAssetData(prev => ({ ...prev, ...growthData }));
   };
 
+  // Handle immediate saving of holdings changes
+  const handleSaveHoldings = async (holdings: any[]) => {
+    if (editingAsset) {
+      const updatedAsset = {
+        ...assetData,
+        holdings
+      };
+      
+      // Calculate total value from holdings if using holdings method
+      if (assetData.growth_method === 'holdings') {
+        const totalValue = holdings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
+        updatedAsset.value = totalValue.toString();
+      }
+      
+      setAssetData(updatedAsset);
+      
+      // Save immediately to database
+      await onSave(updatedAsset);
+    } else {
+      // For new assets, just update state - will be saved when asset is created
+      setAssetData(prev => ({ ...prev, holdings }));
+    }
+  };
+
   const calculateTotalValue = () => {
     if (assetData.growth_method === 'holdings' && assetData.holdings.length > 0) {
       return assetData.holdings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
@@ -152,6 +176,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
                 holdings={assetData.holdings}
                 onChange={(holdings) => updateAssetData('holdings', holdings)}
                 tickerReturns={tickerReturns}
+                onSaveHolding={handleSaveHoldings}
               />
               
               {assetData.holdings.length > 0 && (
