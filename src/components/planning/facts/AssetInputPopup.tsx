@@ -36,7 +36,7 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     type: 'checking',
     value: '',
     growth_method: 'manual',
-    growth_rate: 0.06,
+    growth_rate: 0.025,
     holdings: []
   });
 
@@ -145,8 +145,8 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
     setAssetData(updatedAsset);
     
     // Only save to database if we're editing an existing asset
-    // DO NOT call the parent's onSave callback here as it closes the popup
-    if (editingAsset) {
+    // For new assets, just update the state - it will be saved when the user clicks "Add Asset"
+    if (editingAsset?.id) {
       try {
         const { error } = await supabase
           .from('assets')
@@ -158,12 +158,13 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
           .eq('id', editingAsset.id);
           
         if (error) throw error;
-        console.log('Holdings saved successfully');
+        console.log('Holdings saved successfully for existing asset');
       } catch (error) {
         console.error('Error saving holdings:', error);
       }
+    } else {
+      console.log('New asset: holdings updated in state only, will be saved with full asset');
     }
-    // For new assets, we just keep the state updated - it will be saved when the user clicks "Add Asset"
   };
 
   const calculateTotalValue = () => {
