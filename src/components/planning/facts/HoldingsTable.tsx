@@ -158,7 +158,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: Hol
       const updatedHoldings = [...holdings, holdingWithAllocation];
       const recalculatedHoldings = recalculateAllAllocations(updatedHoldings);
       
-      // Use onSaveHolding if available (which handles state internally), otherwise use onChange
+      // ALWAYS use onSaveHolding if available (which handles state internally)
+      // Only use onChange as fallback for new assets
       if (onSaveHolding) {
         await onSaveHolding(recalculatedHoldings);
       } else {
@@ -174,7 +175,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: Hol
     const updated = holdings.filter((_, i) => i !== index);
     const recalculatedHoldings = recalculateAllAllocations(updated);
     
-    // Use onSaveHolding if available (which handles state internally), otherwise use onChange
+    // ALWAYS use onSaveHolding if available (which handles state internally)
+    // Only use onChange as fallback for new assets
     if (onSaveHolding) {
       await onSaveHolding(recalculatedHoldings);
     } else {
@@ -212,7 +214,8 @@ const HoldingsTable = ({ holdings, onChange, tickerReturns, onSaveHolding }: Hol
 
     const recalculatedHoldings = recalculateAllAllocations(updated);
     
-    // Use onSaveHolding if available (which handles state internally), otherwise use onChange
+    // ALWAYS use onSaveHolding if available (which handles state internally)
+    // Only use onChange as fallback for new assets
     if (onSaveHolding) {
       await onSaveHolding(recalculatedHoldings);
     } else {
