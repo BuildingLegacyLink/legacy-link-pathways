@@ -173,10 +173,10 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
             )}
           </div>
 
-          {/* Asset Growth Method Section */}
+          {/* Asset Entry Method Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">
-              How this asset will grow
+              Entry Method
             </h3>
             <AssetGrowthInput
               value={{
