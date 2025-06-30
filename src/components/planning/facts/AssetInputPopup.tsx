@@ -97,20 +97,20 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
 
   // Handle immediate saving of holdings changes without closing popup
   const handleSaveHoldingsOnly = async (holdings: any[]) => {
+    const updatedAsset = {
+      ...assetData,
+      holdings
+    };
+    
+    // Calculate total value from holdings if using holdings method
+    if (assetData.growth_method === 'holdings') {
+      const totalValue = holdings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
+      updatedAsset.value = totalValue.toString();
+    }
+    
+    setAssetData(updatedAsset);
+    
     if (editingAsset) {
-      const updatedAsset = {
-        ...assetData,
-        holdings
-      };
-      
-      // Calculate total value from holdings if using holdings method
-      if (assetData.growth_method === 'holdings') {
-        const totalValue = holdings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
-        updatedAsset.value = totalValue.toString();
-      }
-      
-      setAssetData(updatedAsset);
-      
       // Save to database but don't trigger onSave (which closes popup)
       try {
         const { error } = await supabase
@@ -127,9 +127,6 @@ const AssetInputPopup = ({ isOpen, onClose, onSave, editingAsset, isLoading }: A
       } catch (error) {
         console.error('Error saving holdings:', error);
       }
-    } else {
-      // For new assets, just update state - will be saved when asset is created
-      setAssetData(prev => ({ ...prev, holdings }));
     }
   };
 
