@@ -8,7 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, Check, X, RotateCcw, Pen } from 'lucide-react';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { ArrowLeft, Check, X, RotateCcw, Pen, Trash } from 'lucide-react';
 import ProjectionTable from './ProjectionTable';
 import CurrentSituationColumn from './comparison/CurrentSituationColumn';
 import EditablePlanColumn from './comparison/EditablePlanColumn';
@@ -385,6 +396,29 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     },
   });
 
+  // Delete plan mutation
+  const deletePlanMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('financial_plans')
+        .delete()
+        .eq('id', planId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial_plans'] });
+      toast({ title: "Plan deleted successfully!" });
+      onBack(); // Navigate back to plans list
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error deleting plan", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -470,6 +504,31 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
                   <Button size="sm" variant="ghost" onClick={handleNameEdit}>
                     <Pen className="h-4 w-4" />
                   </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Plan</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{plan.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => deletePlanMutation.mutate()}
+                          disabled={deletePlanMutation.isPending}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {deletePlanMutation.isPending ? 'Deleting...' : 'Delete'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
               <div className="flex items-center space-x-3 mt-1">
