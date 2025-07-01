@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { Trash2, Plus, Edit2 } from 'lucide-react';
+import TaxAssumptions from './TaxAssumptions';
 
 interface Expense {
   id?: string;
@@ -159,7 +160,7 @@ const ExpensesSection = () => {
             {formatCurrency(expense.amount)} {getFrequencyDisplay(expense.frequency)}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-            {expense.category} • {expense.type}
+            {expense.category}
           </div>
         </div>
         <div className="flex gap-2">
@@ -188,75 +189,80 @@ const ExpensesSection = () => {
     return <div className="text-gray-600 dark:text-gray-300">Loading expenses data...</div>;
   }
 
+  // Categorize expenses
+  const essentialCategories = ['living', 'utilities', 'healthcare', 'transportation'];
+  const discretionaryCategories = ['food', 'entertainment', 'other'];
+  
   const regularExpenses = expenses.filter(expense => expense.type === 'expense');
-  const taxExpenses = expenses.filter(expense => expense.type === 'tax');
+  const essentialExpenses = regularExpenses.filter(expense => essentialCategories.includes(expense.category));
+  const discretionaryExpenses = regularExpenses.filter(expense => discretionaryCategories.includes(expense.category));
 
   return (
-    <div>
-      <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Expenses & Taxes</h3>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Regular Expenses */}
-        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-900 dark:text-white">Regular Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {regularExpenses.map(renderExpenseItem)}
-              {regularExpenses.length === 0 && (
-                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                  No regular expenses added yet
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tax Expenses */}
-        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-900 dark:text-white">Tax Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {taxExpenses.map(renderExpenseItem)}
-              {taxExpenses.length === 0 && (
-                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                  No tax expenses added yet
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Add New Expense */}
-      <div className="mt-6">
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Expense
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Expense Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Rent, Groceries"
-                  required
-                />
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Expenses</h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Essential Expenses */}
+          <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
+            <CardHeader>
+              <CardTitle className="text-lg text-gray-900 dark:text-white">Essential Expenses</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {essentialExpenses.map(renderExpenseItem)}
+                {essentialExpenses.length === 0 && (
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                    No essential expenses added yet
+                  </div>
+                )}
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="grid grid-cols-2 gap-4">
+          {/* Discretionary Expenses */}
+          <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
+            <CardHeader>
+              <CardTitle className="text-lg text-gray-900 dark:text-white">Discretionary Expenses</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {discretionaryExpenses.map(renderExpenseItem)}
+                {discretionaryExpenses.length === 0 && (
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                    No discretionary expenses added yet
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Add New Expense */}
+        <div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Expense
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Expense Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., Rent, Groceries"
+                    required
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
@@ -264,72 +270,64 @@ const ExpensesSection = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="living">Living</SelectItem>
-                      <SelectItem value="transportation">Transportation</SelectItem>
-                      <SelectItem value="food">Food</SelectItem>
-                      <SelectItem value="utilities">Utilities</SelectItem>
-                      <SelectItem value="entertainment">Entertainment</SelectItem>
-                      <SelectItem value="healthcare">Healthcare</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="living">Living (Essential)</SelectItem>
+                      <SelectItem value="utilities">Utilities (Essential)</SelectItem>
+                      <SelectItem value="healthcare">Healthcare (Essential)</SelectItem>
+                      <SelectItem value="transportation">Transportation (Essential)</SelectItem>
+                      <SelectItem value="food">Food (Discretionary)</SelectItem>
+                      <SelectItem value="entertainment">Entertainment (Discretionary)</SelectItem>
+                      <SelectItem value="other">Other (Discretionary)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="tax">Tax</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount ($)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                      required
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount ($)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                    required
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="frequency">Frequency</Label>
+                    <Select value={formData.frequency} onValueChange={(value) => setFormData({ ...formData, frequency: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="annual">Annual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Frequency</Label>
-                  <Select value={formData.frequency} onValueChange={(value) => setFormData({ ...formData, frequency: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="annual">Annual</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={saveMutation.isPending}>
+                    {saveMutation.isPending ? 'Saving...' : editingExpense ? 'Update' : 'Add'}
+                  </Button>
                 </div>
-              </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saveMutation.isPending}>
-                  {saveMutation.isPending ? 'Saving...' : editingExpense ? 'Update' : 'Add'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+      {/* Tax Section */}
+      <div className="border-t pt-8">
+        <TaxAssumptions />
       </div>
     </div>
   );
