@@ -2,7 +2,15 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { PlanData } from '../PlanBuilderComparison';
+
+interface PlanData {
+  monthly_income: number;
+  monthly_expenses: number;
+  monthly_savings: number;
+  target_retirement_age: number;
+  target_savings_rate: number;
+  total_assets: number;
+}
 
 interface EditablePlanColumnProps {
   planData: PlanData;

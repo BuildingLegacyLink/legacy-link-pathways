@@ -1,6 +1,14 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { PlanData } from '../PlanBuilderComparison';
+
+interface PlanData {
+  monthly_income: number;
+  monthly_expenses: number;
+  monthly_savings: number;
+  target_retirement_age: number;
+  target_savings_rate: number;
+  total_assets: number;
+}
 
 interface ComparisonChartProps {
   currentPlan: PlanData;

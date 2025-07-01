@@ -1,5 +1,12 @@
 
-import { PlanData } from '@/components/planning/plans/PlanBuilderComparison';
+interface PlanData {
+  monthly_income: number;
+  monthly_expenses: number;
+  monthly_savings: number;
+  target_retirement_age: number;
+  target_savings_rate: number;
+  total_assets: number;
+}
 
 export const calculateProbabilityOfSuccess = (plan: PlanData): number => {
   // Simplified rule-based probability calculation
