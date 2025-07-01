@@ -1,8 +1,9 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 interface PlanData {
   monthly_income: number;
@@ -69,6 +70,10 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
 
   // Calculate surplus/shortfall
   const monthlySurplusShortfall = planData.monthly_income - planData.monthly_expenses - planData.monthly_savings;
+  
+  // Check if value is within $1 of $0
+  const isBalanced = Math.abs(monthlySurplusShortfall) <= 1;
+  const textColor = isBalanced ? "text-green-600" : "text-red-600";
 
   return (
     <div className="space-y-6">
@@ -130,13 +135,23 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
                 <span>{formatCurrency(planData.monthly_savings)}</span>
               </div>
             </div>
-            <div className="flex justify-between items-center font-semibold">
-              <span className={monthlySurplusShortfall >= 0 ? "text-green-600" : "text-red-600"}>
-                {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
-              </span>
-              <span className={monthlySurplusShortfall >= 0 ? "text-green-600" : "text-red-600"}>
-                {formatCurrency(Math.abs(monthlySurplusShortfall))}
-              </span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center font-semibold">
+                <span className={textColor}>
+                  {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
+                </span>
+                <span className={textColor}>
+                  {formatCurrency(Math.abs(monthlySurplusShortfall))}
+                </span>
+              </div>
+              {!isBalanced && (
+                <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800 dark:text-orange-200 text-xs">
+                    Please make this value $0 by adjusting expenses/savings amount
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </div>
         ) : (
