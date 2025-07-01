@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,12 +104,41 @@ const NetWorthSection = () => {
 
   const deleteAssetMutation = useMutation({
     mutationFn: async (id: string) => {
+      // First, check if any savings records reference this asset
+      const { data: linkedSavings, error: checkError } = await supabase
+        .from('savings')
+        .select('id, name')
+        .eq('destination_asset_id', id);
+      
+      if (checkError) throw checkError;
+      
+      if (linkedSavings && linkedSavings.length > 0) {
+        // Unlink the savings records by setting destination_asset_id to null
+        const { error: unlinkError } = await supabase
+          .from('savings')
+          .update({ destination_asset_id: null })
+          .eq('destination_asset_id', id);
+        
+        if (unlinkError) throw unlinkError;
+      }
+      
+      // Now delete the asset
       const { error } = await supabase.from('assets').delete().eq('id', id);
       if (error) throw error;
+      
+      return linkedSavings;
     },
-    onSuccess: () => {
+    onSuccess: (linkedSavings) => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
-      toast({ title: 'Success', description: 'Asset deleted successfully!' });
+      queryClient.invalidateQueries({ queryKey: ['savings'] });
+      
+      let message = 'Asset deleted successfully!';
+      if (linkedSavings && linkedSavings.length > 0) {
+        const savingsNames = linkedSavings.map(s => s.name).join(', ');
+        message += ` Note: Unlinked from savings: ${savingsNames}`;
+      }
+      
+      toast({ title: 'Success', description: message });
     },
     onError: (error) => {
       toast({ 
