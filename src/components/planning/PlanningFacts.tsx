@@ -14,7 +14,7 @@ const PlanningFacts = () => {
     { id: 'goals', name: 'Goals', icon: Target },
     { id: 'networth', name: 'Net Worth', icon: TrendingUp },
     { id: 'income', name: 'Income', icon: DollarSign },
-    { id: 'expenses', name: 'Expenses', icon: Calculator },
+    { id: 'expenses', name: 'Expenses & Taxes', icon: Calculator },
     { id: 'savings', name: 'Savings', icon: PieChart },
     { id: 'allocation', name: 'Asset Allocation', icon: Shield }
   ];
