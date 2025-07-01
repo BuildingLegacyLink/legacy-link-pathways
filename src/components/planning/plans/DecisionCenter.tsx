@@ -4,13 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { ArrowLeft, Check, X, RotateCcw, Pen } from 'lucide-react';
-import ProjectionChart from './ProjectionChart';
 import ProjectionTable from './ProjectionTable';
 import CurrentSituationColumn from './comparison/CurrentSituationColumn';
 import EditablePlanColumn from './comparison/EditablePlanColumn';
@@ -570,28 +568,6 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Projection Views */}
-      <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl text-gray-900 dark:text-white">Financial Projections</CardTitle>
-            <Select value={viewType} onValueChange={(value: any) => setViewType(value)}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash_flow">Cash Flow Overview</SelectItem>
-                <SelectItem value="portfolio">Lifetime Portfolio Value</SelectItem>
-                <SelectItem value="goals">Goal Funding Progress</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ProjectionChart data={projections} viewType={viewType} />
-        </CardContent>
-      </Card>
 
       {/* Projection Table */}
       <ProjectionTable data={projections} />
