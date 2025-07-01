@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import AssetInputPopup from './AssetInputPopup';
 import LiabilityInputPopup from './LiabilityInputPopup';
+import AssetDeleteConfirmation from './AssetDeleteConfirmation';
 
 const NetWorthSection = () => {
   const { user } = useAuth();
@@ -17,6 +17,15 @@ const NetWorthSection = () => {
   const [isLiabilityPopupOpen, setIsLiabilityPopupOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any>(null);
   const [editingLiability, setEditingLiability] = useState<any>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    asset: any | null;
+    linkedSavings: any[];
+  }>({
+    isOpen: false,
+    asset: null,
+    linkedSavings: []
+  });
 
   const { data: assets = [], isLoading: assetsLoading } = useQuery({
     queryKey: ['assets', user?.id],
@@ -131,6 +140,7 @@ const NetWorthSection = () => {
     onSuccess: (linkedSavings) => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['savings'] });
+      setDeleteConfirmation({ isOpen: false, asset: null, linkedSavings: [] });
       
       let message = 'Asset deleted successfully!';
       if (linkedSavings && linkedSavings.length > 0) {
@@ -185,6 +195,35 @@ const NetWorthSection = () => {
     setEditingAsset(null);
   };
 
+  const handleDeleteAsset = async (asset: any) => {
+    // Check for linked savings before showing confirmation
+    const { data: linkedSavings, error } = await supabase
+      .from('savings')
+      .select('id, name, frequency')
+      .eq('destination_asset_id', asset.id);
+    
+    if (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to check linked savings: ' + error.message, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    setDeleteConfirmation({
+      isOpen: true,
+      asset,
+      linkedSavings: linkedSavings || []
+    });
+  };
+
+  const confirmDeleteAsset = () => {
+    if (deleteConfirmation.asset) {
+      deleteAssetMutation.mutate(deleteConfirmation.asset.id);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -229,7 +268,7 @@ const NetWorthSection = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => deleteAssetMutation.mutate(asset.id)}
+            onClick={() => handleDeleteAsset(asset)}
             disabled={deleteAssetMutation.isPending}
             className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
@@ -391,6 +430,16 @@ const NetWorthSection = () => {
           setEditingLiability(null);
         }}
         editingLiability={editingLiability}
+      />
+
+      {/* Asset Delete Confirmation */}
+      <AssetDeleteConfirmation
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, asset: null, linkedSavings: [] })}
+        onConfirm={confirmDeleteAsset}
+        assetName={deleteConfirmation.asset?.name || ''}
+        linkedSavings={deleteConfirmation.linkedSavings}
+        isLoading={deleteAssetMutation.isPending}
       />
     </div>
   );
