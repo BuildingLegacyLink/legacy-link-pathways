@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -170,6 +171,10 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     target_savings_rate: 20,
     total_assets: currentAssets?.reduce((sum, asset) => sum + Number(asset.value), 0) || 0,
   };
+
+  // Calculate probability of success for both plans
+  const currentPoS = calculateProbabilityOfSuccess(currentSituation);
+  const editablePoS = editablePlan ? calculateProbabilityOfSuccess(editablePlan) : 0;
 
   // Initialize editable plan with plan data when available
   React.useEffect(() => {
