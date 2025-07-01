@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +33,7 @@ const ExpensesSection = () => {
     amount: 0,
     frequency: 'monthly'
   });
+  const [amountInput, setAmountInput] = useState('');
 
   // Common expense names grouped by category
   const commonExpenses = {
@@ -148,6 +148,7 @@ const ExpensesSection = () => {
       amount: expense.amount,
       frequency: expense.frequency
     });
+    setAmountInput(expense.amount.toString());
     setIsDialogOpen(true);
   };
 
@@ -161,11 +162,17 @@ const ExpensesSection = () => {
       amount: 0,
       frequency: 'monthly'
     });
+    setAmountInput('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate(formData);
+    const amount = parseFloat(amountInput) || 0;
+    saveMutation.mutate({ ...formData, amount });
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmountInput(e.target.value);
   };
 
   const formatCurrency = (amount: number) => {
@@ -328,8 +335,9 @@ const ExpensesSection = () => {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                      value={amountInput}
+                      onChange={handleAmountChange}
+                      placeholder="0.00"
                       required
                     />
                   </div>
