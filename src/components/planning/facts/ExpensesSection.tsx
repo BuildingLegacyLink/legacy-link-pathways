@@ -189,13 +189,12 @@ const ExpensesSection = () => {
     return <div className="text-gray-600 dark:text-gray-300">Loading expenses data...</div>;
   }
 
-  // Categorize expenses
+  // Categorize expenses using the same logic as CashFlowDetails
   const essentialCategories = ['living', 'utilities', 'healthcare', 'transportation'];
   const discretionaryCategories = ['food', 'entertainment', 'other'];
   
-  const regularExpenses = expenses.filter(expense => expense.type === 'expense');
-  const essentialExpenses = regularExpenses.filter(expense => essentialCategories.includes(expense.category));
-  const discretionaryExpenses = regularExpenses.filter(expense => discretionaryCategories.includes(expense.category));
+  const essentialExpenses = expenses.filter(expense => essentialCategories.includes(expense.category));
+  const discretionaryExpenses = expenses.filter(expense => discretionaryCategories.includes(expense.category));
 
   return (
     <div className="space-y-8">
