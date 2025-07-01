@@ -90,6 +90,7 @@ export type Database = {
           created_at: string
           current_savings_rate: number
           id: string
+          is_main_plan: boolean
           monthly_expenses: number
           monthly_income: number
           monthly_savings: number
@@ -107,6 +108,7 @@ export type Database = {
           created_at?: string
           current_savings_rate?: number
           id?: string
+          is_main_plan?: boolean
           monthly_expenses?: number
           monthly_income?: number
           monthly_savings?: number
@@ -124,6 +126,7 @@ export type Database = {
           created_at?: string
           current_savings_rate?: number
           id?: string
+          is_main_plan?: boolean
           monthly_expenses?: number
           monthly_income?: number
           monthly_savings?: number

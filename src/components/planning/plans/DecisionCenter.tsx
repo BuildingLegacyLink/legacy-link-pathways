@@ -211,6 +211,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
           ...plan,
           id: undefined,
           name: `${plan.name} (Copy)`,
+          is_main_plan: false, // Copies should not be main plans by default
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
