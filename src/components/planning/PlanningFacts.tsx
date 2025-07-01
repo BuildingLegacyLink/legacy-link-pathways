@@ -5,6 +5,7 @@ import GoalsSection from './facts/GoalsSection';
 import NetWorthSection from './facts/NetWorthSection';
 import IncomeSection from './facts/IncomeSection';
 import ExpensesSection from './facts/ExpensesSection';
+import TaxAssumptions from './facts/TaxAssumptions';
 import SavingsSection from './facts/SavingsSection';
 
 const PlanningFacts = () => {
@@ -14,7 +15,8 @@ const PlanningFacts = () => {
     { id: 'goals', name: 'Goals', icon: Target },
     { id: 'networth', name: 'Net Worth', icon: TrendingUp },
     { id: 'income', name: 'Income', icon: DollarSign },
-    { id: 'expenses', name: 'Expenses & Taxes', icon: Calculator },
+    { id: 'expenses', name: 'Expenses', icon: Calculator },
+    { id: 'taxes', name: 'Tax Assumptions', icon: Calculator },
     { id: 'savings', name: 'Savings', icon: PieChart },
     { id: 'allocation', name: 'Asset Allocation', icon: Shield }
   ];
@@ -29,6 +31,8 @@ const PlanningFacts = () => {
         return <IncomeSection />;
       case 'expenses':
         return <ExpensesSection />;
+      case 'taxes':
+        return <TaxAssumptions />;
       case 'savings':
         return <SavingsSection />;
       default:

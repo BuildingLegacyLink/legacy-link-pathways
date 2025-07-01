@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { Trash2, Plus, Edit2 } from 'lucide-react';
-import TaxAssumptions from './TaxAssumptions';
 
 interface Expense {
   id?: string;
@@ -151,32 +150,93 @@ const ExpensesSection = () => {
     return displays[frequency] || '/month';
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600 dark:text-gray-300">Loading expenses...</div>
-      </div>
-    );
-  }
-
-  const totalMonthlyExpenses = expenses.reduce((total, expense) => {
-    const multiplier = expense.frequency === 'weekly' ? 4.33 : 
-                      expense.frequency === 'quarterly' ? 0.33 : 
-                      expense.frequency === 'annual' ? 0.083 : 1;
-    return total + (expense.amount * multiplier);
-  }, 0);
-
-  return (
-    <div className="space-y-6">
+  const renderExpenseItem = (expense: any) => (
+    <div key={expense.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Expenses</h3>
-          <p className="text-gray-600 dark:text-gray-300">Track your monthly expenses</p>
+          <div className="font-medium text-gray-900 dark:text-white">{expense.name}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            {formatCurrency(expense.amount)} {getFrequencyDisplay(expense.frequency)}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+            {expense.category} • {expense.type}
+          </div>
         </div>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEdit(expense)}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            <Edit2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => deleteMutation.mutate(expense.id)}
+            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isLoading) {
+    return <div className="text-gray-600 dark:text-gray-300">Loading expenses data...</div>;
+  }
+
+  const regularExpenses = expenses.filter(expense => expense.type === 'expense');
+  const taxExpenses = expenses.filter(expense => expense.type === 'tax');
+
+  return (
+    <div>
+      <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Expenses & Taxes</h3>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Regular Expenses */}
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
+          <CardHeader>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">Regular Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {regularExpenses.map(renderExpenseItem)}
+              {regularExpenses.length === 0 && (
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  No regular expenses added yet
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tax Expenses */}
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
+          <CardHeader>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">Tax Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {taxExpenses.map(renderExpenseItem)}
+              {taxExpenses.length === 0 && (
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  No tax expenses added yet
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Add New Expense */}
+      <div className="mt-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
               Add Expense
             </Button>
           </DialogTrigger>
@@ -271,77 +331,6 @@ const ExpensesSection = () => {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Summary Card */}
-      <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Monthly Expense Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-600">
-            {formatCurrency(totalMonthlyExpenses)}
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Total estimated monthly expenses
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Expenses List */}
-      <div className="space-y-3">
-        {expenses.length === 0 ? (
-          <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
-            <CardContent className="text-center py-8">
-              <p className="text-gray-600 dark:text-gray-400">No expenses added yet.</p>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Click "Add Expense" to get started.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          expenses.map((expense) => (
-            <Card key={expense.id} className="dark:bg-gray-800/50 dark:border-gray-700/50">
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h4 className="font-medium text-gray-900 dark:text-white">{expense.name}</h4>
-                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400">
-                        {expense.category}
-                      </span>
-                      {expense.type === 'tax' && (
-                        <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">
-                          Tax
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-lg font-semibold text-green-600 mt-1">
-                      {formatCurrency(expense.amount)}{getFrequencyDisplay(expense.frequency)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(expense)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteMutation.mutate(expense.id)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      <TaxAssumptions />
     </div>
   );
 };
