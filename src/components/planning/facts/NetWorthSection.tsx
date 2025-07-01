@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,6 +109,13 @@ const NetWorthSection = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       toast({ title: 'Success', description: 'Asset deleted successfully!' });
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to delete asset: ' + error.message, 
+        variant: 'destructive' 
+      });
     }
   });
 
@@ -121,6 +127,13 @@ const NetWorthSection = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['liabilities'] });
       toast({ title: 'Success', description: 'Liability deleted successfully!' });
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to delete liability: ' + error.message, 
+        variant: 'destructive' 
+      });
     }
   });
 
@@ -187,6 +200,7 @@ const NetWorthSection = () => {
             variant="ghost"
             size="sm"
             onClick={() => deleteAssetMutation.mutate(asset.id)}
+            disabled={deleteAssetMutation.isPending}
             className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
             <Trash2 className="h-4 w-4" />
@@ -224,6 +238,7 @@ const NetWorthSection = () => {
             variant="ghost"
             size="sm"
             onClick={() => deleteLiabilityMutation.mutate(liability.id)}
+            disabled={deleteLiabilityMutation.isPending}
             className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
             <Trash2 className="h-4 w-4" />
