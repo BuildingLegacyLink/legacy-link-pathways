@@ -123,6 +123,9 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     calculateTotals(expenseAmounts, newSavingsAmounts);
   };
 
+  // Calculate surplus/shortfall
+  const monthlySurplusShortfall = planData.monthly_income - planData.monthly_expenses - planData.monthly_savings;
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -202,6 +205,14 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                 <span>Total Monthly Savings</span>
                 <span>${formatCurrency(planData.monthly_savings)}</span>
               </div>
+            </div>
+            <div className="flex justify-between items-center font-semibold">
+              <span className={monthlySurplusShortfall >= 0 ? "text-green-600" : "text-red-600"}>
+                {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
+              </span>
+              <span className={monthlySurplusShortfall >= 0 ? "text-green-600" : "text-red-600"}>
+                ${formatCurrency(Math.abs(monthlySurplusShortfall))}
+              </span>
             </div>
           </div>
         ) : (
