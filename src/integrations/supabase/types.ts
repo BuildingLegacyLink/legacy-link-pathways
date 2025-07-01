@@ -469,6 +469,42 @@ export type Database = {
           },
         ]
       }
+      tax_assumptions: {
+        Row: {
+          created_at: string
+          federal_tax_method: string
+          flat_federal_rate: number | null
+          flat_state_rate: number | null
+          id: string
+          state: string | null
+          state_tax_method: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          federal_tax_method?: string
+          flat_federal_rate?: number | null
+          flat_state_rate?: number | null
+          id?: string
+          state?: string | null
+          state_tax_method?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          federal_tax_method?: string
+          flat_federal_rate?: number | null
+          flat_state_rate?: number | null
+          id?: string
+          state?: string | null
+          state_tax_method?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       test_out_progress: {
         Row: {
           completed: boolean | null
