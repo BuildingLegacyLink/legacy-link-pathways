@@ -250,12 +250,6 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
           className="w-full"
         />
       </div>
-
-      <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
-        <strong>Current Savings Rate:</strong> {' '}
-        {planData.monthly_income > 0 ? 
-          ((planData.monthly_savings / planData.monthly_income) * 100).toFixed(1) : 0}%
-      </div>
     </div>
   );
 };

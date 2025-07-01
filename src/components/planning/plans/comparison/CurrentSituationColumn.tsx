@@ -2,8 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
 
 interface PlanData {
   monthly_income: number;
@@ -144,14 +142,6 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
                   {formatCurrency(Math.abs(monthlySurplusShortfall))}
                 </span>
               </div>
-              {!isBalanced && (
-                <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                  <AlertDescription className="text-orange-800 dark:text-orange-200 text-xs">
-                    Please make this value $0 by adjusting expenses/savings amount
-                  </AlertDescription>
-                </Alert>
-              )}
             </div>
           </div>
         ) : (
@@ -166,12 +156,6 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
         <div className="text-lg font-semibold text-gray-900 dark:text-white">
           {planData.target_retirement_age}
         </div>
-      </div>
-
-      <div className="text-sm text-gray-600 dark:text-gray-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
-        <strong>Current Savings Rate:</strong> {' '}
-        {planData.monthly_income > 0 ? 
-          ((planData.monthly_savings / planData.monthly_income) * 100).toFixed(1) : 0}%
       </div>
     </div>
   );
