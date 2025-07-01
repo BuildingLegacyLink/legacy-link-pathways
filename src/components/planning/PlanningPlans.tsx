@@ -7,10 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, GitCompare } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import SavedPlanCard from './plans/SavedPlanCard';
 import DecisionCenter from './plans/DecisionCenter';
-import PlanBuilderComparison from './plans/PlanBuilderComparison';
 
 const PlanningPlans = () => {
   const { user } = useAuth();
@@ -19,7 +18,6 @@ const PlanningPlans = () => {
   const [retirementAge, setRetirementAge] = useState([67]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [showDecisionCenter, setShowDecisionCenter] = useState(false);
-  const [showPlanBuilder, setShowPlanBuilder] = useState(false);
 
   // Fetch saved plans
   const { data: savedPlans, isLoading: plansLoading } = useQuery({
@@ -146,26 +144,13 @@ const PlanningPlans = () => {
 
   const handleBackToPlans = () => {
     setShowDecisionCenter(false);
-    setShowPlanBuilder(false);
     setSelectedPlanId(null);
-  };
-
-  const handleOpenPlanBuilder = () => {
-    setShowPlanBuilder(true);
   };
 
   if (showDecisionCenter && selectedPlanId) {
     return (
       <DecisionCenter 
         planId={selectedPlanId} 
-        onBack={handleBackToPlans}
-      />
-    );
-  }
-
-  if (showPlanBuilder) {
-    return (
-      <PlanBuilderComparison 
         onBack={handleBackToPlans}
       />
     );
@@ -180,14 +165,6 @@ const PlanningPlans = () => {
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Your Saved Plans</h3>
           <div className="flex space-x-3">
-            <Button 
-              onClick={handleOpenPlanBuilder}
-              variant="outline"
-              className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-            >
-              <GitCompare className="h-4 w-4 mr-2" />
-              Plan Builder
-            </Button>
             <Button 
               onClick={() => createPlanMutation.mutate()}
               disabled={createPlanMutation.isPending}

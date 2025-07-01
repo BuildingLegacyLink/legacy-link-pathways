@@ -9,14 +9,27 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, Save, Copy, FileText, Edit2, Pen, Check, X } from 'lucide-react';
+import { ArrowLeft, Save, Copy, FileText, Edit2, Pen, Check, X, RotateCcw } from 'lucide-react';
 import PlanInputsSummary from './PlanInputsSummary';
 import ProjectionChart from './ProjectionChart';
 import ProjectionTable from './ProjectionTable';
+import CurrentSituationColumn from './comparison/CurrentSituationColumn';
+import EditablePlanColumn from './comparison/EditablePlanColumn';
+import ComparisonChart from './comparison/ComparisonChart';
+import { calculateProbabilityOfSuccess } from '@/utils/planCalculations';
 
 interface DecisionCenterProps {
   planId: string;
   onBack: () => void;
+}
+
+interface PlanData {
+  monthly_income: number;
+  monthly_expenses: number;
+  monthly_savings: number;
+  target_retirement_age: number;
+  target_savings_rate: number;
+  total_assets: number;
 }
 
 const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
@@ -25,6 +38,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
   const [viewType, setViewType] = useState<'cash_flow' | 'portfolio' | 'goals'>('cash_flow');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [editablePlan, setEditablePlan] = useState<PlanData | null>(null);
 
   // Fetch plan data
   const { data: plan, isLoading } = useQuery({
@@ -74,6 +88,102 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     },
     enabled: !!user
   });
+
+  // Fetch user's current financial data for comparison
+  const { data: income } = useQuery({
+    queryKey: ['income', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('income')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: expenses } = useQuery({
+    queryKey: ['expenses', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: currentAssets } = useQuery({
+    queryKey: ['current_assets', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: currentSavingsContributions } = useQuery({
+    queryKey: ['current_savings_contributions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('savings')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Calculate current situation from user's actual data
+  const currentSituation: PlanData = {
+    monthly_income: income?.reduce((sum, inc) => {
+      const amount = Number(inc.amount);
+      if (inc.frequency === 'annual') return sum + (amount / 12);
+      if (inc.frequency === 'weekly') return sum + (amount * 4.33);
+      return sum + amount;
+    }, 0) || 0,
+    monthly_expenses: expenses?.reduce((sum, exp) => {
+      const amount = Number(exp.amount);
+      if (exp.frequency === 'annual') return sum + (amount / 12);
+      if (exp.frequency === 'weekly') return sum + (amount * 4.33);
+      return sum + amount;
+    }, 0) || 0,
+    monthly_savings: currentSavingsContributions?.reduce((sum, saving) => {
+      const amount = Number(saving.amount);
+      if (saving.frequency === 'annual') return sum + (amount / 12);
+      if (saving.frequency === 'weekly') return sum + (amount * 4.33);
+      return sum + amount;
+    }, 0) || 0,
+    target_retirement_age: 67,
+    target_savings_rate: 20,
+    total_assets: currentAssets?.reduce((sum, asset) => sum + Number(asset.value), 0) || 0,
+  };
+
+  // Initialize editable plan with plan data when available
+  React.useEffect(() => {
+    if (plan && !editablePlan) {
+      setEditablePlan({
+        monthly_income: plan.monthly_income,
+        monthly_expenses: plan.monthly_expenses,
+        monthly_savings: plan.monthly_savings,
+        target_retirement_age: plan.target_retirement_age,
+        target_savings_rate: plan.target_savings_rate,
+        total_assets: plan.total_assets,
+      });
+    }
+  }, [plan, editablePlan]);
 
   // Helper function to convert frequency to annual multiplier
   const getAnnualMultiplier = (frequency: string) => {
@@ -300,7 +410,23 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     setIsEditingName(false);
   };
 
-  if (isLoading || !plan) {
+  const resetToCurrentSituation = () => {
+    if (editablePlan) {
+      setEditablePlan(currentSituation);
+    }
+  };
+
+  const getProbabilityBadge = (probability: number) => {
+    if (probability >= 80) {
+      return <Badge className="bg-green-100 text-green-800 text-lg px-3 py-1">{probability}% 📈</Badge>;
+    } else if (probability >= 60) {
+      return <Badge className="bg-yellow-100 text-yellow-800 text-lg px-3 py-1">{probability}% ⚠️</Badge>;
+    } else {
+      return <Badge className="bg-red-100 text-red-800 text-lg px-3 py-1">{probability}% 📉</Badge>;
+    }
+  };
+
+  if (isLoading || !plan || !editablePlan) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg text-gray-600 dark:text-gray-300">Loading plan...</div>
@@ -369,6 +495,77 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Plan Comparison Split View */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Plan Builder: Compare Current vs. Your Plan
+        </h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Current Situation Column */}
+          <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl text-gray-900 dark:text-white">
+                  Current Situation
+                </CardTitle>
+                <div title="Success means your plan's assets are likely to last through retirement in most market scenarios.">
+                  {getProbabilityBadge(currentPoS)}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CurrentSituationColumn planData={currentSituation} />
+            </CardContent>
+          </Card>
+
+          {/* Editable Plan Column */}
+          <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl text-gray-900 dark:text-white">
+                  Your Plan
+                </CardTitle>
+                <div title="Success means your plan's assets are likely to last through retirement in most market scenarios.">
+                  {getProbabilityBadge(editablePoS)}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <EditablePlanColumn 
+                planData={editablePlan} 
+                onPlanChange={setEditablePlan}
+              />
+              <div className="mt-6 pt-4 border-t dark:border-gray-700">
+                <Button 
+                  variant="outline" 
+                  onClick={resetToCurrentSituation}
+                  className="w-full"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Reset to Current Situation
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Comparison Chart */}
+        <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
+          <CardHeader>
+            <CardTitle className="text-xl text-gray-900 dark:text-white">
+              Overlay Graph: Current Plan vs Your Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ComparisonChart 
+              currentPlan={currentSituation}
+              editablePlan={editablePlan}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Plan Inputs Summary */}
