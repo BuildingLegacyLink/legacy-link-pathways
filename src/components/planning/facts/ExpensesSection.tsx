@@ -29,11 +29,46 @@ const ExpensesSection = () => {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [formData, setFormData] = useState<Expense>({
     name: '',
-    category: 'living',
+    category: 'essential',
     type: 'expense',
     amount: 0,
     frequency: 'monthly'
   });
+
+  // Common expense names grouped by category
+  const commonExpenses = {
+    essential: [
+      'Rent/Mortgage',
+      'Utilities (Electric)',
+      'Utilities (Water)',
+      'Utilities (Gas)',
+      'Utilities (Internet)',
+      'Phone Bill',
+      'Insurance (Health)',
+      'Insurance (Auto)',
+      'Insurance (Home/Renters)',
+      'Transportation (Gas)',
+      'Transportation (Public)',
+      'Car Payment',
+      'Student Loans',
+      'Childcare',
+      'Healthcare/Medical'
+    ],
+    discretionary: [
+      'Food (Groceries)',
+      'Food (Dining Out)',
+      'Entertainment',
+      'Subscriptions (Netflix, etc)',
+      'Gym Membership',
+      'Shopping (Clothing)',
+      'Shopping (General)',
+      'Hobbies',
+      'Travel',
+      'Personal Care',
+      'Gifts',
+      'Charity/Donations'
+    ]
+  };
 
   // Fetch expenses
   const { data: expenses = [], isLoading } = useQuery({
@@ -121,7 +156,7 @@ const ExpensesSection = () => {
     setEditingExpense(null);
     setFormData({
       name: '',
-      category: 'living',
+      category: 'essential',
       type: 'expense',
       amount: 0,
       frequency: 'monthly'
@@ -186,12 +221,9 @@ const ExpensesSection = () => {
     return <div className="text-gray-600 dark:text-gray-300">Loading expenses data...</div>;
   }
 
-  // Categorize expenses using the same logic as CashFlowDetails
-  const essentialCategories = ['living', 'utilities', 'healthcare', 'transportation'];
-  const discretionaryCategories = ['food', 'entertainment', 'other'];
-  
-  const essentialExpenses = expenses.filter(expense => essentialCategories.includes(expense.category));
-  const discretionaryExpenses = expenses.filter(expense => discretionaryCategories.includes(expense.category));
+  // Categorize expenses
+  const essentialExpenses = expenses.filter(expense => expense.category === 'essential');
+  const discretionaryExpenses = expenses.filter(expense => expense.category === 'discretionary');
 
   return (
     <div className="space-y-8">
@@ -249,6 +281,35 @@ const ExpensesSection = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="essential">Essential</SelectItem>
+                      <SelectItem value="discretionary">Discretionary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="common-expense">Common Expense (Optional)</Label>
+                  <Select onValueChange={(value) => setFormData({ ...formData, name: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a common expense or type your own below" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {commonExpenses[formData.category as keyof typeof commonExpenses].map((expenseName) => (
+                        <SelectItem key={expenseName} value={expenseName}>
+                          {expenseName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="name">Expense Name</Label>
                   <Input
                     id="name"
@@ -257,24 +318,6 @@ const ExpensesSection = () => {
                     placeholder="e.g., Rent, Groceries"
                     required
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="living">Living (Essential)</SelectItem>
-                      <SelectItem value="utilities">Utilities (Essential)</SelectItem>
-                      <SelectItem value="healthcare">Healthcare (Essential)</SelectItem>
-                      <SelectItem value="transportation">Transportation (Essential)</SelectItem>
-                      <SelectItem value="food">Food (Discretionary)</SelectItem>
-                      <SelectItem value="entertainment">Entertainment (Discretionary)</SelectItem>
-                      <SelectItem value="other">Other (Discretionary)</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
