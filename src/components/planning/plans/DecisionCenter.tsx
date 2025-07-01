@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,8 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, Save, Copy, FileText, Edit2, Pen, Check, X, RotateCcw } from 'lucide-react';
-import PlanInputsSummary from './PlanInputsSummary';
+import { ArrowLeft, Check, X, RotateCcw, Pen } from 'lucide-react';
 import ProjectionChart from './ProjectionChart';
 import ProjectionTable from './ProjectionTable';
 import CurrentSituationColumn from './comparison/CurrentSituationColumn';
@@ -573,37 +571,6 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         </Card>
       </div>
 
-      {/* Plan Inputs Summary */}
-      <PlanInputsSummary 
-        plan={plan}
-        onEditInputs={() => {}}
-      />
-
-      {/* Summary Metrics */}
-      <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
-        <CardHeader>
-          <CardTitle className="text-lg text-gray-900 dark:text-white">Key Metrics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{summaryMetrics.yearsToRetirement}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Years to Retirement</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">Age {summaryMetrics.assetsLastUntil}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Assets Last Until</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {formatCurrency(summaryMetrics.projectedSavings)}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Projected Retirement Savings</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Projection Views */}
       <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
         <CardHeader>
@@ -628,37 +595,6 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
 
       {/* Projection Table */}
       <ProjectionTable data={projections} />
-
-      {/* Plan Controls */}
-      <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
-        <CardHeader>
-          <CardTitle className="text-lg text-gray-900 dark:text-white">Plan Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button 
-              onClick={() => savePlanMutation.mutate({})}
-              disabled={savePlanMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save Plan
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => duplicatePlanMutation.mutate()}
-              disabled={duplicatePlanMutation.isPending}
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Duplicate Plan
-            </Button>
-            <Button variant="outline" disabled>
-              <FileText className="h-4 w-4 mr-2" />
-              Export Plan
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
