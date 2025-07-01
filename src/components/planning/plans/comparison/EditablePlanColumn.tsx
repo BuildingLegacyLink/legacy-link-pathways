@@ -77,6 +77,51 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
+  // Calculate total expenses and savings when individual items change
+  const calculateTotals = (expenseAmounts: { [key: string]: number }, savingsAmounts: { [key: string]: number }) => {
+    const totalExpenses = Object.values(expenseAmounts).reduce((sum, amount) => sum + amount, 0);
+    const totalSavings = Object.values(savingsAmounts).reduce((sum, amount) => sum + amount, 0);
+    
+    onPlanChange({
+      ...planData,
+      monthly_expenses: totalExpenses,
+      monthly_savings: totalSavings,
+    });
+  };
+
+  // State for individual expense and savings amounts
+  const [expenseAmounts, setExpenseAmounts] = React.useState<{ [key: string]: number }>({});
+  const [savingsAmounts, setSavingsAmounts] = React.useState<{ [key: string]: number }>({});
+
+  // Initialize amounts from original data
+  React.useEffect(() => {
+    const initialExpenseAmounts: { [key: string]: number } = {};
+    expenses.forEach((expense) => {
+      const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
+      initialExpenseAmounts[expense.id] = monthlyAmount;
+    });
+    setExpenseAmounts(initialExpenseAmounts);
+
+    const initialSavingsAmounts: { [key: string]: number } = {};
+    savingsContributions.forEach((saving) => {
+      const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
+      initialSavingsAmounts[saving.id] = monthlyAmount;
+    });
+    setSavingsAmounts(initialSavingsAmounts);
+  }, [expenses, savingsContributions]);
+
+  const updateExpenseAmount = (expenseId: string, amount: number) => {
+    const newExpenseAmounts = { ...expenseAmounts, [expenseId]: amount };
+    setExpenseAmounts(newExpenseAmounts);
+    calculateTotals(newExpenseAmounts, savingsAmounts);
+  };
+
+  const updateSavingsAmount = (savingId: string, amount: number) => {
+    const newSavingsAmounts = { ...savingsAmounts, [savingId]: amount };
+    setSavingsAmounts(newSavingsAmounts);
+    calculateTotals(expenseAmounts, newSavingsAmounts);
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -97,15 +142,21 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         <Label className="text-sm font-medium">Monthly Expenses</Label>
         {expenses.length > 0 ? (
           <div className="space-y-2">
-            {expenses.map((expense) => {
-              const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
-              return (
-                <div key={expense.id} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">{expense.name}</span>
-                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+            {expenses.map((expense) => (
+              <div key={expense.id} className="flex justify-between items-center text-sm">
+                <span className="text-gray-600 dark:text-gray-400 flex-1">{expense.name}</span>
+                <div className="flex items-center space-x-2">
+                  <span>$</span>
+                  <Input
+                    type="number"
+                    value={expenseAmounts[expense.id]?.toFixed(0) || '0'}
+                    onChange={(e) => updateExpenseAmount(expense.id, Number(e.target.value) || 0)}
+                    className="w-20 h-8 text-xs"
+                  />
+                  <span className="text-xs">/mo</span>
                 </div>
-              );
-            })}
+              </div>
+            ))}
             <div className="pt-2 border-t dark:border-gray-700">
               <div className="flex justify-between items-center font-semibold">
                 <span>Total Monthly Expenses</span>
@@ -126,14 +177,22 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         {savingsContributions.length > 0 ? (
           <div className="space-y-2">
             {savingsContributions.map((saving) => {
-              const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
               const destinationName = saving.destination_asset?.name || 'General Savings';
               return (
                 <div key={saving.id} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">
+                  <span className="text-gray-600 dark:text-gray-400 flex-1">
                     Contribution to {destinationName}
                   </span>
-                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+                  <div className="flex items-center space-x-2">
+                    <span>$</span>
+                    <Input
+                      type="number"
+                      value={savingsAmounts[saving.id]?.toFixed(0) || '0'}
+                      onChange={(e) => updateSavingsAmount(saving.id, Number(e.target.value) || 0)}
+                      className="w-20 h-8 text-xs"
+                    />
+                    <span className="text-xs">/mo</span>
+                  </div>
                 </div>
               );
             })}
@@ -149,20 +208,6 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
             No savings contributions added yet. Add them in Facts to see them here.
           </div>
         )}
-      </div>
-
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">
-          Target Savings Rate: {planData.target_savings_rate}%
-        </Label>
-        <Slider
-          value={[planData.target_savings_rate]}
-          onValueChange={([value]) => updatePlan('target_savings_rate', value)}
-          max={50}
-          min={0}
-          step={1}
-          className="w-full"
-        />
       </div>
 
       <div className="space-y-3">
