@@ -1,4 +1,7 @@
 
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -18,6 +21,41 @@ interface EditablePlanColumnProps {
 }
 
 const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps) => {
+  const { user } = useAuth();
+
+  // Fetch user's expenses
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch user's savings contributions
+  const { data: savingsContributions = [] } = useQuery({
+    queryKey: ['savings_contributions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('savings')
+        .select(`
+          *,
+          destination_asset:assets(id, name, type)
+        `)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const updatePlan = (field: keyof PlanData, value: number) => {
     onPlanChange({
       ...planData,
@@ -27,6 +65,16 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
 
   const formatCurrency = (value: number) => {
     return value.toFixed(0);
+  };
+
+  const getFrequencyMultiplier = (frequency: string) => {
+    switch (frequency) {
+      case 'weekly': return 4.33;
+      case 'monthly': return 1;
+      case 'quarterly': return 0.25;
+      case 'annual': return 1/12;
+      default: return 1;
+    }
   };
 
   return (
@@ -44,30 +92,63 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="monthly_expenses" className="text-sm font-medium">
-          Monthly Expenses
-        </Label>
-        <Input
-          id="monthly_expenses"
-          type="number"
-          value={formatCurrency(planData.monthly_expenses)}
-          onChange={(e) => updatePlan('monthly_expenses', Number(e.target.value) || 0)}
-          placeholder="Enter monthly expenses"
-        />
+      {/* Individual Expenses */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Monthly Expenses</Label>
+        {expenses.length > 0 ? (
+          <div className="space-y-2">
+            {expenses.map((expense) => {
+              const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
+              return (
+                <div key={expense.id} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">{expense.name}</span>
+                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+                </div>
+              );
+            })}
+            <div className="pt-2 border-t dark:border-gray-700">
+              <div className="flex justify-between items-center font-semibold">
+                <span>Total Monthly Expenses</span>
+                <span>${formatCurrency(planData.monthly_expenses)}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            No expenses added yet. Add them in Facts to see them here.
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="monthly_savings" className="text-sm font-medium">
-          Monthly Savings
-        </Label>
-        <Input
-          id="monthly_savings"
-          type="number"
-          value={formatCurrency(planData.monthly_savings)}
-          onChange={(e) => updatePlan('monthly_savings', Number(e.target.value) || 0)}
-          placeholder="Enter monthly savings"
-        />
+      {/* Individual Savings Contributions */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Investment Contributions</Label>
+        {savingsContributions.length > 0 ? (
+          <div className="space-y-2">
+            {savingsContributions.map((saving) => {
+              const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
+              const destinationName = saving.destination_asset?.name || 'General Savings';
+              return (
+                <div key={saving.id} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Contribution to {destinationName}
+                  </span>
+                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+                </div>
+              );
+            })}
+            <div className="pt-2 border-t dark:border-gray-700">
+              <div className="flex justify-between items-center font-semibold">
+                <span>Total Monthly Savings</span>
+                <span>${formatCurrency(planData.monthly_savings)}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            No savings contributions added yet. Add them in Facts to see them here.
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -92,22 +173,9 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
           value={[planData.target_retirement_age]}
           onValueChange={([value]) => updatePlan('target_retirement_age', value)}
           max={75}
-          min={55}
+          min={30}
           step={1}
           className="w-full"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="total_assets" className="text-sm font-medium">
-          Total Assets
-        </Label>
-        <Input
-          id="total_assets"
-          type="number"
-          value={formatCurrency(planData.total_assets)}
-          onChange={(e) => updatePlan('total_assets', Number(e.target.value) || 0)}
-          placeholder="Enter total assets"
         />
       </div>
 
