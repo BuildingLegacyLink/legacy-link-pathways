@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { ArrowLeft, Save, Copy, FileText, Edit2 } from 'lucide-react';
+import { ArrowLeft, Save, Copy, FileText, Edit2, Pen, Check, X } from 'lucide-react';
 import PlanInputsSummary from './PlanInputsSummary';
 import ProjectionChart from './ProjectionChart';
 import ProjectionTable from './ProjectionTable';
@@ -21,7 +23,8 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [viewType, setViewType] = useState<'cash_flow' | 'portfolio' | 'goals'>('cash_flow');
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
 
   // Fetch plan data
   const { data: plan, isLoading } = useQuery({
@@ -222,12 +225,78 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     },
   });
 
+  // Update plan name mutation
+  const updatePlanNameMutation = useMutation({
+    mutationFn: async (newName: string) => {
+      const { data, error } = await supabase
+        .from('financial_plans')
+        .update({ name: newName, updated_at: new Date().toISOString() })
+        .eq('id', planId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial_plans'] });
+      queryClient.invalidateQueries({ queryKey: ['financial_plan', planId] });
+      setIsEditingName(false);
+      toast({ title: "Plan name updated successfully!" });
+    },
+  });
+
+  // Toggle main plan mutation
+  const toggleMainPlanMutation = useMutation({
+    mutationFn: async (isMainPlan: boolean) => {
+      if (isMainPlan) {
+        // First, set all other plans as not main
+        await supabase
+          .from('financial_plans')
+          .update({ is_main_plan: false })
+          .eq('user_id', user?.id);
+      }
+      
+      // Then set this plan as main or not main
+      const { data, error } = await supabase
+        .from('financial_plans')
+        .update({ is_main_plan: isMainPlan, updated_at: new Date().toISOString() })
+        .eq('id', planId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial_plans'] });
+      queryClient.invalidateQueries({ queryKey: ['financial_plan', planId] });
+      toast({ title: `Plan ${plan?.is_main_plan ? 'removed as' : 'set as'} main plan!` });
+    },
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const handleNameEdit = () => {
+    setEditedName(plan?.name || '');
+    setIsEditingName(true);
+  };
+
+  const handleNameSave = () => {
+    if (editedName.trim() && editedName !== plan?.name) {
+      updatePlanNameMutation.mutate(editedName.trim());
+    } else {
+      setIsEditingName(false);
+    }
+  };
+
+  const handleNameCancel = () => {
+    setEditedName('');
+    setIsEditingName(false);
   };
 
   if (isLoading || !plan) {
@@ -247,11 +316,56 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Plans
           </Button>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h2>
-            <Badge variant={plan.status === 'on_track' ? "default" : "destructive"} className="mt-1">
-              {plan.status === 'on_track' ? "On Track" : "Needs Attention"}
-            </Badge>
+          <div className="flex items-center space-x-3">
+            <div>
+              {isEditingName ? (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="text-2xl font-bold h-10"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleNameSave();
+                      if (e.key === 'Escape') handleNameCancel();
+                    }}
+                  />
+                  <Button size="sm" onClick={handleNameSave} disabled={updatePlanNameMutation.isPending}>
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleNameCancel}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h2>
+                  <Button size="sm" variant="ghost" onClick={handleNameEdit}>
+                    <Pen className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex items-center space-x-3 mt-1">
+                <Badge variant={plan.status === 'on_track' ? "default" : "destructive"}>
+                  {plan.status === 'on_track' ? "On Track" : "Needs Attention"}
+                </Badge>
+                {plan.is_main_plan && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    Main Plan
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Set as Main Plan</span>
+              <Switch
+                checked={plan.is_main_plan || false}
+                onCheckedChange={(checked) => toggleMainPlanMutation.mutate(checked)}
+                disabled={toggleMainPlanMutation.isPending}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -259,7 +373,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       {/* Plan Inputs Summary */}
       <PlanInputsSummary 
         plan={plan}
-        onEditInputs={() => setIsEditing(true)}
+        onEditInputs={() => {}}
       />
 
       {/* Summary Metrics */}
@@ -326,13 +440,6 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
             >
               <Save className="h-4 w-4 mr-2" />
               Save Plan
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => setIsEditing(true)}
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              Rename Plan
             </Button>
             <Button 
               variant="outline"
