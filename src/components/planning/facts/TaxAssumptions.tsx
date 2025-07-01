@@ -150,12 +150,15 @@ const TaxAssumptions = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Tax Assumptions</h4>
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Tax Assumptions</h3>
+          <p className="text-gray-600 dark:text-gray-300">Configure your tax assumptions</p>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button>
               <Settings className="h-4 w-4 mr-2" />
               Configure
             </Button>
@@ -274,7 +277,10 @@ const TaxAssumptions = () => {
       </div>
 
       <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Tax Assumptions Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Federal Taxes:</span>

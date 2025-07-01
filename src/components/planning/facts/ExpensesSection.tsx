@@ -167,183 +167,180 @@ const ExpensesSection = () => {
   }, 0);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Expenses & Taxes</h3>
-            <p className="text-gray-600 dark:text-gray-300">Track your monthly expenses and tax assumptions</p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Expense
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Expenses</h3>
+          <p className="text-gray-600 dark:text-gray-300">Track your monthly expenses</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Expense
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Expense Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Rent, Groceries"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Expense Name</Label>
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="living">Living</SelectItem>
+                      <SelectItem value="transportation">Transportation</SelectItem>
+                      <SelectItem value="food">Food</SelectItem>
+                      <SelectItem value="utilities">Utilities</SelectItem>
+                      <SelectItem value="entertainment">Entertainment</SelectItem>
+                      <SelectItem value="healthcare">Healthcare</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="tax">Tax</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount ($)</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Rent, Groceries"
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="living">Living</SelectItem>
-                        <SelectItem value="transportation">Transportation</SelectItem>
-                        <SelectItem value="food">Food</SelectItem>
-                        <SelectItem value="utilities">Utilities</SelectItem>
-                        <SelectItem value="entertainment">Entertainment</SelectItem>
-                        <SelectItem value="healthcare">Healthcare</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Type</Label>
-                    <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="expense">Expense</SelectItem>
-                        <SelectItem value="tax">Tax</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="frequency">Frequency</Label>
+                  <Select value={formData.frequency} onValueChange={(value) => setFormData({ ...formData, frequency: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="annual">Annual</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Amount ($)</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="frequency">Frequency</Label>
-                    <Select value={formData.frequency} onValueChange={(value) => setFormData({ ...formData, frequency: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="quarterly">Quarterly</SelectItem>
-                        <SelectItem value="annual">Annual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={saveMutation.isPending}>
-                    {saveMutation.isPending ? 'Saving...' : editingExpense ? 'Update' : 'Add'}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Summary Card */}
-        <Card className="mb-6 dark:bg-gray-800/50 dark:border-gray-700/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Monthly Expense Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalMonthlyExpenses)}
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Total estimated monthly expenses
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Expenses List */}
-        <div className="space-y-3">
-          {expenses.length === 0 ? (
-            <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
-              <CardContent className="text-center py-8">
-                <p className="text-gray-600 dark:text-gray-400">No expenses added yet.</p>
-                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Click "Add Expense" to get started.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            expenses.map((expense) => (
-              <Card key={expense.id} className="dark:bg-gray-800/50 dark:border-gray-700/50">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-medium text-gray-900 dark:text-white">{expense.name}</h4>
-                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400">
-                          {expense.category}
-                        </span>
-                        {expense.type === 'tax' && (
-                          <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">
-                            Tax
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-lg font-semibold text-green-600 mt-1">
-                        {formatCurrency(expense.amount)}{getFrequencyDisplay(expense.frequency)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(expense)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteMutation.mutate(expense.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? 'Saving...' : editingExpense ? 'Update' : 'Add'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Tax Assumptions Section */}
+      {/* Summary Card */}
+      <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
+        <CardHeader>
+          <CardTitle className="text-lg">Monthly Expense Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-600">
+            {formatCurrency(totalMonthlyExpenses)}
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Total estimated monthly expenses
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Expenses List */}
+      <div className="space-y-3">
+        {expenses.length === 0 ? (
+          <Card className="dark:bg-gray-800/50 dark:border-gray-700/50">
+            <CardContent className="text-center py-8">
+              <p className="text-gray-600 dark:text-gray-400">No expenses added yet.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Click "Add Expense" to get started.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          expenses.map((expense) => (
+            <Card key={expense.id} className="dark:bg-gray-800/50 dark:border-gray-700/50">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-medium text-gray-900 dark:text-white">{expense.name}</h4>
+                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400">
+                        {expense.category}
+                      </span>
+                      {expense.type === 'tax' && (
+                        <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">
+                          Tax
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-lg font-semibold text-green-600 mt-1">
+                      {formatCurrency(expense.amount)}{getFrequencyDisplay(expense.frequency)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(expense)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(expense.id)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
       <TaxAssumptions />
     </div>
   );
