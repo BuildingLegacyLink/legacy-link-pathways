@@ -29,7 +29,7 @@ const ExpensesSection = () => {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [formData, setFormData] = useState<Expense>({
     name: '',
-    category: 'living',
+    category: 'essential',
     type: 'expense',
     amount: 0,
     frequency: 'monthly'
@@ -121,7 +121,7 @@ const ExpensesSection = () => {
     setEditingExpense(null);
     setFormData({
       name: '',
-      category: 'living',
+      category: 'essential',
       type: 'expense',
       amount: 0,
       frequency: 'monthly'
@@ -159,9 +159,6 @@ const ExpensesSection = () => {
           <div className="text-sm text-gray-600 dark:text-gray-300">
             {formatCurrency(expense.amount)} {getFrequencyDisplay(expense.frequency)}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-            {expense.category}
-          </div>
         </div>
         <div className="flex gap-2">
           <Button
@@ -189,12 +186,9 @@ const ExpensesSection = () => {
     return <div className="text-gray-600 dark:text-gray-300">Loading expenses data...</div>;
   }
 
-  // Categorize expenses using the same logic as CashFlowDetails
-  const essentialCategories = ['living', 'utilities', 'healthcare', 'transportation'];
-  const discretionaryCategories = ['food', 'entertainment', 'other'];
-  
-  const essentialExpenses = expenses.filter(expense => essentialCategories.includes(expense.category));
-  const discretionaryExpenses = expenses.filter(expense => discretionaryCategories.includes(expense.category));
+  // Categorize expenses - now using simple essential/discretionary categories
+  const essentialExpenses = expenses.filter(expense => expense.category === 'essential');
+  const discretionaryExpenses = expenses.filter(expense => expense.category === 'discretionary');
 
   return (
     <div className="space-y-8">
@@ -269,13 +263,8 @@ const ExpensesSection = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="living">Living (Essential)</SelectItem>
-                      <SelectItem value="utilities">Utilities (Essential)</SelectItem>
-                      <SelectItem value="healthcare">Healthcare (Essential)</SelectItem>
-                      <SelectItem value="transportation">Transportation (Essential)</SelectItem>
-                      <SelectItem value="food">Food (Discretionary)</SelectItem>
-                      <SelectItem value="entertainment">Entertainment (Discretionary)</SelectItem>
-                      <SelectItem value="other">Other (Discretionary)</SelectItem>
+                      <SelectItem value="essential">Essential</SelectItem>
+                      <SelectItem value="discretionary">Discretionary</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
