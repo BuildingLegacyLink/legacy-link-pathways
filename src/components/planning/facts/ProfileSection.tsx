@@ -6,11 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, Minus } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProfileData {
@@ -31,7 +27,7 @@ interface ProfileData {
 
 interface Dependent {
   name: string;
-  age: string;
+  dob: string;
 }
 
 const ProfileSection = () => {
@@ -47,6 +43,33 @@ const ProfileSection = () => {
       fetchProfile();
     }
   }, [user]);
+
+  // Helper function to format date to MM/DD/YYYY
+  const formatDateForDisplay = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-US');
+  };
+
+  // Helper function to parse MM/DD/YYYY date to ISO string
+  const parseDateInput = (dateInput: string) => {
+    if (!dateInput) return '';
+    const [month, day, year] = dateInput.split('/');
+    if (!month || !day || !year) return '';
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    if (isNaN(date.getTime())) return '';
+    return date.toISOString().split('T')[0];
+  };
+
+  // Helper function to format phone number
+  const formatPhoneNumber = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 0) return '';
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 6) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+  };
 
   const fetchProfile = async () => {
     try {
@@ -125,7 +148,7 @@ const ProfileSection = () => {
   };
 
   const addDependent = () => {
-    setDependents([...dependents, { name: '', age: '' }]);
+    setDependents([...dependents, { name: '', dob: '' }]);
   };
 
   const removeDependent = (index: number) => {
@@ -136,6 +159,17 @@ const ProfileSection = () => {
     const newDependents = [...dependents];
     newDependents[index][field] = value;
     setDependents(newDependents);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setProfile({ ...profile, phone_number: formatted });
+  };
+
+  const handleDateChange = (field: keyof ProfileData, value: string) => {
+    // Allow user to type in MM/DD/YYYY format
+    const isoDate = parseDateInput(value);
+    setProfile({ ...profile, [field]: isoDate || value });
   };
 
   if (loading) {
@@ -191,31 +225,13 @@ const ProfileSection = () => {
           </div>
 
           <div>
-            <Label>Date of Birth</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !profile.date_of_birth && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {profile.date_of_birth ? format(new Date(profile.date_of_birth), "PPP") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={profile.date_of_birth ? new Date(profile.date_of_birth) : undefined}
-                  onSelect={(date) => setProfile({ ...profile, date_of_birth: date?.toISOString().split('T')[0] })}
-                  disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="dob">Date of Birth</Label>
+            <Input
+              id="dob"
+              value={formatDateForDisplay(profile.date_of_birth)}
+              onChange={(e) => handleDateChange('date_of_birth', e.target.value)}
+              placeholder="MM/DD/YYYY"
+            />
           </div>
 
           <div>
@@ -224,8 +240,8 @@ const ProfileSection = () => {
               id="phone"
               type="tel"
               value={profile.phone_number || ''}
-              onChange={(e) => setProfile({ ...profile, phone_number: e.target.value })}
-              placeholder="Enter phone number"
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              placeholder="(555) 123-4567"
             />
           </div>
         </div>
@@ -262,31 +278,13 @@ const ProfileSection = () => {
                 />
               </div>
               <div>
-                <Label>Spouse Date of Birth</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !profile.spouse_dob && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {profile.spouse_dob ? format(new Date(profile.spouse_dob), "PPP") : "Pick spouse's date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={profile.spouse_dob ? new Date(profile.spouse_dob) : undefined}
-                      onSelect={(date) => setProfile({ ...profile, spouse_dob: date?.toISOString().split('T')[0] })}
-                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="spouseDob">Spouse Date of Birth</Label>
+                <Input
+                  id="spouseDob"
+                  value={formatDateForDisplay(profile.spouse_dob)}
+                  onChange={(e) => handleDateChange('spouse_dob', e.target.value)}
+                  placeholder="MM/DD/YYYY"
+                />
               </div>
             </div>
           )}
@@ -312,13 +310,13 @@ const ProfileSection = () => {
                     className="flex-1"
                   />
                   <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={dependent.age}
-                    onChange={(e) => updateDependent(index, 'age', e.target.value)}
-                    placeholder="Age"
-                    className="w-20"
+                    value={formatDateForDisplay(dependent.dob)}
+                    onChange={(e) => {
+                      const isoDate = parseDateInput(e.target.value);
+                      updateDependent(index, 'dob', isoDate || e.target.value);
+                    }}
+                    placeholder="MM/DD/YYYY"
+                    className="w-32"
                   />
                   <Button
                     type="button"
