@@ -96,18 +96,18 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
       <div className="space-y-3">
         <Label className="text-sm font-medium">Monthly Income</Label>
         {income.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {income.map((incomeItem) => {
               const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
               return (
-                <div key={incomeItem.id} className="flex justify-between items-center text-sm">
+                <div key={incomeItem.id} className="flex justify-between items-center text-sm h-8">
                   <span className="text-gray-600 dark:text-gray-400">{incomeItem.name}</span>
                   <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
                 </div>
               );
             })}
             <div className="pt-2 border-t dark:border-gray-700">
-              <div className="flex justify-between items-center font-semibold">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Income</span>
                 <span>{formatCurrency(planData.monthly_income)}</span>
               </div>
@@ -124,18 +124,18 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
       <div className="space-y-3">
         <Label className="text-sm font-medium">Monthly Expenses</Label>
         {expenses.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {expenses.map((expense) => {
               const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
               return (
-                <div key={expense.id} className="flex justify-between items-center text-sm">
+                <div key={expense.id} className="flex justify-between items-center text-sm h-8">
                   <span className="text-gray-600 dark:text-gray-400">{expense.name}</span>
                   <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
                 </div>
               );
             })}
             <div className="pt-2 border-t dark:border-gray-700">
-              <div className="flex justify-between items-center font-semibold">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Expenses</span>
                 <span>{formatCurrency(planData.monthly_expenses)}</span>
               </div>
@@ -152,7 +152,7 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
       <div className="space-y-3">
         <Label className="text-sm font-medium">Savings</Label>
         {savingsContributions.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {savingsContributions.map((saving) => {
               const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
               const destinationName = saving.destination_asset?.name || 'General Savings';
@@ -162,7 +162,7 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
                 : `Contribution to ${destinationName}`;
               
               return (
-                <div key={saving.id} className="flex justify-between items-center text-sm">
+                <div key={saving.id} className="flex justify-between items-center text-sm h-8">
                   <span className="text-gray-600 dark:text-gray-400">
                     {description}
                   </span>
@@ -171,13 +171,13 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
               );
             })}
             <div className="pt-2 border-t dark:border-gray-700">
-              <div className="flex justify-between items-center font-semibold">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Savings</span>
                 <span>{formatCurrency(planData.monthly_savings)}</span>
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center font-semibold">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span className={textColor}>
                   {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
                 </span>
@@ -196,7 +196,7 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
 
       <div className="space-y-2">
         <Label className="text-sm font-medium">Target Retirement Age</Label>
-        <div className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="text-lg font-semibold text-gray-900 dark:text-white h-8 flex items-center">
           {planData.target_retirement_age}
         </div>
       </div>

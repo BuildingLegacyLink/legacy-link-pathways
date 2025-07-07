@@ -177,9 +177,9 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       <div className="space-y-3">
         <Label className="text-sm font-medium">Monthly Income</Label>
         {income.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {income.map((incomeItem) => (
-              <div key={incomeItem.id} className="flex justify-between items-center text-sm">
+              <div key={incomeItem.id} className="flex justify-between items-center text-sm h-8">
                 <span className="text-gray-600 dark:text-gray-400 flex-1">{incomeItem.name}</span>
                 <div className="flex items-center space-x-2">
                   <span>$</span>
@@ -187,14 +187,14 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                     type="number"
                     value={incomeAmounts[incomeItem.id]?.toFixed(0) || '0'}
                     onChange={(e) => updateIncomeAmount(incomeItem.id, Number(e.target.value) || 0)}
-                    className="w-20 h-8 text-xs"
+                    className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
                 </div>
               </div>
             ))}
             <div className="pt-2 border-t dark:border-gray-700">
-              <div className="flex justify-between items-center font-semibold">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Income</span>
                 <span>${formatCurrency(planData.monthly_income)}</span>
               </div>
@@ -211,9 +211,9 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       <div className="space-y-3">
         <Label className="text-sm font-medium">Monthly Expenses</Label>
         {expenses.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {expenses.map((expense) => (
-              <div key={expense.id} className="flex justify-between items-center text-sm">
+              <div key={expense.id} className="flex justify-between items-center text-sm h-8">
                 <span className="text-gray-600 dark:text-gray-400 flex-1">{expense.name}</span>
                 <div className="flex items-center space-x-2">
                   <span>$</span>
@@ -221,14 +221,14 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                     type="number"
                     value={expenseAmounts[expense.id]?.toFixed(0) || '0'}
                     onChange={(e) => updateExpenseAmount(expense.id, Number(e.target.value) || 0)}
-                    className="w-20 h-8 text-xs"
+                    className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
                 </div>
               </div>
             ))}
             <div className="pt-2 border-t dark:border-gray-700">
-              <div className="flex justify-between items-center font-semibold">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Expenses</span>
                 <span>${formatCurrency(planData.monthly_expenses)}</span>
               </div>
@@ -245,7 +245,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       <div className="space-y-3">
         <Label className="text-sm font-medium">Savings</Label>
         {savingsContributions.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {savingsContributions.map((saving) => {
               const destinationName = saving.destination_asset?.name || 'General Savings';
               const goalName = saving.goal?.name;
@@ -254,7 +254,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                 : `Contribution to ${destinationName}`;
               
               return (
-                <div key={saving.id} className="flex justify-between items-center text-sm">
+                <div key={saving.id} className="flex justify-between items-center text-sm h-8">
                   <span className="text-gray-600 dark:text-gray-400 flex-1">
                     {description}
                   </span>
@@ -264,7 +264,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                       type="number"
                       value={savingsAmounts[saving.id]?.toFixed(0) || '0'}
                       onChange={(e) => updateSavingsAmount(saving.id, Number(e.target.value) || 0)}
-                      className="w-20 h-8 text-xs"
+                      className="w-20 h-7 text-xs"
                     />
                     <span className="text-xs">/mo</span>
                   </div>
@@ -272,13 +272,13 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
               );
             })}
             <div className="pt-2 border-t dark:border-gray-700">
-              <div className="flex justify-between items-center font-semibold">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Savings</span>
                 <span>${formatCurrency(planData.monthly_savings)}</span>
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center font-semibold">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center font-semibold h-8">
                 <span className={textColor}>
                   {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
                 </span>
@@ -307,14 +307,16 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         <Label className="text-sm font-medium">
           Retirement Age: {planData.target_retirement_age}
         </Label>
-        <Slider
-          value={[planData.target_retirement_age]}
-          onValueChange={([value]) => updatePlan('target_retirement_age', value)}
-          max={75}
-          min={30}
-          step={1}
-          className="w-full"
-        />
+        <div className="h-8 flex items-center">
+          <Slider
+            value={[planData.target_retirement_age]}
+            onValueChange={([value]) => updatePlan('target_retirement_age', value)}
+            max={75}
+            min={30}
+            step={1}
+            className="w-full"
+          />
+        </div>
       </div>
     </div>
   );
