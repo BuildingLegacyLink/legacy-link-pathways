@@ -179,6 +179,31 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     total_assets: currentAssets?.reduce((sum, asset) => sum + Number(asset.value), 0) || 0,
   };
 
+  // Calculate weighted average expense growth rate
+  const calculateExpenseGrowthRate = () => {
+    if (!expenses || expenses.length === 0) return 0.03; // Default 3% inflation
+    
+    let totalWeightedGrowth = 0;
+    let totalExpenses = 0;
+    
+    expenses.forEach(expense => {
+      const amount = Number(expense.amount);
+      // Use the growth_rate from the expense if available, otherwise default to 3%
+      const growthRate = (expense.growth_rate != null ? Number(expense.growth_rate) : 3.0) / 100;
+      
+      // Convert to monthly if needed
+      let monthlyAmount = amount;
+      if (expense.frequency === 'annual') monthlyAmount = amount / 12;
+      if (expense.frequency === 'weekly') monthlyAmount = amount * 4.33;
+      if (expense.frequency === 'quarterly') monthlyAmount = amount / 3;
+      
+      totalWeightedGrowth += monthlyAmount * growthRate;
+      totalExpenses += monthlyAmount;
+    });
+    
+    return totalExpenses > 0 ? totalWeightedGrowth / totalExpenses : 0.03;
+  };
+
   // Calculate probability of success for both plans
   const currentPoS = calculateProbabilityOfSuccess(currentSituation);
   const editablePoS = editablePlan ? calculateProbabilityOfSuccess(editablePlan) : 0;
@@ -215,6 +240,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     const currentAge = 30; // Assuming current age of 30 for demo
     const retirementAge = planData.target_retirement_age;
     const deathAge = planData.assets_last_until_age;
+    const expenseGrowthRate = calculateExpenseGrowthRate();
     
     // Initialize asset balances from current assets
     const assetBalances = new Map();
@@ -241,9 +267,12 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       const isRetired = age >= retirementAge;
       const yearsFromNow = age - currentAge;
       
+      // Apply expense growth over time
+      const baseAnnualExpenses = planData.monthly_expenses * 12;
+      const inflatedAnnualExpenses = baseAnnualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromNow);
+      
       // Base calculations from plan
       const baseSavings = planData.monthly_savings * 12;
-      const annualExpenses = planData.monthly_expenses * 12;
       const annualIncome = isRetired ? baseSavings * 0.04 : planData.monthly_income * 12; // 4% withdrawal rule
       
       // Calculate portfolio value with contributions
@@ -280,14 +309,14 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       portfolioValue = Math.max(portfolioValue, totalAssetValue);
       
       const netWorth = portfolioValue;
-      const cashFlow = annualIncome - annualExpenses + (isRetired ? 0 : totalAnnualContributions);
+      const cashFlow = annualIncome - inflatedAnnualExpenses + (isRetired ? 0 : totalAnnualContributions);
       
       projections.push({
         year,
         age,
         net_worth: netWorth,
         portfolio_value: portfolioValue,
-        annual_expenses: annualExpenses,
+        annual_expenses: inflatedAnnualExpenses, // Now using inflated expenses
         cash_flow: cashFlow,
       });
     }
