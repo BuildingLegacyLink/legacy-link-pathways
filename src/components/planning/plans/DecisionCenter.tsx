@@ -616,13 +616,14 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
           <CardHeader>
             <CardTitle className="text-xl text-gray-900 dark:text-white">
-              Overlay Graph: Current Plan vs Your Plan
+              Portfolio Value: Current Situation vs {plan?.name || 'Your Plan'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ComparisonChart 
               currentPlan={currentSituation}
               editablePlan={editablePlan}
+              planName={plan?.name}
             />
           </CardContent>
         </Card>
