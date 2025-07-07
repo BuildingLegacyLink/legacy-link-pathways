@@ -414,8 +414,6 @@ export type Database = {
           citizenship_status: string | null
           created_at: string
           date_of_birth: string | null
-          dependents_ages: string | null
-          dependents_count: number | null
           dependents_data: string | null
           email: string | null
           employment_status: string | null
@@ -436,8 +434,6 @@ export type Database = {
           citizenship_status?: string | null
           created_at?: string
           date_of_birth?: string | null
-          dependents_ages?: string | null
-          dependents_count?: number | null
           dependents_data?: string | null
           email?: string | null
           employment_status?: string | null
@@ -458,8 +454,6 @@ export type Database = {
           citizenship_status?: string | null
           created_at?: string
           date_of_birth?: string | null
-          dependents_ages?: string | null
-          dependents_count?: number | null
           dependents_data?: string | null
           email?: string | null
           employment_status?: string | null
