@@ -92,9 +92,9 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Initialize and update local inputs when data loads or plan data changes
+  // Initialize local inputs when data loads
   useEffect(() => {
-    if (income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) {
+    if ((income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) && Object.keys(localInputs).length === 0) {
       const newLocalInputs: { [key: string]: string } = {};
       
       // Calculate original totals
@@ -114,7 +114,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         totalOriginalSavings += Number(item.amount) * getFrequencyMultiplier(item.frequency);
       });
       
-      // Set values from plan data, distributing proportionally
+      // Set initial values directly from plan data
       income.forEach((item) => {
         const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
         const proportion = totalOriginalIncome > 0 ? originalAmount / totalOriginalIncome : 1 / income.length;
@@ -138,7 +138,42 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       
       setLocalInputs(newLocalInputs);
     }
-  }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
+  }, [income, expenses, savingsContributions]);
+
+  // Reset inputs when plan data is reset externally (like "Reset to Current Situation")
+  useEffect(() => {
+    // Only reset if we have existing inputs and the plan data appears to be reset to original values
+    if (Object.keys(localInputs).length > 0 && income.length > 0 && expenses.length > 0) {
+      const originalIncome = income.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
+      const originalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
+      const originalSavings = savingsContributions.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
+      
+      // If plan data matches original data, reset inputs
+      if (Math.abs(planData.monthly_income - originalIncome) < 1 && 
+          Math.abs(planData.monthly_expenses - originalExpenses) < 1 &&
+          Math.abs(planData.monthly_savings - originalSavings) < 1) {
+        
+        const newLocalInputs: { [key: string]: string } = {};
+        
+        income.forEach((item) => {
+          const monthlyAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
+          newLocalInputs[`income_${item.id}`] = Math.round(monthlyAmount).toString();
+        });
+        
+        expenses.forEach((item) => {
+          const monthlyAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
+          newLocalInputs[`expense_${item.id}`] = Math.round(monthlyAmount).toString();
+        });
+        
+        savingsContributions.forEach((item) => {
+          const monthlyAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
+          newLocalInputs[`saving_${item.id}`] = Math.round(monthlyAmount).toString();
+        });
+        
+        setLocalInputs(newLocalInputs);
+      }
+    }
+  }, [planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
 
   // Handle input changes - allow empty string and numbers only
   const handleInputChange = (key: string, value: string) => {
