@@ -416,6 +416,7 @@ export type Database = {
           date_of_birth: string | null
           dependents_ages: string | null
           dependents_count: number | null
+          dependents_data: string | null
           email: string | null
           employment_status: string | null
           first_name: string | null
@@ -426,6 +427,8 @@ export type Database = {
           phone_number: string | null
           projected_death_age: number | null
           retirement_age: number | null
+          spouse_dob: string | null
+          spouse_name: string | null
           updated_at: string
         }
         Insert: {
@@ -435,6 +438,7 @@ export type Database = {
           date_of_birth?: string | null
           dependents_ages?: string | null
           dependents_count?: number | null
+          dependents_data?: string | null
           email?: string | null
           employment_status?: string | null
           first_name?: string | null
@@ -445,6 +449,8 @@ export type Database = {
           phone_number?: string | null
           projected_death_age?: number | null
           retirement_age?: number | null
+          spouse_dob?: string | null
+          spouse_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -454,6 +460,7 @@ export type Database = {
           date_of_birth?: string | null
           dependents_ages?: string | null
           dependents_count?: number | null
+          dependents_data?: string | null
           email?: string | null
           employment_status?: string | null
           first_name?: string | null
@@ -464,6 +471,8 @@ export type Database = {
           phone_number?: string | null
           projected_death_age?: number | null
           retirement_age?: number | null
+          spouse_dob?: string | null
+          spouse_name?: string | null
           updated_at?: string
         }
         Relationships: []

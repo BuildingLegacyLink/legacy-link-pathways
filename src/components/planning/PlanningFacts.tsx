@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Target, TrendingUp, DollarSign, Calculator, PieChart, Shield, User } from 'lucide-react';
+import { Target, TrendingUp, DollarSign, Calculator, PieChart, User } from 'lucide-react';
 import GoalsSection from './facts/GoalsSection';
 import NetWorthSection from './facts/NetWorthSection';
 import IncomeSection from './facts/IncomeSection';
@@ -17,7 +17,6 @@ const PlanningFacts = () => {
     { id: 'income', name: 'Income', icon: DollarSign },
     { id: 'expenses', name: 'Expenses & Taxes', icon: Calculator },
     { id: 'savings', name: 'Savings', icon: PieChart },
-    { id: 'allocation', name: 'Asset Allocation', icon: Shield },
     { id: 'profile', name: 'Profile', icon: User }
   ];
 

@@ -20,12 +20,18 @@ interface ProfileData {
   date_of_birth?: string;
   phone_number?: string;
   marital_status?: string;
-  dependents_count?: number;
-  dependents_ages?: string;
+  spouse_name?: string;
+  spouse_dob?: string;
+  dependents_data?: string;
   address?: string;
   citizenship_status?: string;
   employment_status?: string;
   occupation?: string;
+}
+
+interface Dependent {
+  name: string;
+  age: string;
 }
 
 const ProfileSection = () => {
@@ -34,7 +40,7 @@ const ProfileSection = () => {
   const [profile, setProfile] = useState<ProfileData>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [dependentAges, setDependentAges] = useState<string[]>([]);
+  const [dependents, setDependents] = useState<Dependent[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -49,20 +55,20 @@ const ProfileSection = () => {
         .from('profiles')
         .select('*')
         .eq('id', user?.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
 
       if (data) {
         setProfile(data);
-        // Parse dependent ages if they exist
-        if (data.dependents_ages) {
+        // Parse dependents data if it exists
+        if (data.dependents_data) {
           try {
-            setDependentAges(JSON.parse(data.dependents_ages));
+            setDependents(JSON.parse(data.dependents_data));
           } catch {
-            setDependentAges([]);
+            setDependents([]);
           }
         }
       } else {
@@ -92,7 +98,7 @@ const ProfileSection = () => {
       setSaving(true);
       const profileData = {
         ...profile,
-        dependents_ages: JSON.stringify(dependentAges),
+        dependents_data: JSON.stringify(dependents),
         id: user.id,
       };
 
@@ -118,18 +124,18 @@ const ProfileSection = () => {
     }
   };
 
-  const addDependentAge = () => {
-    setDependentAges([...dependentAges, '']);
+  const addDependent = () => {
+    setDependents([...dependents, { name: '', age: '' }]);
   };
 
-  const removeDependentAge = (index: number) => {
-    setDependentAges(dependentAges.filter((_, i) => i !== index));
+  const removeDependent = (index: number) => {
+    setDependents(dependents.filter((_, i) => i !== index));
   };
 
-  const updateDependentAge = (index: number, age: string) => {
-    const newAges = [...dependentAges];
-    newAges[index] = age;
-    setDependentAges(newAges);
+  const updateDependent = (index: number, field: keyof Dependent, value: string) => {
+    const newDependents = [...dependents];
+    newDependents[index][field] = value;
+    setDependents(newDependents);
   };
 
   if (loading) {
@@ -178,7 +184,7 @@ const ProfileSection = () => {
             <Input
               id="email"
               type="email"
-              value={profile.email || ''}
+              value={profile.email || user?.email || ''}
               onChange={(e) => setProfile({ ...profile, email: e.target.value })}
               placeholder="Enter email address"
             />
@@ -242,36 +248,75 @@ const ProfileSection = () => {
             </Select>
           </div>
 
+          {/* Spouse Information - only show if married */}
+          {profile.marital_status === 'married' && (
+            <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <h4 className="font-medium text-gray-900 dark:text-white">Spouse Information</h4>
+              <div>
+                <Label htmlFor="spouseName">Spouse Name</Label>
+                <Input
+                  id="spouseName"
+                  value={profile.spouse_name || ''}
+                  onChange={(e) => setProfile({ ...profile, spouse_name: e.target.value })}
+                  placeholder="Enter spouse's name"
+                />
+              </div>
+              <div>
+                <Label>Spouse Date of Birth</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !profile.spouse_dob && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {profile.spouse_dob ? format(new Date(profile.spouse_dob), "PPP") : "Pick spouse's date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={profile.spouse_dob ? new Date(profile.spouse_dob) : undefined}
+                      onSelect={(date) => setProfile({ ...profile, spouse_dob: date?.toISOString().split('T')[0] })}
+                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          )}
+
           <div>
             <Label>Dependents</Label>
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min="0"
-                  value={profile.dependents_count || 0}
-                  onChange={(e) => setProfile({ ...profile, dependents_count: parseInt(e.target.value) || 0 })}
-                  placeholder="Number of dependents"
-                  className="w-32"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addDependentAge}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Age
-                </Button>
-              </div>
-              {dependentAges.map((age, index) => (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addDependent}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Dependent
+              </Button>
+              {dependents.map((dependent, index) => (
                 <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={dependent.name}
+                    onChange={(e) => updateDependent(index, 'name', e.target.value)}
+                    placeholder="Name"
+                    className="flex-1"
+                  />
                   <Input
                     type="number"
                     min="0"
                     max="100"
-                    value={age}
-                    onChange={(e) => updateDependentAge(index, e.target.value)}
+                    value={dependent.age}
+                    onChange={(e) => updateDependent(index, 'age', e.target.value)}
                     placeholder="Age"
                     className="w-20"
                   />
@@ -279,7 +324,7 @@ const ProfileSection = () => {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeDependentAge(index)}
+                    onClick={() => removeDependent(index)}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
