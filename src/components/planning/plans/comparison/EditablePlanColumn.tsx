@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,6 +100,11 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
   const [expenseAmounts, setExpenseAmounts] = React.useState<{ [key: string]: number }>({});
   const [savingsAmounts, setSavingsAmounts] = React.useState<{ [key: string]: number }>({});
 
+  // State for input display values (strings for better input handling)
+  const [incomeInputs, setIncomeInputs] = React.useState<{ [key: string]: string }>({});
+  const [expenseInputs, setExpenseInputs] = React.useState<{ [key: string]: string }>({});
+  const [savingsInputs, setSavingsInputs] = React.useState<{ [key: string]: string }>({});
+
   // Initialize amounts from plan data or original data
   React.useEffect(() => {
     if (income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) {
@@ -158,7 +162,33 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
 
-  const updateIncomeAmount = (incomeId: string, amount: number) => {
+  // Initialize input display values when amounts change
+  React.useEffect(() => {
+    const newIncomeInputs: { [key: string]: string } = {};
+    const newExpenseInputs: { [key: string]: string } = {};
+    const newSavingsInputs: { [key: string]: string } = {};
+
+    Object.keys(incomeAmounts).forEach(id => {
+      newIncomeInputs[id] = incomeAmounts[id]?.toFixed(0) || '0';
+    });
+    Object.keys(expenseAmounts).forEach(id => {
+      newExpenseInputs[id] = expenseAmounts[id]?.toFixed(0) || '0';
+    });
+    Object.keys(savingsAmounts).forEach(id => {
+      newSavingsInputs[id] = savingsAmounts[id]?.toFixed(0) || '0';
+    });
+
+    setIncomeInputs(newIncomeInputs);
+    setExpenseInputs(newExpenseInputs);
+    setSavingsInputs(newSavingsInputs);
+  }, [incomeAmounts, expenseAmounts, savingsAmounts]);
+
+  const updateIncomeAmount = (incomeId: string, inputValue: string) => {
+    // Update input display value immediately
+    setIncomeInputs(prev => ({ ...prev, [incomeId]: inputValue }));
+    
+    // Convert to number and update amounts
+    const amount = Number(inputValue) || 0;
     const newIncomeAmounts = { ...incomeAmounts, [incomeId]: amount };
     setIncomeAmounts(newIncomeAmounts);
     
@@ -169,7 +199,12 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     });
   };
 
-  const updateExpenseAmount = (expenseId: string, amount: number) => {
+  const updateExpenseAmount = (expenseId: string, inputValue: string) => {
+    // Update input display value immediately
+    setExpenseInputs(prev => ({ ...prev, [expenseId]: inputValue }));
+    
+    // Convert to number and update amounts
+    const amount = Number(inputValue) || 0;
     const newExpenseAmounts = { ...expenseAmounts, [expenseId]: amount };
     setExpenseAmounts(newExpenseAmounts);
     
@@ -180,7 +215,12 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     });
   };
 
-  const updateSavingsAmount = (savingId: string, amount: number) => {
+  const updateSavingsAmount = (savingId: string, inputValue: string) => {
+    // Update input display value immediately
+    setSavingsInputs(prev => ({ ...prev, [savingId]: inputValue }));
+    
+    // Convert to number and update amounts
+    const amount = Number(inputValue) || 0;
     const newSavingsAmounts = { ...savingsAmounts, [savingId]: amount };
     setSavingsAmounts(newSavingsAmounts);
     
@@ -212,8 +252,8 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="number"
-                    value={incomeAmounts[incomeItem.id]?.toFixed(0) || '0'}
-                    onChange={(e) => updateIncomeAmount(incomeItem.id, Number(e.target.value) || 0)}
+                    value={incomeInputs[incomeItem.id] || '0'}
+                    onChange={(e) => updateIncomeAmount(incomeItem.id, e.target.value)}
                     className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
@@ -246,8 +286,8 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="number"
-                    value={expenseAmounts[expense.id]?.toFixed(0) || '0'}
-                    onChange={(e) => updateExpenseAmount(expense.id, Number(e.target.value) || 0)}
+                    value={expenseInputs[expense.id] || '0'}
+                    onChange={(e) => updateExpenseAmount(expense.id, e.target.value)}
                     className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
@@ -289,8 +329,8 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                     <span>$</span>
                     <Input
                       type="number"
-                      value={savingsAmounts[saving.id]?.toFixed(0) || '0'}
-                      onChange={(e) => updateSavingsAmount(saving.id, Number(e.target.value) || 0)}
+                      value={savingsInputs[saving.id] || '0'}
+                      onChange={(e) => updateSavingsAmount(saving.id, e.target.value)}
                       className="w-20 h-7 text-xs"
                     />
                     <span className="text-xs">/mo</span>
