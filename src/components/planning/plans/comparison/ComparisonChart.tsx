@@ -143,7 +143,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           <Tooltip 
             formatter={(value: number, name: string) => [
               formatCurrency(value), 
-              name === 'currentValue' ? 'Current Situation' : planName || 'Your Plan'
+              name === 'currentValue' ? 'Current Situation' : (planName || 'New Plan')
             ]}
             labelFormatter={(age) => `Age: ${age}`}
             contentStyle={{ 
@@ -181,7 +181,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
             strokeWidth={3}
             dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
             activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
-            name={planName || 'Your Plan'}
+            name={planName || 'New Plan'}
           />
         </LineChart>
       </ResponsiveContainer>
