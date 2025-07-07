@@ -37,6 +37,12 @@ const ProfileSection = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dependents, setDependents] = useState<Dependent[]>([]);
+  
+  // Store raw input values for date fields to avoid formatting conflicts
+  const [rawDateInputs, setRawDateInputs] = useState({
+    date_of_birth: '',
+    spouse_dob: '',
+  });
 
   useEffect(() => {
     if (user) {
@@ -54,11 +60,32 @@ const ProfileSection = () => {
 
   // Helper function to parse MM/DD/YYYY date to ISO string
   const parseDateInput = (dateInput: string) => {
-    if (!dateInput) return '';
-    const [month, day, year] = dateInput.split('/');
-    if (!month || !day || !year) return '';
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    if (!dateInput || dateInput.trim() === '') return '';
+    
+    // Handle various date formats
+    let month, day, year;
+    
+    // Try MM/DD/YYYY or M/D/YYYY format
+    const parts = dateInput.split('/');
+    if (parts.length === 3) {
+      [month, day, year] = parts;
+    } else {
+      return ''; // Invalid format
+    }
+    
+    const monthNum = parseInt(month);
+    const dayNum = parseInt(day);
+    const yearNum = parseInt(year);
+    
+    // Basic validation
+    if (isNaN(monthNum) || isNaN(dayNum) || isNaN(yearNum)) return '';
+    if (monthNum < 1 || monthNum > 12) return '';
+    if (dayNum < 1 || dayNum > 31) return '';
+    if (yearNum < 1900 || yearNum > new Date().getFullYear()) return '';
+    
+    const date = new Date(yearNum, monthNum - 1, dayNum);
     if (isNaN(date.getTime())) return '';
+    
     return date.toISOString().split('T')[0];
   };
 
@@ -86,6 +113,11 @@ const ProfileSection = () => {
 
       if (data) {
         setProfile(data);
+        // Set raw date inputs for display
+        setRawDateInputs({
+          date_of_birth: formatDateForDisplay(data.date_of_birth) || '',
+          spouse_dob: formatDateForDisplay(data.spouse_dob) || '',
+        });
         // Parse dependents data if it exists
         if (data.dependents_data) {
           try {
@@ -161,15 +193,43 @@ const ProfileSection = () => {
     setDependents(newDependents);
   };
 
+  const handleDependentDateBlur = (index: number, value: string) => {
+    if (value.trim() === '') {
+      updateDependent(index, 'dob', '');
+      return;
+    }
+    
+    const isoDate = parseDateInput(value);
+    if (isoDate) {
+      updateDependent(index, 'dob', isoDate);
+    }
+    // If invalid, keep the raw input so user can continue editing
+  };
+
   const handlePhoneChange = (value: string) => {
     const formatted = formatPhoneNumber(value);
     setProfile({ ...profile, phone_number: formatted });
   };
 
-  const handleDateChange = (field: keyof ProfileData, value: string) => {
-    // Allow user to type in MM/DD/YYYY format
-    const isoDate = parseDateInput(value);
-    setProfile({ ...profile, [field]: isoDate || value });
+  const handleDateChange = (field: keyof typeof rawDateInputs, value: string) => {
+    // Update the raw input value as user types
+    setRawDateInputs(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateBlur = (field: keyof ProfileData, rawValue: string) => {
+    // Only parse and validate when user finishes typing
+    if (rawValue.trim() === '') {
+      setProfile(prev => ({ ...prev, [field]: '' }));
+      return;
+    }
+    
+    const isoDate = parseDateInput(rawValue);
+    if (isoDate) {
+      setProfile(prev => ({ ...prev, [field]: isoDate }));
+      // Update raw input to show formatted version
+      setRawDateInputs(prev => ({ ...prev, [field as keyof typeof rawDateInputs]: formatDateForDisplay(isoDate) }));
+    }
+    // If invalid, keep the raw input so user can continue editing
   };
 
   if (loading) {
@@ -228,8 +288,9 @@ const ProfileSection = () => {
             <Label htmlFor="dob">Date of Birth</Label>
             <Input
               id="dob"
-              value={formatDateForDisplay(profile.date_of_birth)}
+              value={rawDateInputs.date_of_birth}
               onChange={(e) => handleDateChange('date_of_birth', e.target.value)}
+              onBlur={(e) => handleDateBlur('date_of_birth', e.target.value)}
               placeholder="MM/DD/YYYY"
             />
           </div>
@@ -281,8 +342,9 @@ const ProfileSection = () => {
                 <Label htmlFor="spouseDob">Spouse Date of Birth</Label>
                 <Input
                   id="spouseDob"
-                  value={formatDateForDisplay(profile.spouse_dob)}
+                  value={rawDateInputs.spouse_dob}
                   onChange={(e) => handleDateChange('spouse_dob', e.target.value)}
+                  onBlur={(e) => handleDateBlur('spouse_dob', e.target.value)}
                   placeholder="MM/DD/YYYY"
                 />
               </div>
@@ -310,11 +372,9 @@ const ProfileSection = () => {
                     className="flex-1"
                   />
                   <Input
-                    value={formatDateForDisplay(dependent.dob)}
-                    onChange={(e) => {
-                      const isoDate = parseDateInput(e.target.value);
-                      updateDependent(index, 'dob', isoDate || e.target.value);
-                    }}
+                    value={dependent.dob ? formatDateForDisplay(dependent.dob) : ''}
+                    onChange={(e) => updateDependent(index, 'dob', e.target.value)}
+                    onBlur={(e) => handleDependentDateBlur(index, e.target.value)}
                     placeholder="MM/DD/YYYY"
                     className="w-32"
                   />
