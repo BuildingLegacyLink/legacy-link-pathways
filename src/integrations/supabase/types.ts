@@ -59,6 +59,7 @@ export type Database = {
           category: string
           created_at: string
           frequency: string
+          growth_rate: number | null
           id: string
           name: string
           type: string
@@ -70,6 +71,7 @@ export type Database = {
           category: string
           created_at?: string
           frequency?: string
+          growth_rate?: number | null
           id?: string
           name: string
           type: string
@@ -81,6 +83,7 @@ export type Database = {
           category?: string
           created_at?: string
           frequency?: string
+          growth_rate?: number | null
           id?: string
           name?: string
           type?: string

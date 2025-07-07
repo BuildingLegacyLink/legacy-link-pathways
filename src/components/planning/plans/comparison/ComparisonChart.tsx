@@ -19,6 +19,19 @@ interface ComparisonChartProps {
   planName?: string;
 }
 
+interface ExpenseData {
+  id: string;
+  amount: number;
+  category: string;
+  created_at: string;
+  frequency: string;
+  name: string;
+  type: string;
+  updated_at: string;
+  user_id: string;
+  growth_rate: number | null;
+}
+
 const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChartProps) => {
   const { user } = useAuth();
 
@@ -32,7 +45,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         .select('*')
         .eq('user_id', user.id);
       if (error) throw error;
-      return data;
+      return data as ExpenseData[];
     },
     enabled: !!user,
   });
