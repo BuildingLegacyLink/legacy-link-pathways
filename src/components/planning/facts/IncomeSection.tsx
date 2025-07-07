@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,11 @@ const IncomeSection = () => {
     frequency: 'monthly',
     start_date: '',
     end_date: '',
-    is_current: true
+    is_current: true,
+    start_date_type: 'none',
+    start_date_value: null as number | null,
+    end_date_type: 'none',
+    end_date_value: null as number | null
   });
   const [editData, setEditData] = useState({
     name: '',
@@ -32,8 +37,38 @@ const IncomeSection = () => {
     frequency: 'monthly',
     start_date: '',
     end_date: '',
-    is_current: true
+    is_current: true,
+    start_date_type: 'none',
+    start_date_value: null as number | null,
+    end_date_type: 'none',
+    end_date_value: null as number | null
   });
+
+  // Fetch user profile for first name
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  const firstName = profile?.first_name || 'User';
+
+  // Generate year options (current year + 50 years)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 51 }, (_, i) => currentYear + i);
+
+  // Generate age options (current age to 100)
+  const ageOptions = Array.from({ length: 71 }, (_, i) => 30 + i); // Assuming starting from age 30
 
   const { data: incomes = [], isLoading } = useQuery({
     queryKey: ['income', user?.id],
@@ -75,7 +110,11 @@ const IncomeSection = () => {
         frequency: 'monthly',
         start_date: '',
         end_date: '',
-        is_current: true
+        is_current: true,
+        start_date_type: 'none',
+        start_date_value: null,
+        end_date_type: 'none',
+        end_date_value: null
       });
       setIsAdding(false);
       toast({ title: 'Success', description: 'Income added successfully!' });
@@ -145,7 +184,11 @@ const IncomeSection = () => {
       frequency: income.frequency,
       start_date: income.start_date || '',
       end_date: income.end_date || '',
-      is_current: income.is_current
+      is_current: income.is_current,
+      start_date_type: income.start_date_type || 'none',
+      start_date_value: income.start_date_value,
+      end_date_type: income.end_date_type || 'none',
+      end_date_value: income.end_date_value
     });
   };
 
@@ -156,6 +199,71 @@ const IncomeSection = () => {
     }
     updateIncomeMutation.mutate({ id, data: editData });
   };
+
+  const formatDateDescription = (dateType: string, dateValue: number | null) => {
+    switch (dateType) {
+      case 'retirement':
+        return `At ${firstName}'s Retirement`;
+      case 'death':
+        return `At ${firstName}'s Death`;
+      case 'calendar_year':
+        return dateValue ? `Year ${dateValue}` : 'Calendar Year';
+      case 'age':
+        return dateValue ? `At Age ${dateValue}` : 'At Age';
+      default:
+        return 'Not Set';
+    }
+  };
+
+  const renderDateDropdowns = (
+    dateType: string,
+    dateValue: number | null,
+    onDateTypeChange: (value: string) => void,
+    onDateValueChange: (value: number | null) => void,
+    label: string
+  ) => (
+    <div className="space-y-2">
+      <Label className="text-gray-900 dark:text-white">{label}</Label>
+      <Select value={dateType} onValueChange={onDateTypeChange}>
+        <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+          <SelectItem value="none" className="dark:text-white">Not Set</SelectItem>
+          <SelectItem value="retirement" className="dark:text-white">At {firstName}'s Retirement</SelectItem>
+          <SelectItem value="death" className="dark:text-white">At {firstName}'s Death</SelectItem>
+          <SelectItem value="calendar_year" className="dark:text-white">Calendar Year</SelectItem>
+          <SelectItem value="age" className="dark:text-white">At Age</SelectItem>
+        </SelectContent>
+      </Select>
+      
+      {dateType === 'calendar_year' && (
+        <Select value={dateValue?.toString() || ''} onValueChange={(value) => onDateValueChange(value ? parseInt(value) : null)}>
+          <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+            <SelectValue placeholder="Select year" />
+          </SelectTrigger>
+          <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+            {yearOptions.map(year => (
+              <SelectItem key={year} value={year.toString()} className="dark:text-white">{year}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      
+      {dateType === 'age' && (
+        <Select value={dateValue?.toString() || ''} onValueChange={(value) => onDateValueChange(value ? parseInt(value) : null)}>
+          <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
+            <SelectValue placeholder="Select age" />
+          </SelectTrigger>
+          <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+            {ageOptions.map(age => (
+              <SelectItem key={age} value={age.toString()} className="dark:text-white">{age}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    </div>
+  );
 
   const renderIncomeItem = (income: any) => (
     <div key={income.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -211,6 +319,25 @@ const IncomeSection = () => {
               </Select>
             </div>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {renderDateDropdowns(
+              editData.start_date_type,
+              editData.start_date_value,
+              (value) => setEditData({ ...editData, start_date_type: value }),
+              (value) => setEditData({ ...editData, start_date_value: value }),
+              'Start Date'
+            )}
+            
+            {renderDateDropdowns(
+              editData.end_date_type,
+              editData.end_date_value,
+              (value) => setEditData({ ...editData, end_date_type: value }),
+              (value) => setEditData({ ...editData, end_date_value: value }),
+              'End Date'
+            )}
+          </div>
+          
           <div className="flex items-center gap-4">
             <input
               type="checkbox"
@@ -247,9 +374,14 @@ const IncomeSection = () => {
             <div className="text-sm text-gray-600 dark:text-gray-300">
               {formatCurrency(income.amount)} {income.frequency}
             </div>
-            {income.start_date && (
+            {(income.start_date_type && income.start_date_type !== 'none') && (
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Starts: {new Date(income.start_date).toLocaleDateString()}
+                Starts: {formatDateDescription(income.start_date_type, income.start_date_value)}
+              </div>
+            )}
+            {(income.end_date_type && income.end_date_type !== 'none') && (
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Ends: {formatDateDescription(income.end_date_type, income.end_date_value)}
               </div>
             )}
           </div>
@@ -388,6 +520,24 @@ const IncomeSection = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {renderDateDropdowns(
+                    newIncome.start_date_type,
+                    newIncome.start_date_value,
+                    (value) => setNewIncome({ ...newIncome, start_date_type: value }),
+                    (value) => setNewIncome({ ...newIncome, start_date_value: value }),
+                    'Start Date'
+                  )}
+                  
+                  {renderDateDropdowns(
+                    newIncome.end_date_type,
+                    newIncome.end_date_value,
+                    (value) => setNewIncome({ ...newIncome, end_date_type: value }),
+                    (value) => setNewIncome({ ...newIncome, end_date_value: value }),
+                    'End Date'
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-4">

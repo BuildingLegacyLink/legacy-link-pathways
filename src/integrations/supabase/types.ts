@@ -187,11 +187,15 @@ export type Database = {
           amount: number
           created_at: string
           end_date: string | null
+          end_date_type: string | null
+          end_date_value: number | null
           frequency: string
           id: string
           is_current: boolean | null
           name: string
           start_date: string | null
+          start_date_type: string | null
+          start_date_value: number | null
           type: string
           updated_at: string
           user_id: string
@@ -200,11 +204,15 @@ export type Database = {
           amount?: number
           created_at?: string
           end_date?: string | null
+          end_date_type?: string | null
+          end_date_value?: number | null
           frequency?: string
           id?: string
           is_current?: boolean | null
           name: string
           start_date?: string | null
+          start_date_type?: string | null
+          start_date_value?: number | null
           type: string
           updated_at?: string
           user_id: string
@@ -213,11 +221,15 @@ export type Database = {
           amount?: number
           created_at?: string
           end_date?: string | null
+          end_date_type?: string | null
+          end_date_value?: number | null
           frequency?: string
           id?: string
           is_current?: boolean | null
           name?: string
           start_date?: string | null
+          start_date_type?: string | null
+          start_date_value?: number | null
           type?: string
           updated_at?: string
           user_id?: string
