@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -643,7 +644,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       {/* Plan Comparison Split View */}
       <div className="space-y-6">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Plan Builder: Compare Current vs. Your Plan
+          Plan Builder: Compare Current vs. {plan?.name || 'Your Plan'}
         </h3>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -669,7 +670,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl text-gray-900 dark:text-white">
-                  Your Plan
+                  {plan?.name || 'Your Plan'}
                 </CardTitle>
                 <div title="Success means your plan's assets are likely to last through retirement in most market scenarios.">
                   {getProbabilityBadge(editablePoS)}
