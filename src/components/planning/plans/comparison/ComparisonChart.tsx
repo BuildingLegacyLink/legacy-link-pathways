@@ -24,6 +24,22 @@ type ExpenseData = Tables<'expenses'>;
 const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChartProps) => {
   const { user } = useAuth();
 
+  // Fetch user profile to get date of birth
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('date_of_birth')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Fetch expenses to get growth rates
   const { data: expenses } = useQuery({
     queryKey: ['expenses', user?.id],
@@ -38,6 +54,22 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     },
     enabled: !!user,
   });
+
+  // Calculate current age from date of birth
+  const calculateCurrentAge = () => {
+    if (!profile?.date_of_birth) return 30; // Default fallback
+    
+    const today = new Date();
+    const birthDate = new Date(profile.date_of_birth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -75,7 +107,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
   // Generate projection data for both plans
   const generateProjections = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = [];
-    const currentAge = 30; // Assuming current age
+    const currentAge = calculateCurrentAge(); // Use calculated age from user's DOB
     const retirementAge = plan.target_retirement_age;
     const deathAge = 85;
     const annualGrowthRate = 0.07; // 7% annual growth
