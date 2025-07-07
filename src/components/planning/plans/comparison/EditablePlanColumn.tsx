@@ -96,72 +96,99 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Calculate total income, expenses and savings when individual items change
-  const calculateTotals = (incomeAmounts: { [key: string]: number }, expenseAmounts: { [key: string]: number }, savingsAmounts: { [key: string]: number }) => {
-    const totalIncome = Object.values(incomeAmounts).reduce((sum, amount) => sum + amount, 0);
-    const totalExpenses = Object.values(expenseAmounts).reduce((sum, amount) => sum + amount, 0);
-    const totalSavings = Object.values(savingsAmounts).reduce((sum, amount) => sum + amount, 0);
-    
-    onPlanChange({
-      ...planData,
-      monthly_income: totalIncome,
-      monthly_expenses: totalExpenses,
-      monthly_savings: totalSavings,
-    });
-  };
-
   // State for individual income, expense and savings amounts
   const [incomeAmounts, setIncomeAmounts] = React.useState<{ [key: string]: number }>({});
   const [expenseAmounts, setExpenseAmounts] = React.useState<{ [key: string]: number }>({});
   const [savingsAmounts, setSavingsAmounts] = React.useState<{ [key: string]: number }>({});
 
-  // Initialize amounts from original data
+  // Initialize amounts from plan data or original data
   React.useEffect(() => {
-    const initialIncomeAmounts: { [key: string]: number } = {};
-    income.forEach((incomeItem) => {
-      const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
-      initialIncomeAmounts[incomeItem.id] = monthlyAmount;
-    });
-
-    const initialExpenseAmounts: { [key: string]: number } = {};
-    expenses.forEach((expense) => {
-      const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
-      initialExpenseAmounts[expense.id] = monthlyAmount;
-    });
-
-    const initialSavingsAmounts: { [key: string]: number } = {};
-    savingsContributions.forEach((saving) => {
-      const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
-      initialSavingsAmounts[saving.id] = monthlyAmount;
-    });
-
-    // Only update state if there are actual changes
-    if (Object.keys(initialIncomeAmounts).length > 0 || Object.keys(initialExpenseAmounts).length > 0 || Object.keys(initialSavingsAmounts).length > 0) {
-      setIncomeAmounts(initialIncomeAmounts);
-      setExpenseAmounts(initialExpenseAmounts);
-      setSavingsAmounts(initialSavingsAmounts);
+    if (income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) {
+      const newIncomeAmounts: { [key: string]: number } = {};
+      const newExpenseAmounts: { [key: string]: number } = {};
+      const newSavingsAmounts: { [key: string]: number } = {};
       
-      // Calculate totals immediately after setting the amounts
-      calculateTotals(initialIncomeAmounts, initialExpenseAmounts, initialSavingsAmounts);
+      // Calculate total amounts from plan data
+      const totalIncome = planData.monthly_income;
+      const totalExpenses = planData.monthly_expenses;
+      const totalSavings = planData.monthly_savings;
+      
+      // Distribute totals proportionally based on original amounts
+      let originalIncomeTotal = 0;
+      let originalExpenseTotal = 0;
+      let originalSavingsTotal = 0;
+      
+      income.forEach((incomeItem) => {
+        const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
+        originalIncomeTotal += monthlyAmount;
+      });
+      
+      expenses.forEach((expense) => {
+        const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
+        originalExpenseTotal += monthlyAmount;
+      });
+      
+      savingsContributions.forEach((saving) => {
+        const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
+        originalSavingsTotal += monthlyAmount;
+      });
+      
+      // Distribute plan amounts proportionally
+      income.forEach((incomeItem) => {
+        const originalMonthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
+        const proportion = originalIncomeTotal > 0 ? originalMonthlyAmount / originalIncomeTotal : 1 / income.length;
+        newIncomeAmounts[incomeItem.id] = totalIncome * proportion;
+      });
+      
+      expenses.forEach((expense) => {
+        const originalMonthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
+        const proportion = originalExpenseTotal > 0 ? originalMonthlyAmount / originalExpenseTotal : 1 / expenses.length;
+        newExpenseAmounts[expense.id] = totalExpenses * proportion;
+      });
+      
+      savingsContributions.forEach((saving) => {
+        const originalMonthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
+        const proportion = originalSavingsTotal > 0 ? originalMonthlyAmount / originalSavingsTotal : 1 / savingsContributions.length;
+        newSavingsAmounts[saving.id] = totalSavings * proportion;
+      });
+      
+      setIncomeAmounts(newIncomeAmounts);
+      setExpenseAmounts(newExpenseAmounts);
+      setSavingsAmounts(newSavingsAmounts);
     }
-  }, [income, expenses, savingsContributions]);
+  }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
 
   const updateIncomeAmount = (incomeId: string, amount: number) => {
     const newIncomeAmounts = { ...incomeAmounts, [incomeId]: amount };
     setIncomeAmounts(newIncomeAmounts);
-    calculateTotals(newIncomeAmounts, expenseAmounts, savingsAmounts);
+    
+    const totalIncome = Object.values(newIncomeAmounts).reduce((sum, amt) => sum + amt, 0);
+    onPlanChange({
+      ...planData,
+      monthly_income: totalIncome,
+    });
   };
 
   const updateExpenseAmount = (expenseId: string, amount: number) => {
     const newExpenseAmounts = { ...expenseAmounts, [expenseId]: amount };
     setExpenseAmounts(newExpenseAmounts);
-    calculateTotals(incomeAmounts, newExpenseAmounts, savingsAmounts);
+    
+    const totalExpenses = Object.values(newExpenseAmounts).reduce((sum, amt) => sum + amt, 0);
+    onPlanChange({
+      ...planData,
+      monthly_expenses: totalExpenses,
+    });
   };
 
   const updateSavingsAmount = (savingId: string, amount: number) => {
     const newSavingsAmounts = { ...savingsAmounts, [savingId]: amount };
     setSavingsAmounts(newSavingsAmounts);
-    calculateTotals(incomeAmounts, expenseAmounts, newSavingsAmounts);
+    
+    const totalSavings = Object.values(newSavingsAmounts).reduce((sum, amt) => sum + amt, 0);
+    onPlanChange({
+      ...planData,
+      monthly_savings: totalSavings,
+    });
   };
 
   // Calculate surplus/shortfall
