@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,13 +75,6 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     enabled: !!user,
   });
 
-  const updatePlan = (field: keyof PlanData, value: number) => {
-    onPlanChange({
-      ...planData,
-      [field]: value,
-    });
-  };
-
   const formatCurrency = (value: number) => {
     return value.toFixed(0);
   };
@@ -95,29 +89,24 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // State for individual income, expense and savings amounts
-  const [incomeAmounts, setIncomeAmounts] = React.useState<{ [key: string]: number }>({});
-  const [expenseAmounts, setExpenseAmounts] = React.useState<{ [key: string]: number }>({});
-  const [savingsAmounts, setSavingsAmounts] = React.useState<{ [key: string]: number }>({});
+  // Local state for individual amounts (managed as strings for input handling)
+  const [localIncomeAmounts, setLocalIncomeAmounts] = useState<{ [key: string]: string }>({});
+  const [localExpenseAmounts, setLocalExpenseAmounts] = useState<{ [key: string]: string }>({});
+  const [localSavingsAmounts, setLocalSavingsAmounts] = useState<{ [key: string]: string }>({});
 
-  // State for input display values (strings for better input handling)
-  const [incomeInputs, setIncomeInputs] = React.useState<{ [key: string]: string }>({});
-  const [expenseInputs, setExpenseInputs] = React.useState<{ [key: string]: string }>({});
-  const [savingsInputs, setSavingsInputs] = React.useState<{ [key: string]: string }>({});
-
-  // Initialize amounts from plan data or original data
-  React.useEffect(() => {
+  // Initialize local amounts from plan data when data loads
+  useEffect(() => {
     if (income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) {
-      const newIncomeAmounts: { [key: string]: number } = {};
-      const newExpenseAmounts: { [key: string]: number } = {};
-      const newSavingsAmounts: { [key: string]: number } = {};
+      const newIncomeAmounts: { [key: string]: string } = {};
+      const newExpenseAmounts: { [key: string]: string } = {};
+      const newSavingsAmounts: { [key: string]: string } = {};
       
       // Calculate total amounts from plan data
       const totalIncome = planData.monthly_income;
       const totalExpenses = planData.monthly_expenses;
       const totalSavings = planData.monthly_savings;
       
-      // Distribute totals proportionally based on original amounts
+      // Calculate original totals to determine proportions
       let originalIncomeTotal = 0;
       let originalExpenseTotal = 0;
       let originalSavingsTotal = 0;
@@ -141,58 +130,36 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       income.forEach((incomeItem) => {
         const originalMonthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
         const proportion = originalIncomeTotal > 0 ? originalMonthlyAmount / originalIncomeTotal : 1 / income.length;
-        newIncomeAmounts[incomeItem.id] = totalIncome * proportion;
+        const distributedAmount = totalIncome * proportion;
+        newIncomeAmounts[incomeItem.id] = distributedAmount.toFixed(0);
       });
       
       expenses.forEach((expense) => {
         const originalMonthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
         const proportion = originalExpenseTotal > 0 ? originalMonthlyAmount / originalExpenseTotal : 1 / expenses.length;
-        newExpenseAmounts[expense.id] = totalExpenses * proportion;
+        const distributedAmount = totalExpenses * proportion;
+        newExpenseAmounts[expense.id] = distributedAmount.toFixed(0);
       });
       
       savingsContributions.forEach((saving) => {
         const originalMonthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
         const proportion = originalSavingsTotal > 0 ? originalMonthlyAmount / originalSavingsTotal : 1 / savingsContributions.length;
-        newSavingsAmounts[saving.id] = totalSavings * proportion;
+        const distributedAmount = totalSavings * proportion;
+        newSavingsAmounts[saving.id] = distributedAmount.toFixed(0);
       });
       
-      setIncomeAmounts(newIncomeAmounts);
-      setExpenseAmounts(newExpenseAmounts);
-      setSavingsAmounts(newSavingsAmounts);
+      setLocalIncomeAmounts(newIncomeAmounts);
+      setLocalExpenseAmounts(newExpenseAmounts);
+      setLocalSavingsAmounts(newSavingsAmounts);
     }
   }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
 
-  // Initialize input display values when amounts change
-  React.useEffect(() => {
-    const newIncomeInputs: { [key: string]: string } = {};
-    const newExpenseInputs: { [key: string]: string } = {};
-    const newSavingsInputs: { [key: string]: string } = {};
-
-    Object.keys(incomeAmounts).forEach(id => {
-      newIncomeInputs[id] = incomeAmounts[id]?.toFixed(0) || '0';
-    });
-    Object.keys(expenseAmounts).forEach(id => {
-      newExpenseInputs[id] = expenseAmounts[id]?.toFixed(0) || '0';
-    });
-    Object.keys(savingsAmounts).forEach(id => {
-      newSavingsInputs[id] = savingsAmounts[id]?.toFixed(0) || '0';
-    });
-
-    setIncomeInputs(newIncomeInputs);
-    setExpenseInputs(newExpenseInputs);
-    setSavingsInputs(newSavingsInputs);
-  }, [incomeAmounts, expenseAmounts, savingsAmounts]);
-
   const updateIncomeAmount = (incomeId: string, inputValue: string) => {
-    // Update input display value immediately
-    setIncomeInputs(prev => ({ ...prev, [incomeId]: inputValue }));
+    const newIncomeAmounts = { ...localIncomeAmounts, [incomeId]: inputValue };
+    setLocalIncomeAmounts(newIncomeAmounts);
     
-    // Convert to number and update amounts
-    const amount = Number(inputValue) || 0;
-    const newIncomeAmounts = { ...incomeAmounts, [incomeId]: amount };
-    setIncomeAmounts(newIncomeAmounts);
-    
-    const totalIncome = Object.values(newIncomeAmounts).reduce((sum, amt) => sum + amt, 0);
+    // Calculate total and update plan
+    const totalIncome = Object.values(newIncomeAmounts).reduce((sum, amt) => sum + (Number(amt) || 0), 0);
     onPlanChange({
       ...planData,
       monthly_income: totalIncome,
@@ -200,15 +167,11 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
   };
 
   const updateExpenseAmount = (expenseId: string, inputValue: string) => {
-    // Update input display value immediately
-    setExpenseInputs(prev => ({ ...prev, [expenseId]: inputValue }));
+    const newExpenseAmounts = { ...localExpenseAmounts, [expenseId]: inputValue };
+    setLocalExpenseAmounts(newExpenseAmounts);
     
-    // Convert to number and update amounts
-    const amount = Number(inputValue) || 0;
-    const newExpenseAmounts = { ...expenseAmounts, [expenseId]: amount };
-    setExpenseAmounts(newExpenseAmounts);
-    
-    const totalExpenses = Object.values(newExpenseAmounts).reduce((sum, amt) => sum + amt, 0);
+    // Calculate total and update plan
+    const totalExpenses = Object.values(newExpenseAmounts).reduce((sum, amt) => sum + (Number(amt) || 0), 0);
     onPlanChange({
       ...planData,
       monthly_expenses: totalExpenses,
@@ -216,18 +179,21 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
   };
 
   const updateSavingsAmount = (savingId: string, inputValue: string) => {
-    // Update input display value immediately
-    setSavingsInputs(prev => ({ ...prev, [savingId]: inputValue }));
+    const newSavingsAmounts = { ...localSavingsAmounts, [savingId]: inputValue };
+    setLocalSavingsAmounts(newSavingsAmounts);
     
-    // Convert to number and update amounts
-    const amount = Number(inputValue) || 0;
-    const newSavingsAmounts = { ...savingsAmounts, [savingId]: amount };
-    setSavingsAmounts(newSavingsAmounts);
-    
-    const totalSavings = Object.values(newSavingsAmounts).reduce((sum, amt) => sum + amt, 0);
+    // Calculate total and update plan
+    const totalSavings = Object.values(newSavingsAmounts).reduce((sum, amt) => sum + (Number(amt) || 0), 0);
     onPlanChange({
       ...planData,
       monthly_savings: totalSavings,
+    });
+  };
+
+  const updatePlan = (field: keyof PlanData, value: number) => {
+    onPlanChange({
+      ...planData,
+      [field]: value,
     });
   };
 
@@ -252,7 +218,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="number"
-                    value={incomeInputs[incomeItem.id] || '0'}
+                    value={localIncomeAmounts[incomeItem.id] || '0'}
                     onChange={(e) => updateIncomeAmount(incomeItem.id, e.target.value)}
                     className="w-20 h-7 text-xs"
                   />
@@ -286,7 +252,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="number"
-                    value={expenseInputs[expense.id] || '0'}
+                    value={localExpenseAmounts[expense.id] || '0'}
                     onChange={(e) => updateExpenseAmount(expense.id, e.target.value)}
                     className="w-20 h-7 text-xs"
                   />
@@ -329,7 +295,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                     <span>$</span>
                     <Input
                       type="number"
-                      value={savingsInputs[saving.id] || '0'}
+                      value={localSavingsAmounts[saving.id] || '0'}
                       onChange={(e) => updateSavingsAmount(saving.id, e.target.value)}
                       className="w-20 h-7 text-xs"
                     />

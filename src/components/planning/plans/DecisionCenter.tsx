@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,7 +25,6 @@ import CurrentSituationColumn from './comparison/CurrentSituationColumn';
 import EditablePlanColumn from './comparison/EditablePlanColumn';
 import ComparisonChart from './comparison/ComparisonChart';
 import { calculateProbabilityOfSuccess } from '@/utils/planCalculations';
-import { useDebounce } from 'use-debounce';
 
 interface DecisionCenterProps {
   planId: string;
@@ -49,9 +47,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editablePlan, setEditablePlan] = useState<PlanData | null>(null);
-
-  // Debounce the editable plan changes to avoid too frequent saves
-  const [debouncedEditablePlan] = useDebounce(editablePlan, 1000);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Fetch plan data
   const { data: plan, isLoading } = useQuery({
@@ -214,7 +210,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
   const editablePoS = editablePlan ? calculateProbabilityOfSuccess(editablePlan) : 0;
 
   // Initialize editable plan with plan data when available
-  React.useEffect(() => {
+  useEffect(() => {
     if (plan && !editablePlan) {
       setEditablePlan({
         monthly_income: plan.monthly_income,
@@ -227,24 +223,58 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     }
   }, [plan, editablePlan]);
 
-  // Auto-save plan changes when debouncedEditablePlan changes
-  React.useEffect(() => {
-    if (debouncedEditablePlan && plan && editablePlan) {
-      // Only save if there are actual changes
+  // Track changes to editable plan
+  const handlePlanChange = (newPlan: PlanData) => {
+    setEditablePlan(newPlan);
+    if (plan) {
       const hasChanges = (
-        debouncedEditablePlan.monthly_income !== plan.monthly_income ||
-        debouncedEditablePlan.monthly_expenses !== plan.monthly_expenses ||
-        debouncedEditablePlan.monthly_savings !== plan.monthly_savings ||
-        debouncedEditablePlan.target_retirement_age !== plan.target_retirement_age ||
-        debouncedEditablePlan.target_savings_rate !== plan.target_savings_rate ||
-        debouncedEditablePlan.total_assets !== plan.total_assets
+        newPlan.monthly_income !== plan.monthly_income ||
+        newPlan.monthly_expenses !== plan.monthly_expenses ||
+        newPlan.monthly_savings !== plan.monthly_savings ||
+        newPlan.target_retirement_age !== plan.target_retirement_age ||
+        newPlan.target_savings_rate !== plan.target_savings_rate ||
+        newPlan.total_assets !== plan.total_assets
       );
-
-      if (hasChanges) {
-        autoSavePlanMutation.mutate(debouncedEditablePlan);
-      }
+      setHasUnsavedChanges(hasChanges);
     }
-  }, [debouncedEditablePlan, plan]);
+  };
+
+  // Save changes before leaving
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    const saveChanges = async () => {
+      if (hasUnsavedChanges && editablePlan) {
+        try {
+          await supabase
+            .from('financial_plans')
+            .update({ 
+              ...editablePlan, 
+              updated_at: new Date().toISOString() 
+            })
+            .eq('id', planId);
+          setHasUnsavedChanges(false);
+        } catch (error) {
+          console.error('Failed to save changes:', error);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Save when component unmounts
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (hasUnsavedChanges) {
+        saveChanges();
+      }
+    };
+  }, [hasUnsavedChanges, editablePlan, planId]);
 
   // Helper function to convert frequency to annual multiplier
   const getAnnualMultiplier = (frequency: string) => {
@@ -398,9 +428,17 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financial_plans'] });
       queryClient.invalidateQueries({ queryKey: ['financial_plan', planId] });
+      setHasUnsavedChanges(false);
       toast({ title: "Plan saved successfully!" });
     },
   });
+
+  // Manual save function
+  const handleSaveChanges = () => {
+    if (editablePlan && hasUnsavedChanges) {
+      savePlanMutation.mutate(editablePlan);
+    }
+  };
 
   // Duplicate plan mutation
   const duplicatePlanMutation = useMutation({
@@ -525,9 +563,8 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
   };
 
   const resetToCurrentSituation = () => {
-    if (editablePlan) {
-      setEditablePlan(currentSituation);
-    }
+    setEditablePlan(currentSituation);
+    setHasUnsavedChanges(true);
   };
 
   const getProbabilityBadge = (probability: number) => {
@@ -619,7 +656,12 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
                     Main Plan
                   </Badge>
                 )}
-                {autoSavePlanMutation.isPending && (
+                {hasUnsavedChanges && (
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    Unsaved Changes
+                  </Badge>
+                )}
+                {savePlanMutation.isPending && (
                   <Badge variant="outline" className="text-gray-500">
                     Saving...
                   </Badge>
@@ -629,6 +671,15 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
           </div>
         
           <div className="flex items-center space-x-3">
+            {hasUnsavedChanges && (
+              <Button 
+                onClick={handleSaveChanges}
+                disabled={savePlanMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Save Changes
+              </Button>
+            )}
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600 dark:text-gray-400">Set as Main Plan</span>
               <Switch
@@ -680,7 +731,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
             <CardContent>
               <EditablePlanColumn 
                 planData={editablePlan} 
-                onPlanChange={setEditablePlan}
+                onPlanChange={handlePlanChange}
               />
               <div className="mt-6 pt-4 border-t dark:border-gray-700">
                 <Button 
