@@ -1,8 +1,8 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import type { Tables } from '@/integrations/supabase/types';
 
 interface PlanData {
   monthly_income: number;
@@ -19,18 +19,7 @@ interface ComparisonChartProps {
   planName?: string;
 }
 
-interface ExpenseData {
-  id: string;
-  amount: number;
-  category: string;
-  created_at: string;
-  frequency: string;
-  name: string;
-  type: string;
-  updated_at: string;
-  user_id: string;
-  growth_rate: number | null;
-}
+type ExpenseData = Tables<'expenses'>;
 
 const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChartProps) => {
   const { user } = useAuth();
