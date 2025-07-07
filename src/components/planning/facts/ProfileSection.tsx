@@ -257,8 +257,7 @@ const ProfileSection = () => {
     const isoDate = parseDateInput(rawValue);
     if (isoDate) {
       setProfile(prev => ({ ...prev, [field]: isoDate }));
-      // Update raw input to show formatted version
-      setRawDateInputs(prev => ({ ...prev, [field as keyof typeof rawDateInputs]: formatDateForDisplay(isoDate) }));
+      // Don't update raw input - keep what user typed to avoid timezone shifts
     }
     // If invalid, keep the raw input so user can continue editing
   };
