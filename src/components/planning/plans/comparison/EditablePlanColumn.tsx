@@ -26,8 +26,8 @@ interface EditablePlanColumnProps {
 const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps) => {
   const { user } = useAuth();
 
-  // Simple local state for individual input values
-  const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
+  // Simple local state for input values as strings
+  const [localInputs, setLocalInputs] = useState<{ [key: string]: string }>({});
 
   // Fetch user's income
   const { data: income = [] } = useQuery({
@@ -92,11 +92,11 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Initialize input values when plan data changes
+  // Initialize local inputs when planData changes
   useEffect(() => {
-    const newInputValues: { [key: string]: string } = {};
+    const newLocalInputs: { [key: string]: string } = {};
     
-    // Calculate totals from actual data
+    // Calculate original totals
     let totalOriginalIncome = 0;
     let totalOriginalExpenses = 0;
     let totalOriginalSavings = 0;
@@ -118,52 +118,53 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
       const proportion = totalOriginalIncome > 0 ? originalAmount / totalOriginalIncome : 1 / income.length;
       const distributedAmount = planData.monthly_income * proportion;
-      newInputValues[`income_${item.id}`] = Math.round(distributedAmount).toString();
+      newLocalInputs[`income_${item.id}`] = Math.round(distributedAmount).toString();
     });
     
     expenses.forEach((item) => {
       const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
       const proportion = totalOriginalExpenses > 0 ? originalAmount / totalOriginalExpenses : 1 / expenses.length;
       const distributedAmount = planData.monthly_expenses * proportion;
-      newInputValues[`expense_${item.id}`] = Math.round(distributedAmount).toString();
+      newLocalInputs[`expense_${item.id}`] = Math.round(distributedAmount).toString();
     });
     
     savingsContributions.forEach((item) => {
       const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
       const proportion = totalOriginalSavings > 0 ? originalAmount / totalOriginalSavings : 1 / savingsContributions.length;
       const distributedAmount = planData.monthly_savings * proportion;
-      newInputValues[`saving_${item.id}`] = Math.round(distributedAmount).toString();
+      newLocalInputs[`saving_${item.id}`] = Math.round(distributedAmount).toString();
     });
     
-    setInputValues(newInputValues);
+    setLocalInputs(newLocalInputs);
   }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
 
-  // Simple input change handler
+  // Handle input changes - just update local state
   const handleInputChange = (key: string, value: string) => {
-    // Update the input value immediately
-    const newInputValues = { ...inputValues, [key]: value };
-    setInputValues(newInputValues);
-    
-    // Calculate new totals and update plan
+    // Allow empty string and numbers only
+    if (value === '' || /^\d*$/.test(value)) {
+      setLocalInputs(prev => ({ ...prev, [key]: value }));
+    }
+  };
+
+  // Handle input blur - calculate totals and update plan
+  const handleInputBlur = () => {
     let newIncomeTotal = 0;
     let newExpenseTotal = 0;
     let newSavingsTotal = 0;
     
-    // Calculate income total
+    // Calculate totals from local inputs
     income.forEach((item) => {
-      const inputValue = newInputValues[`income_${item.id}`] || '0';
+      const inputValue = localInputs[`income_${item.id}`] || '0';
       newIncomeTotal += Number(inputValue) || 0;
     });
     
-    // Calculate expense total
     expenses.forEach((item) => {
-      const inputValue = newInputValues[`expense_${item.id}`] || '0';
+      const inputValue = localInputs[`expense_${item.id}`] || '0';
       newExpenseTotal += Number(inputValue) || 0;
     });
     
-    // Calculate savings total
     savingsContributions.forEach((item) => {
-      const inputValue = newInputValues[`saving_${item.id}`] || '0';
+      const inputValue = localInputs[`saving_${item.id}`] || '0';
       newSavingsTotal += Number(inputValue) || 0;
     });
     
@@ -203,9 +204,10 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                 <div className="flex items-center space-x-2">
                   <span>$</span>
                   <Input
-                    type="number"
-                    value={inputValues[`income_${incomeItem.id}`] || '0'}
+                    type="text"
+                    value={localInputs[`income_${incomeItem.id}`] || '0'}
                     onChange={(e) => handleInputChange(`income_${incomeItem.id}`, e.target.value)}
+                    onBlur={handleInputBlur}
                     className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
@@ -237,9 +239,10 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                 <div className="flex items-center space-x-2">
                   <span>$</span>
                   <Input
-                    type="number"
-                    value={inputValues[`expense_${expense.id}`] || '0'}
+                    type="text"
+                    value={localInputs[`expense_${expense.id}`] || '0'}
                     onChange={(e) => handleInputChange(`expense_${expense.id}`, e.target.value)}
+                    onBlur={handleInputBlur}
                     className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
@@ -280,9 +283,10 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <div className="flex items-center space-x-2">
                     <span>$</span>
                     <Input
-                      type="number"
-                      value={inputValues[`saving_${saving.id}`] || '0'}
+                      type="text"
+                      value={localInputs[`saving_${saving.id}`] || '0'}
                       onChange={(e) => handleInputChange(`saving_${saving.id}`, e.target.value)}
+                      onBlur={handleInputBlur}
                       className="w-20 h-7 text-xs"
                     />
                     <span className="text-xs">/mo</span>
