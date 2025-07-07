@@ -26,7 +26,7 @@ interface EditablePlanColumnProps {
 const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps) => {
   const { user } = useAuth();
 
-  // Simple local state for input values as strings
+  // Simple local state for input values as strings - allow empty strings
   const [localInputs, setLocalInputs] = useState<{ [key: string]: string }>({});
 
   // Fetch user's income
@@ -92,7 +92,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Initialize local inputs when data loads - only run once
+  // Initialize local inputs when data loads
   useEffect(() => {
     if ((income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) && Object.keys(localInputs).length === 0) {
       const newLocalInputs: { [key: string]: string } = {};
@@ -114,7 +114,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         totalOriginalSavings += Number(item.amount) * getFrequencyMultiplier(item.frequency);
       });
       
-      // Distribute plan totals proportionally - only on initial load
+      // Set initial values directly from plan data
       income.forEach((item) => {
         const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
         const proportion = totalOriginalIncome > 0 ? originalAmount / totalOriginalIncome : 1 / income.length;
@@ -140,9 +140,9 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   }, [income, expenses, savingsContributions]);
 
-  // Handle input changes - just update local state
+  // Handle input changes - allow empty string and numbers only
   const handleInputChange = (key: string, value: string) => {
-    // Allow empty string and numbers only
+    // Allow empty string or numbers only
     if (value === '' || /^\d*$/.test(value)) {
       setLocalInputs(prev => ({ ...prev, [key]: value }));
     }
@@ -154,23 +154,23 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     let newExpenseTotal = 0;
     let newSavingsTotal = 0;
     
-    // Calculate totals from local inputs
+    // Calculate totals from local inputs, treating empty strings as 0
     income.forEach((item) => {
-      const inputValue = localInputs[`income_${item.id}`] || '0';
-      newIncomeTotal += Number(inputValue) || 0;
+      const inputValue = localInputs[`income_${item.id}`];
+      newIncomeTotal += inputValue === '' ? 0 : (Number(inputValue) || 0);
     });
     
     expenses.forEach((item) => {
-      const inputValue = localInputs[`expense_${item.id}`] || '0';
-      newExpenseTotal += Number(inputValue) || 0;
+      const inputValue = localInputs[`expense_${item.id}`];
+      newExpenseTotal += inputValue === '' ? 0 : (Number(inputValue) || 0);
     });
     
     savingsContributions.forEach((item) => {
-      const inputValue = localInputs[`saving_${item.id}`] || '0';
-      newSavingsTotal += Number(inputValue) || 0;
+      const inputValue = localInputs[`saving_${item.id}`];
+      newSavingsTotal += inputValue === '' ? 0 : (Number(inputValue) || 0);
     });
     
-    // Update plan data WITHOUT redistributing back to inputs
+    // Update plan data
     onPlanChange({
       ...planData,
       monthly_income: newIncomeTotal,
@@ -207,10 +207,11 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="text"
-                    value={localInputs[`income_${incomeItem.id}`] || '0'}
+                    value={localInputs[`income_${incomeItem.id}`] || ''}
                     onChange={(e) => handleInputChange(`income_${incomeItem.id}`, e.target.value)}
                     onBlur={handleInputBlur}
                     className="w-20 h-7 text-xs"
+                    placeholder="0"
                   />
                   <span className="text-xs">/mo</span>
                 </div>
@@ -242,10 +243,11 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="text"
-                    value={localInputs[`expense_${expense.id}`] || '0'}
+                    value={localInputs[`expense_${expense.id}`] || ''}
                     onChange={(e) => handleInputChange(`expense_${expense.id}`, e.target.value)}
                     onBlur={handleInputBlur}
                     className="w-20 h-7 text-xs"
+                    placeholder="0"
                   />
                   <span className="text-xs">/mo</span>
                 </div>
@@ -286,10 +288,11 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                     <span>$</span>
                     <Input
                       type="text"
-                      value={localInputs[`saving_${saving.id}`] || '0'}
+                      value={localInputs[`saving_${saving.id}`] || ''}
                       onChange={(e) => handleInputChange(`saving_${saving.id}`, e.target.value)}
                       onBlur={handleInputBlur}
                       className="w-20 h-7 text-xs"
+                      placeholder="0"
                     />
                     <span className="text-xs">/mo</span>
                   </div>
