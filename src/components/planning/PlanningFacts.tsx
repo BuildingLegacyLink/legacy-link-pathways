@@ -1,11 +1,12 @@
 
 import { useState } from 'react';
-import { Target, TrendingUp, DollarSign, Calculator, PieChart, Shield } from 'lucide-react';
+import { Target, TrendingUp, DollarSign, Calculator, PieChart, Shield, User } from 'lucide-react';
 import GoalsSection from './facts/GoalsSection';
 import NetWorthSection from './facts/NetWorthSection';
 import IncomeSection from './facts/IncomeSection';
 import ExpensesSection from './facts/ExpensesSection';
 import SavingsSection from './facts/SavingsSection';
+import ProfileSection from './facts/ProfileSection';
 
 const PlanningFacts = () => {
   const [activeFactsTab, setActiveFactsTab] = useState('goals');
@@ -16,7 +17,8 @@ const PlanningFacts = () => {
     { id: 'income', name: 'Income', icon: DollarSign },
     { id: 'expenses', name: 'Expenses & Taxes', icon: Calculator },
     { id: 'savings', name: 'Savings', icon: PieChart },
-    { id: 'allocation', name: 'Asset Allocation', icon: Shield }
+    { id: 'allocation', name: 'Asset Allocation', icon: Shield },
+    { id: 'profile', name: 'Profile', icon: User }
   ];
 
   const renderFactsContent = () => {
@@ -31,6 +33,8 @@ const PlanningFacts = () => {
         return <ExpensesSection />;
       case 'savings':
         return <SavingsSection />;
+      case 'profile':
+        return <ProfileSection />;
       default:
         return (
           <div>

@@ -410,31 +410,58 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          citizenship_status: string | null
           created_at: string
           date_of_birth: string | null
+          dependents_ages: string | null
+          dependents_count: number | null
+          email: string | null
+          employment_status: string | null
           first_name: string | null
           id: string
           last_name: string | null
+          marital_status: string | null
+          occupation: string | null
+          phone_number: string | null
           projected_death_age: number | null
           retirement_age: number | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          citizenship_status?: string | null
           created_at?: string
           date_of_birth?: string | null
+          dependents_ages?: string | null
+          dependents_count?: number | null
+          email?: string | null
+          employment_status?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
+          marital_status?: string | null
+          occupation?: string | null
+          phone_number?: string | null
           projected_death_age?: number | null
           retirement_age?: number | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          citizenship_status?: string | null
           created_at?: string
           date_of_birth?: string | null
+          dependents_ages?: string | null
+          dependents_count?: number | null
+          email?: string | null
+          employment_status?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          marital_status?: string | null
+          occupation?: string | null
+          phone_number?: string | null
           projected_death_age?: number | null
           retirement_age?: number | null
           updated_at?: string
