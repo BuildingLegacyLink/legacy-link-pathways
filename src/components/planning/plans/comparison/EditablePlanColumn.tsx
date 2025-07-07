@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,21 @@ interface EditablePlanColumnProps {
 
 const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps) => {
   const { user } = useAuth();
+
+  // Fetch user's income
+  const { data: income = [] } = useQuery({
+    queryKey: ['income', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('income')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
 
   // Fetch user's expenses
   const { data: expenses = [] } = useQuery({
@@ -79,24 +95,34 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Calculate total expenses and savings when individual items change
-  const calculateTotals = (expenseAmounts: { [key: string]: number }, savingsAmounts: { [key: string]: number }) => {
+  // Calculate total income, expenses and savings when individual items change
+  const calculateTotals = (incomeAmounts: { [key: string]: number }, expenseAmounts: { [key: string]: number }, savingsAmounts: { [key: string]: number }) => {
+    const totalIncome = Object.values(incomeAmounts).reduce((sum, amount) => sum + amount, 0);
     const totalExpenses = Object.values(expenseAmounts).reduce((sum, amount) => sum + amount, 0);
     const totalSavings = Object.values(savingsAmounts).reduce((sum, amount) => sum + amount, 0);
     
     onPlanChange({
       ...planData,
+      monthly_income: totalIncome,
       monthly_expenses: totalExpenses,
       monthly_savings: totalSavings,
     });
   };
 
-  // State for individual expense and savings amounts
+  // State for individual income, expense and savings amounts
+  const [incomeAmounts, setIncomeAmounts] = React.useState<{ [key: string]: number }>({});
   const [expenseAmounts, setExpenseAmounts] = React.useState<{ [key: string]: number }>({});
   const [savingsAmounts, setSavingsAmounts] = React.useState<{ [key: string]: number }>({});
 
   // Initialize amounts from original data
   React.useEffect(() => {
+    const initialIncomeAmounts: { [key: string]: number } = {};
+    income.forEach((incomeItem) => {
+      const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
+      initialIncomeAmounts[incomeItem.id] = monthlyAmount;
+    });
+    setIncomeAmounts(initialIncomeAmounts);
+
     const initialExpenseAmounts: { [key: string]: number } = {};
     expenses.forEach((expense) => {
       const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
@@ -110,18 +136,24 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       initialSavingsAmounts[saving.id] = monthlyAmount;
     });
     setSavingsAmounts(initialSavingsAmounts);
-  }, [expenses, savingsContributions]);
+  }, [income, expenses, savingsContributions]);
+
+  const updateIncomeAmount = (incomeId: string, amount: number) => {
+    const newIncomeAmounts = { ...incomeAmounts, [incomeId]: amount };
+    setIncomeAmounts(newIncomeAmounts);
+    calculateTotals(newIncomeAmounts, expenseAmounts, savingsAmounts);
+  };
 
   const updateExpenseAmount = (expenseId: string, amount: number) => {
     const newExpenseAmounts = { ...expenseAmounts, [expenseId]: amount };
     setExpenseAmounts(newExpenseAmounts);
-    calculateTotals(newExpenseAmounts, savingsAmounts);
+    calculateTotals(incomeAmounts, newExpenseAmounts, savingsAmounts);
   };
 
   const updateSavingsAmount = (savingId: string, amount: number) => {
     const newSavingsAmounts = { ...savingsAmounts, [savingId]: amount };
     setSavingsAmounts(newSavingsAmounts);
-    calculateTotals(expenseAmounts, newSavingsAmounts);
+    calculateTotals(incomeAmounts, expenseAmounts, newSavingsAmounts);
   };
 
   // Calculate surplus/shortfall
@@ -133,17 +165,38 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="monthly_income" className="text-sm font-medium">
-          Monthly Income
-        </Label>
-        <Input
-          id="monthly_income"
-          type="number"
-          value={formatCurrency(planData.monthly_income)}
-          onChange={(e) => updatePlan('monthly_income', Number(e.target.value) || 0)}
-          placeholder="Enter monthly income"
-        />
+      {/* Individual Income Streams */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Monthly Income</Label>
+        {income.length > 0 ? (
+          <div className="space-y-2">
+            {income.map((incomeItem) => (
+              <div key={incomeItem.id} className="flex justify-between items-center text-sm">
+                <span className="text-gray-600 dark:text-gray-400 flex-1">{incomeItem.name}</span>
+                <div className="flex items-center space-x-2">
+                  <span>$</span>
+                  <Input
+                    type="number"
+                    value={incomeAmounts[incomeItem.id]?.toFixed(0) || '0'}
+                    onChange={(e) => updateIncomeAmount(incomeItem.id, Number(e.target.value) || 0)}
+                    className="w-20 h-8 text-xs"
+                  />
+                  <span className="text-xs">/mo</span>
+                </div>
+              </div>
+            ))}
+            <div className="pt-2 border-t dark:border-gray-700">
+              <div className="flex justify-between items-center font-semibold">
+                <span>Total Monthly Income</span>
+                <span>${formatCurrency(planData.monthly_income)}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            No income added yet. Add them in Facts to see them here.
+          </div>
+        )}
       </div>
 
       {/* Individual Expenses */}
@@ -224,7 +277,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                 <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700">
                   <AlertTriangle className="h-4 w-4 text-orange-600" />
                   <AlertDescription className="text-orange-800 dark:text-orange-200 text-xs">
-                    Please make this value $0 by adjusting expenses/savings amount
+                    Please make this value $0 by adjusting income/expenses/savings amount
                   </AlertDescription>
                 </Alert>
               )}

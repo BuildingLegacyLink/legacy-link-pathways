@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,21 @@ interface CurrentSituationColumnProps {
 
 const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
   const { user } = useAuth();
+
+  // Fetch user's income
+  const { data: income = [] } = useQuery({
+    queryKey: ['income', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('income')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
 
   // Fetch user's expenses
   const { data: expenses = [] } = useQuery({
@@ -75,11 +91,32 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
+      {/* Individual Income Streams */}
+      <div className="space-y-3">
         <Label className="text-sm font-medium">Monthly Income</Label>
-        <div className="text-lg font-semibold text-gray-900 dark:text-white">
-          {formatCurrency(planData.monthly_income)}
-        </div>
+        {income.length > 0 ? (
+          <div className="space-y-2">
+            {income.map((incomeItem) => {
+              const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
+              return (
+                <div key={incomeItem.id} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">{incomeItem.name}</span>
+                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+                </div>
+              );
+            })}
+            <div className="pt-2 border-t dark:border-gray-700">
+              <div className="flex justify-between items-center font-semibold">
+                <span>Total Monthly Income</span>
+                <span>{formatCurrency(planData.monthly_income)}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            No income added yet. Add them in Facts to see them here.
+          </div>
+        )}
       </div>
 
       {/* Individual Expenses */}
