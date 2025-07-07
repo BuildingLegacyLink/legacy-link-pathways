@@ -19,6 +19,7 @@ interface Expense {
   type: string;
   amount: number;
   frequency: string;
+  growth_rate?: number;
 }
 
 const ExpensesSection = () => {
@@ -31,9 +32,11 @@ const ExpensesSection = () => {
     category: 'essential',
     type: 'expense',
     amount: 0,
-    frequency: 'monthly'
+    frequency: 'monthly',
+    growth_rate: 3.0 // Default inflation rate of 3%
   });
   const [amountInput, setAmountInput] = useState('');
+  const [growthRateInput, setGrowthRateInput] = useState('3.0');
 
   // Common expense names grouped by category
   const commonExpenses = {
@@ -146,9 +149,11 @@ const ExpensesSection = () => {
       category: expense.category,
       type: expense.type,
       amount: expense.amount,
-      frequency: expense.frequency
+      frequency: expense.frequency,
+      growth_rate: expense.growth_rate || 3.0
     });
     setAmountInput(expense.amount.toString());
+    setGrowthRateInput((expense.growth_rate || 3.0).toString());
     setIsDialogOpen(true);
   };
 
@@ -160,19 +165,26 @@ const ExpensesSection = () => {
       category: 'essential',
       type: 'expense',
       amount: 0,
-      frequency: 'monthly'
+      frequency: 'monthly',
+      growth_rate: 3.0
     });
     setAmountInput('');
+    setGrowthRateInput('3.0');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(amountInput) || 0;
-    saveMutation.mutate({ ...formData, amount });
+    const growthRate = parseFloat(growthRateInput) || 3.0;
+    saveMutation.mutate({ ...formData, amount, growth_rate: growthRate });
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmountInput(e.target.value);
+  };
+
+  const handleGrowthRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGrowthRateInput(e.target.value);
   };
 
   const formatCurrency = (amount: number) => {
@@ -356,6 +368,23 @@ const ExpensesSection = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="growth-rate">Annual Growth Rate (%)</Label>
+                  <Input
+                    id="growth-rate"
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="0.1"
+                    value={growthRateInput}
+                    onChange={handleGrowthRateChange}
+                    placeholder="3.0"
+                  />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Default is 3% (typical inflation rate). This helps project how expenses will grow over time.
+                  </p>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
