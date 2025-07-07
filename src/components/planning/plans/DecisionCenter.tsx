@@ -630,7 +630,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       </div>
 
       {/* Projection Table */}
-      <ProjectionTable data={projections} />
+      <ProjectionTable data={projections} planName={plan.name} />
     </div>
   );
 };

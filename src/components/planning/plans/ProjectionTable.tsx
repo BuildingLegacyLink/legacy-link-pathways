@@ -13,9 +13,10 @@ interface ProjectionData {
 
 interface ProjectionTableProps {
   data: ProjectionData[];
+  planName?: string;
 }
 
-const ProjectionTable = ({ data }: ProjectionTableProps) => {
+const ProjectionTable = ({ data, planName }: ProjectionTableProps) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -27,7 +28,9 @@ const ProjectionTable = ({ data }: ProjectionTableProps) => {
   return (
     <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
       <CardHeader>
-        <CardTitle className="text-lg text-gray-900 dark:text-white">Year-by-Year Projections</CardTitle>
+        <CardTitle className="text-lg text-gray-900 dark:text-white">
+          Year-by-Year Projections{planName ? `: ${planName}` : ''}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="max-h-96 overflow-y-auto">
