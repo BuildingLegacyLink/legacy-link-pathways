@@ -86,10 +86,16 @@ const ProfileSection = () => {
     if (dayNum < 1 || dayNum > 31) return '';
     if (yearNum < 1900 || yearNum > new Date().getFullYear()) return '';
     
+    // Create date using UTC to avoid timezone issues
     const date = new Date(yearNum, monthNum - 1, dayNum);
     if (isNaN(date.getTime())) return '';
     
-    return date.toISOString().split('T')[0];
+    // Format as YYYY-MM-DD without timezone conversion
+    const formattedYear = yearNum.toString();
+    const formattedMonth = monthNum.toString().padStart(2, '0');
+    const formattedDay = dayNum.toString().padStart(2, '0');
+    
+    return `${formattedYear}-${formattedMonth}-${formattedDay}`;
   };
 
   // Helper function to format phone number
