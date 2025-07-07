@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -11,12 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/currency';
+import IncomeEditDialog from './IncomeEditDialog';
 
 const IncomeSection = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingIncome, setEditingIncome] = useState<any>(null);
   const [newIncome, setNewIncome] = useState({
     name: '',
     type: 'salary',
@@ -30,21 +30,7 @@ const IncomeSection = () => {
     end_date_type: 'none',
     end_date_value: null as number | null
   });
-  const [editData, setEditData] = useState({
-    name: '',
-    type: 'salary',
-    amount: '',
-    frequency: 'monthly',
-    start_date: '',
-    end_date: '',
-    is_current: true,
-    start_date_type: 'none',
-    start_date_value: null as number | null,
-    end_date_type: 'none',
-    end_date_value: null as number | null
-  });
 
-  // Fetch user profile for first name
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
@@ -63,11 +49,9 @@ const IncomeSection = () => {
 
   const firstName = profile?.first_name || 'User';
 
-  // Generate year options (current year + 50 years)
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 51 }, (_, i) => currentYear + i);
 
-  // Generate age options (current age to 100)
   const ageOptions = Array.from({ length: 71 }, (_, i) => 30 + i); // Assuming starting from age 30
 
   const { data: incomes = [], isLoading } = useQuery({
@@ -139,30 +123,6 @@ const IncomeSection = () => {
     }
   });
 
-  const updateIncomeMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof editData }) => {
-      const { error } = await supabase
-        .from('income')
-        .update({ 
-          ...data, 
-          amount: parseFloat(data.amount),
-          start_date: data.start_date || null,
-          end_date: data.end_date || null
-        })
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['income'] });
-      setEditingId(null);
-      toast({ title: 'Success', description: 'Income updated successfully!' });
-    },
-    onError: (error) => {
-      toast({ title: 'Error', description: 'Failed to update income: ' + error.message, variant: 'destructive' });
-    }
-  });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newIncome.name || !newIncome.amount) {
@@ -174,31 +134,6 @@ const IncomeSection = () => {
 
   const currentIncomes = incomes.filter(income => income.is_current);
   const futureIncomes = incomes.filter(income => !income.is_current);
-
-  const handleEdit = (income: any) => {
-    setEditingId(income.id);
-    setEditData({
-      name: income.name,
-      type: income.type,
-      amount: income.amount.toString(),
-      frequency: income.frequency,
-      start_date: income.start_date || '',
-      end_date: income.end_date || '',
-      is_current: income.is_current,
-      start_date_type: income.start_date_type || 'none',
-      start_date_value: income.start_date_value,
-      end_date_type: income.end_date_type || 'none',
-      end_date_value: income.end_date_value
-    });
-  };
-
-  const handleUpdate = (id: string) => {
-    if (!editData.name || !editData.amount) {
-      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
-      return;
-    }
-    updateIncomeMutation.mutate({ id, data: editData });
-  };
 
   const formatDateDescription = (dateType: string, dateValue: number | null) => {
     switch (dateType) {
@@ -267,144 +202,42 @@ const IncomeSection = () => {
 
   const renderIncomeItem = (income: any) => (
     <div key={income.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-      {editingId === income.id ? (
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-gray-900 dark:text-white">Name</Label>
-              <Input
-                value={editData.name}
-                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
-              />
-            </div>
-            <div>
-              <Label className="text-gray-900 dark:text-white">Type</Label>
-              <Select value={editData.type} onValueChange={(value) => setEditData({ ...editData, type: value })}>
-                <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
-                  <SelectItem value="salary" className="dark:text-white">Salary</SelectItem>
-                  <SelectItem value="bonus" className="dark:text-white">Bonus</SelectItem>
-                  <SelectItem value="rental" className="dark:text-white">Rental Income</SelectItem>
-                  <SelectItem value="business" className="dark:text-white">Business Income</SelectItem>
-                  <SelectItem value="investment" className="dark:text-white">Investment Income</SelectItem>
-                  <SelectItem value="social_security" className="dark:text-white">Social Security</SelectItem>
-                  <SelectItem value="pension" className="dark:text-white">Pension</SelectItem>
-                  <SelectItem value="other" className="dark:text-white">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-gray-900 dark:text-white">Amount</Label>
-              <Input
-                type="number"
-                value={editData.amount}
-                onChange={(e) => setEditData({ ...editData, amount: e.target.value })}
-                className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white"
-              />
-            </div>
-            <div>
-              <Label className="text-gray-900 dark:text-white">Frequency</Label>
-              <Select value={editData.frequency} onValueChange={(value) => setEditData({ ...editData, frequency: value })}>
-                <SelectTrigger className="dark:bg-gray-600/50 dark:border-gray-500 dark:text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
-                  <SelectItem value="weekly" className="dark:text-white">Weekly</SelectItem>
-                  <SelectItem value="monthly" className="dark:text-white">Monthly</SelectItem>
-                  <SelectItem value="annual" className="dark:text-white">Annual</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-medium text-gray-900 dark:text-white">{income.name}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            {formatCurrency(income.amount)} {income.frequency}
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {renderDateDropdowns(
-              editData.start_date_type,
-              editData.start_date_value,
-              (value) => setEditData({ ...editData, start_date_type: value }),
-              (value) => setEditData({ ...editData, start_date_value: value }),
-              'Start Date'
-            )}
-            
-            {renderDateDropdowns(
-              editData.end_date_type,
-              editData.end_date_value,
-              (value) => setEditData({ ...editData, end_date_type: value }),
-              (value) => setEditData({ ...editData, end_date_value: value }),
-              'End Date'
-            )}
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <input
-              type="checkbox"
-              id={`is_current_${income.id}`}
-              checked={editData.is_current}
-              onChange={(e) => setEditData({ ...editData, is_current: e.target.checked })}
-              className="dark:bg-gray-600"
-            />
-            <Label htmlFor={`is_current_${income.id}`} className="text-gray-900 dark:text-white">Current Income</Label>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => handleUpdate(income.id)}
-              disabled={updateIncomeMutation.isPending}
-              size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {updateIncomeMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-            <Button
-              onClick={() => setEditingId(null)}
-              variant="outline"
-              size="sm"
-              className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
-            >
-              Cancel
-            </Button>
-          </div>
+          {(income.start_date_type && income.start_date_type !== 'none') && (
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Starts: {formatDateDescription(income.start_date_type, income.start_date_value)}
+            </div>
+          )}
+          {(income.end_date_type && income.end_date_type !== 'none') && (
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Ends: {formatDateDescription(income.end_date_type, income.end_date_value)}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-gray-900 dark:text-white">{income.name}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              {formatCurrency(income.amount)} {income.frequency}
-            </div>
-            {(income.start_date_type && income.start_date_type !== 'none') && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Starts: {formatDateDescription(income.start_date_type, income.start_date_value)}
-              </div>
-            )}
-            {(income.end_date_type && income.end_date_type !== 'none') && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Ends: {formatDateDescription(income.end_date_type, income.end_date_value)}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleEdit(income)}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => deleteIncomeMutation.mutate(income.id)}
-              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditingIncome(income)}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => deleteIncomeMutation.mutate(income.id)}
+            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 
@@ -563,6 +396,13 @@ const IncomeSection = () => {
           </Card>
         )}
       </div>
+
+      {/* Edit Income Dialog */}
+      <IncomeEditDialog 
+        income={editingIncome}
+        open={!!editingIncome}
+        onOpenChange={(open) => !open && setEditingIncome(null)}
+      />
     </div>
   );
 };
