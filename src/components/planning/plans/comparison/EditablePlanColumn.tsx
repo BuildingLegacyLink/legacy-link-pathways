@@ -122,21 +122,28 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
       initialIncomeAmounts[incomeItem.id] = monthlyAmount;
     });
-    setIncomeAmounts(initialIncomeAmounts);
 
     const initialExpenseAmounts: { [key: string]: number } = {};
     expenses.forEach((expense) => {
       const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
       initialExpenseAmounts[expense.id] = monthlyAmount;
     });
-    setExpenseAmounts(initialExpenseAmounts);
 
     const initialSavingsAmounts: { [key: string]: number } = {};
     savingsContributions.forEach((saving) => {
       const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
       initialSavingsAmounts[saving.id] = monthlyAmount;
     });
-    setSavingsAmounts(initialSavingsAmounts);
+
+    // Only update state if there are actual changes
+    if (Object.keys(initialIncomeAmounts).length > 0 || Object.keys(initialExpenseAmounts).length > 0 || Object.keys(initialSavingsAmounts).length > 0) {
+      setIncomeAmounts(initialIncomeAmounts);
+      setExpenseAmounts(initialExpenseAmounts);
+      setSavingsAmounts(initialSavingsAmounts);
+      
+      // Calculate totals immediately after setting the amounts
+      calculateTotals(initialIncomeAmounts, initialExpenseAmounts, initialSavingsAmounts);
+    }
   }, [income, expenses, savingsContributions]);
 
   const updateIncomeAmount = (incomeId: string, amount: number) => {
