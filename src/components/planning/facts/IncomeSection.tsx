@@ -24,7 +24,6 @@ const IncomeSection = () => {
     frequency: 'monthly',
     start_date: '',
     end_date: '',
-    is_current: true,
     start_date_type: 'none',
     start_date_value: null as number | null,
     end_date_type: 'none',
@@ -37,7 +36,7 @@ const IncomeSection = () => {
       if (!user) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name')
+        .select('first_name, date_of_birth, retirement_age')
         .eq('id', user.id)
         .single();
       
@@ -49,10 +48,74 @@ const IncomeSection = () => {
 
   const firstName = profile?.first_name || 'User';
 
+  // Calculate current age
+  const getCurrentAge = () => {
+    if (!profile?.date_of_birth) return 25; // Default age assumption
+    const today = new Date();
+    const birthDate = new Date(profile.date_of_birth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Logic to determine if income is current
+  const determineIsCurrentIncome = (incomeData: typeof newIncome) => {
+    const currentYear = new Date().getFullYear();
+    const currentAge = getCurrentAge();
+    const retirementAge = profile?.retirement_age || 67;
+
+    // If no start date is set, assume it's current
+    if (incomeData.start_date_type === 'none') {
+      return true;
+    }
+
+    // Check start date conditions
+    let hasStarted = true;
+    switch (incomeData.start_date_type) {
+      case 'calendar_year':
+        hasStarted = incomeData.start_date_value ? currentYear >= incomeData.start_date_value : true;
+        break;
+      case 'age':
+        hasStarted = incomeData.start_date_value ? currentAge >= incomeData.start_date_value : true;
+        break;
+      case 'retirement':
+        hasStarted = currentAge >= retirementAge;
+        break;
+      case 'death':
+        hasStarted = false; // Income starting at death is never current
+        break;
+    }
+
+    // Check end date conditions
+    let hasEnded = false;
+    if (incomeData.end_date_type !== 'none') {
+      switch (incomeData.end_date_type) {
+        case 'calendar_year':
+          hasEnded = incomeData.end_date_value ? currentYear > incomeData.end_date_value : false;
+          break;
+        case 'age':
+          hasEnded = incomeData.end_date_value ? currentAge > incomeData.end_date_value : false;
+          break;
+        case 'retirement':
+          hasEnded = currentAge > retirementAge;
+          break;
+        case 'death':
+          hasEnded = false; // Income ending at death is still current until death
+          break;
+      }
+    }
+
+    return hasStarted && !hasEnded;
+  };
+
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 51 }, (_, i) => currentYear + i);
 
-  const ageOptions = Array.from({ length: 71 }, (_, i) => 30 + i); // Assuming starting from age 30
+  const currentAge = getCurrentAge();
+  const ageOptions = Array.from({ length: 71 }, (_, i) => Math.max(currentAge, 30) + i);
 
   const { data: incomes = [], isLoading } = useQuery({
     queryKey: ['income', user?.id],
@@ -73,6 +136,8 @@ const IncomeSection = () => {
   const addIncomeMutation = useMutation({
     mutationFn: async (income: typeof newIncome) => {
       if (!user) throw new Error('No user');
+      const isCurrentIncome = determineIsCurrentIncome(income);
+      
       const { error } = await supabase
         .from('income')
         .insert([{ 
@@ -80,7 +145,8 @@ const IncomeSection = () => {
           user_id: user.id, 
           amount: parseFloat(income.amount),
           start_date: income.start_date || null,
-          end_date: income.end_date || null
+          end_date: income.end_date || null,
+          is_current: isCurrentIncome
         }]);
       
       if (error) throw error;
@@ -94,7 +160,6 @@ const IncomeSection = () => {
         frequency: 'monthly',
         start_date: '',
         end_date: '',
-        is_current: true,
         start_date_type: 'none',
         start_date_value: null,
         end_date_type: 'none',
@@ -371,16 +436,6 @@ const IncomeSection = () => {
                     (value) => setNewIncome({ ...newIncome, end_date_value: value }),
                     'End Date'
                   )}
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  <input
-                    type="checkbox"
-                    id="is_current"
-                    checked={newIncome.is_current}
-                    onChange={(e) => setNewIncome({ ...newIncome, is_current: e.target.checked })}
-                  />
-                  <Label htmlFor="is_current">Current Income</Label>
                 </div>
 
                 <div className="flex gap-2">

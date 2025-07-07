@@ -27,21 +27,20 @@ const IncomeEditDialog = ({ income, open, onOpenChange }: IncomeEditDialogProps)
     frequency: income?.frequency || 'monthly',
     start_date: income?.start_date || '',
     end_date: income?.end_date || '',
-    is_current: income?.is_current ?? true,
     start_date_type: income?.start_date_type || 'none',
     start_date_value: income?.start_date_value,
     end_date_type: income?.end_date_type || 'none',
     end_date_value: income?.end_date_value
   });
 
-  // Fetch user profile for first name
+  // Fetch user profile for first name and age calculation
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name')
+        .select('first_name, date_of_birth, retirement_age')
         .eq('id', user.id)
         .single();
       
@@ -53,22 +52,89 @@ const IncomeEditDialog = ({ income, open, onOpenChange }: IncomeEditDialogProps)
 
   const firstName = profile?.first_name || 'User';
 
+  // Calculate current age
+  const getCurrentAge = () => {
+    if (!profile?.date_of_birth) return 25; // Default age assumption
+    const today = new Date();
+    const birthDate = new Date(profile.date_of_birth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Logic to determine if income is current
+  const determineIsCurrentIncome = () => {
+    const currentYear = new Date().getFullYear();
+    const currentAge = getCurrentAge();
+    const retirementAge = profile?.retirement_age || 67;
+
+    // If no start date is set, assume it's current
+    if (editData.start_date_type === 'none') {
+      return true;
+    }
+
+    // Check start date conditions
+    let hasStarted = true;
+    switch (editData.start_date_type) {
+      case 'calendar_year':
+        hasStarted = editData.start_date_value ? currentYear >= editData.start_date_value : true;
+        break;
+      case 'age':
+        hasStarted = editData.start_date_value ? currentAge >= editData.start_date_value : true;
+        break;
+      case 'retirement':
+        hasStarted = currentAge >= retirementAge;
+        break;
+      case 'death':
+        hasStarted = false; // Income starting at death is never current
+        break;
+    }
+
+    // Check end date conditions
+    let hasEnded = false;
+    if (editData.end_date_type !== 'none') {
+      switch (editData.end_date_type) {
+        case 'calendar_year':
+          hasEnded = editData.end_date_value ? currentYear > editData.end_date_value : false;
+          break;
+        case 'age':
+          hasEnded = editData.end_date_value ? currentAge > editData.end_date_value : false;
+          break;
+        case 'retirement':
+          hasEnded = currentAge > retirementAge;
+          break;
+        case 'death':
+          hasEnded = false; // Income ending at death is still current until death
+          break;
+      }
+    }
+
+    return hasStarted && !hasEnded;
+  };
+
   // Generate year options (current year + 50 years)
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 51 }, (_, i) => currentYear + i);
 
   // Generate age options (current age to 100)
-  const ageOptions = Array.from({ length: 71 }, (_, i) => 30 + i);
+  const currentAge = getCurrentAge();
+  const ageOptions = Array.from({ length: 71 }, (_, i) => Math.max(currentAge, 30) + i);
 
   const updateIncomeMutation = useMutation({
     mutationFn: async (data: typeof editData) => {
+      const isCurrentIncome = determineIsCurrentIncome();
+      
       const { error } = await supabase
         .from('income')
         .update({ 
           ...data, 
           amount: parseFloat(data.amount),
           start_date: data.start_date || null,
-          end_date: data.end_date || null
+          end_date: data.end_date || null,
+          is_current: isCurrentIncome
         })
         .eq('id', income.id);
       
@@ -220,17 +286,6 @@ const IncomeEditDialog = ({ income, open, onOpenChange }: IncomeEditDialogProps)
               (value) => setEditData({ ...editData, end_date_value: value }),
               'End Date'
             )}
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <input
-              type="checkbox"
-              id="is_current_edit"
-              checked={editData.is_current}
-              onChange={(e) => setEditData({ ...editData, is_current: e.target.checked })}
-              className="dark:bg-gray-600"
-            />
-            <Label htmlFor="is_current_edit" className="text-gray-900 dark:text-white">Current Income</Label>
           </div>
 
           <div className="flex gap-2 pt-4">
