@@ -1,4 +1,7 @@
 
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface PlanData {
@@ -17,12 +20,53 @@ interface ComparisonChartProps {
 }
 
 const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChartProps) => {
+  const { user } = useAuth();
+
+  // Fetch expenses to get growth rates
+  const { data: expenses } = useQuery({
+    queryKey: ['expenses', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Calculate weighted average expense growth rate
+  const calculateExpenseGrowthRate = () => {
+    if (!expenses || expenses.length === 0) return 0.03; // Default 3% inflation
+    
+    let totalWeightedGrowth = 0;
+    let totalExpenses = 0;
+    
+    expenses.forEach(expense => {
+      const amount = Number(expense.amount);
+      const growthRate = (expense.growth_rate || 3.0) / 100;
+      
+      // Convert to monthly if needed
+      let monthlyAmount = amount;
+      if (expense.frequency === 'annual') monthlyAmount = amount / 12;
+      if (expense.frequency === 'weekly') monthlyAmount = amount * 4.33;
+      if (expense.frequency === 'quarterly') monthlyAmount = amount / 3;
+      
+      totalWeightedGrowth += monthlyAmount * growthRate;
+      totalExpenses += monthlyAmount;
+    });
+    
+    return totalExpenses > 0 ? totalWeightedGrowth / totalExpenses : 0.03;
   };
 
   // Generate projection data for both plans
@@ -32,7 +76,8 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     const retirementAge = plan.target_retirement_age;
     const deathAge = 85;
     const annualGrowthRate = 0.07; // 7% annual growth
-    const annualExpenses = plan.monthly_expenses * 12;
+    const expenseGrowthRate = calculateExpenseGrowthRate();
+    let annualExpenses = plan.monthly_expenses * 12;
     const annualSavings = plan.monthly_savings * 12;
     
     let portfolioValue = plan.total_assets;
@@ -40,15 +85,19 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     for (let age = currentAge; age <= deathAge; age++) {
       const year = new Date().getFullYear() + (age - currentAge);
       const isRetired = age >= retirementAge;
+      const yearsFromStart = age - currentAge;
+      
+      // Apply expense growth over time
+      const inflatedAnnualExpenses = annualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromStart);
       
       if (!isRetired) {
         // Pre-retirement: Add savings and apply growth
         portfolioValue += annualSavings;
         portfolioValue *= (1 + annualGrowthRate);
       } else {
-        // Post-retirement: Apply growth first, then subtract expenses
+        // Post-retirement: Apply growth first, then subtract inflated expenses
         portfolioValue *= (1 + annualGrowthRate);
-        portfolioValue -= annualExpenses;
+        portfolioValue -= inflatedAnnualExpenses;
         
         // Don't let portfolio go negative
         portfolioValue = Math.max(0, portfolioValue);
