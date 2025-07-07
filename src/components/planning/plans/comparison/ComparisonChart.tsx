@@ -31,32 +31,33 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     const currentAge = 30; // Assuming current age
     const retirementAge = plan.target_retirement_age;
     const deathAge = 85;
+    const annualGrowthRate = 0.07; // 7% annual growth
+    const annualExpenses = plan.monthly_expenses * 12;
+    const annualSavings = plan.monthly_savings * 12;
+    
+    let portfolioValue = plan.total_assets;
     
     for (let age = currentAge; age <= deathAge; age++) {
       const year = new Date().getFullYear() + (age - currentAge);
-      const yearsFromNow = age - currentAge;
       const isRetired = age >= retirementAge;
       
-      // Simple projection calculation
-      let portfolioValue = plan.total_assets;
-      
       if (!isRetired) {
-        // Growth phase: add savings and compound growth
-        const annualSavings = plan.monthly_savings * 12;
-        portfolioValue += annualSavings * yearsFromNow * Math.pow(1.07, yearsFromNow / 2);
+        // Pre-retirement: Add savings and apply growth
+        portfolioValue += annualSavings;
+        portfolioValue *= (1 + annualGrowthRate);
       } else {
-        // Retirement phase: 4% withdrawal rule
-        const yearsInRetirement = age - retirementAge;
-        const withdrawalRate = 0.04;
-        portfolioValue = plan.total_assets * Math.pow(1.07 - withdrawalRate, yearsInRetirement);
+        // Post-retirement: Apply growth first, then subtract expenses
+        portfolioValue *= (1 + annualGrowthRate);
+        portfolioValue -= annualExpenses;
+        
+        // Don't let portfolio go negative
+        portfolioValue = Math.max(0, portfolioValue);
       }
-      
-      portfolioValue = Math.max(0, portfolioValue); // Don't go negative
       
       projections.push({
         age,
         year,
-        [`${planType}Value`]: portfolioValue,
+        [`${planType}Value`]: Math.round(portfolioValue),
       });
     }
     
