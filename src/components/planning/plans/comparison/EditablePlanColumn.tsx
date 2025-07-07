@@ -92,9 +92,9 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Initialize local inputs when data loads
+  // Initialize and update local inputs when data loads or plan data changes
   useEffect(() => {
-    if ((income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) && Object.keys(localInputs).length === 0) {
+    if (income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) {
       const newLocalInputs: { [key: string]: string } = {};
       
       // Calculate original totals
@@ -114,7 +114,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         totalOriginalSavings += Number(item.amount) * getFrequencyMultiplier(item.frequency);
       });
       
-      // Set initial values directly from plan data
+      // Set values from plan data, distributing proportionally
       income.forEach((item) => {
         const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
         const proportion = totalOriginalIncome > 0 ? originalAmount / totalOriginalIncome : 1 / income.length;
@@ -138,7 +138,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       
       setLocalInputs(newLocalInputs);
     }
-  }, [income, expenses, savingsContributions]);
+  }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
 
   // Handle input changes - allow empty string and numbers only
   const handleInputChange = (key: string, value: string) => {
