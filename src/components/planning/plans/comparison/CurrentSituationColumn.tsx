@@ -59,7 +59,8 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
         .from('savings')
         .select(`
           *,
-          destination_asset:assets(id, name, type)
+          destination_asset:assets(id, name, type),
+          goal:goals(id, name)
         `)
         .eq('user_id', user.id);
       if (error) throw error;
@@ -149,16 +150,21 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
 
       {/* Individual Savings Contributions */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Investment Contributions</Label>
+        <Label className="text-sm font-medium">Savings</Label>
         {savingsContributions.length > 0 ? (
           <div className="space-y-2">
             {savingsContributions.map((saving) => {
               const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
               const destinationName = saving.destination_asset?.name || 'General Savings';
+              const goalName = saving.goal?.name;
+              const description = goalName 
+                ? `Contribution to ${destinationName} for ${goalName}`
+                : `Contribution to ${destinationName}`;
+              
               return (
                 <div key={saving.id} className="flex justify-between items-center text-sm">
                   <span className="text-gray-600 dark:text-gray-400">
-                    Contribution to {destinationName}
+                    {description}
                   </span>
                   <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
                 </div>
