@@ -25,6 +25,7 @@ import CurrentSituationColumn from './comparison/CurrentSituationColumn';
 import EditablePlanColumn from './comparison/EditablePlanColumn';
 import ComparisonChart from './comparison/ComparisonChart';
 import { calculateProbabilityOfSuccess } from '@/utils/planCalculations';
+import { useDebounce } from 'use-debounce';
 
 interface DecisionCenterProps {
   planId: string;
@@ -47,6 +48,9 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editablePlan, setEditablePlan] = useState<PlanData | null>(null);
+
+  // Debounce the editable plan changes to avoid too frequent saves
+  const [debouncedEditablePlan] = useDebounce(editablePlan, 1000);
 
   // Fetch plan data
   const { data: plan, isLoading } = useQuery({
@@ -222,6 +226,25 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     }
   }, [plan, editablePlan]);
 
+  // Auto-save plan changes when debouncedEditablePlan changes
+  React.useEffect(() => {
+    if (debouncedEditablePlan && plan && editablePlan) {
+      // Only save if there are actual changes
+      const hasChanges = (
+        debouncedEditablePlan.monthly_income !== plan.monthly_income ||
+        debouncedEditablePlan.monthly_expenses !== plan.monthly_expenses ||
+        debouncedEditablePlan.monthly_savings !== plan.monthly_savings ||
+        debouncedEditablePlan.target_retirement_age !== plan.target_retirement_age ||
+        debouncedEditablePlan.target_savings_rate !== plan.target_savings_rate ||
+        debouncedEditablePlan.total_assets !== plan.total_assets
+      );
+
+      if (hasChanges) {
+        autoSavePlanMutation.mutate(debouncedEditablePlan);
+      }
+    }
+  }, [debouncedEditablePlan, plan]);
+
   // Helper function to convert frequency to annual multiplier
   const getAnnualMultiplier = (frequency: string) => {
     switch (frequency) {
@@ -332,6 +355,32 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     assetsLastUntil: plan ? plan.assets_last_until_age : 0,
     projectedSavings: plan ? plan.projected_retirement_savings : 0,
   };
+
+  // Auto-save plan mutation (silent, no toast)
+  const autoSavePlanMutation = useMutation({
+    mutationFn: async (updates: PlanData) => {
+      const { data, error } = await supabase
+        .from('financial_plans')
+        .update({ 
+          ...updates, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', planId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial_plans'] });
+      queryClient.invalidateQueries({ queryKey: ['financial_plan', planId] });
+      // No toast for auto-save to keep it unobtrusive
+    },
+    onError: (error) => {
+      console.error('Auto-save failed:', error);
+      // Could show a subtle indicator that auto-save failed
+    },
+  });
 
   // Save plan mutation
   const savePlanMutation = useMutation({
@@ -567,6 +616,11 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
                 {plan.is_main_plan && (
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                     Main Plan
+                  </Badge>
+                )}
+                {autoSavePlanMutation.isPending && (
+                  <Badge variant="outline" className="text-gray-500">
+                    Saving...
                   </Badge>
                 )}
               </div>
