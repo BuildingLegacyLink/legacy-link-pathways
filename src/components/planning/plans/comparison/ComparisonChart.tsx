@@ -54,7 +54,8 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     
     expenses.forEach(expense => {
       const amount = Number(expense.amount);
-      const growthRate = (expense.growth_rate || 3.0) / 100;
+      // Use the growth_rate from the expense if available, otherwise default to 3%
+      const growthRate = (expense.growth_rate != null ? Number(expense.growth_rate) : 3.0) / 100;
       
       // Convert to monthly if needed
       let monthlyAmount = amount;
