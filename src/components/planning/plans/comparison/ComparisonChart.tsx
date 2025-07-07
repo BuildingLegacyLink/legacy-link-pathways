@@ -143,7 +143,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           <Tooltip 
             formatter={(value: number, name: string) => [
               formatCurrency(value), 
-              name === 'currentValue' ? 'Current Situation' : (planName || 'New Plan')
+              name
             ]}
             labelFormatter={(age) => `Age: ${age}`}
             contentStyle={{ 
