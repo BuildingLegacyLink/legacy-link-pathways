@@ -44,6 +44,9 @@ const ProfileSection = () => {
     spouse_dob: '',
   });
 
+  // Store raw input values for dependent dates
+  const [dependentRawDates, setDependentRawDates] = useState<{[key: number]: string}>({});
+
   useEffect(() => {
     if (user) {
       fetchProfile();
@@ -121,9 +124,17 @@ const ProfileSection = () => {
         // Parse dependents data if it exists
         if (data.dependents_data) {
           try {
-            setDependents(JSON.parse(data.dependents_data));
+            const loadedDependents = JSON.parse(data.dependents_data);
+            setDependents(loadedDependents);
+            // Initialize raw date inputs for dependents
+            const rawDates: {[key: number]: string} = {};
+            loadedDependents.forEach((dep: Dependent, index: number) => {
+              rawDates[index] = formatDateForDisplay(dep.dob) || '';
+            });
+            setDependentRawDates(rawDates);
           } catch {
             setDependents([]);
+            setDependentRawDates({});
           }
         }
       } else {
@@ -180,11 +191,25 @@ const ProfileSection = () => {
   };
 
   const addDependent = () => {
+    const newIndex = dependents.length;
     setDependents([...dependents, { name: '', dob: '' }]);
+    // Initialize raw date input for the new dependent
+    setDependentRawDates(prev => ({ ...prev, [newIndex]: '' }));
   };
 
   const removeDependent = (index: number) => {
     setDependents(dependents.filter((_, i) => i !== index));
+    // Remove the raw date input for this dependent and reindex
+    const newRawDates: {[key: number]: string} = {};
+    Object.entries(dependentRawDates).forEach(([key, value]) => {
+      const keyNum = parseInt(key);
+      if (keyNum < index) {
+        newRawDates[keyNum] = value;
+      } else if (keyNum > index) {
+        newRawDates[keyNum - 1] = value;
+      }
+    });
+    setDependentRawDates(newRawDates);
   };
 
   const updateDependent = (index: number, field: keyof Dependent, value: string) => {
@@ -363,20 +388,25 @@ const ProfileSection = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Dependent
               </Button>
+              {dependents.length > 0 && (
+                <div className="grid grid-cols-[1fr,120px,auto] gap-2 mb-2">
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Name</Label>
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Date of Birth</Label>
+                  <div></div>
+                </div>
+              )}
               {dependents.map((dependent, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="grid grid-cols-[1fr,120px,auto] gap-2 items-center">
                   <Input
                     value={dependent.name}
                     onChange={(e) => updateDependent(index, 'name', e.target.value)}
                     placeholder="Name"
-                    className="flex-1"
                   />
                   <Input
-                    value={dependent.dob ? formatDateForDisplay(dependent.dob) : ''}
-                    onChange={(e) => updateDependent(index, 'dob', e.target.value)}
+                    value={dependentRawDates[index] || ''}
+                    onChange={(e) => setDependentRawDates(prev => ({ ...prev, [index]: e.target.value }))}
                     onBlur={(e) => handleDependentDateBlur(index, e.target.value)}
                     placeholder="MM/DD/YYYY"
-                    className="w-32"
                   />
                   <Button
                     type="button"
