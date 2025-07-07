@@ -89,105 +89,94 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Local state for individual amounts (managed as strings for input handling)
-  const [localIncomeAmounts, setLocalIncomeAmounts] = useState<{ [key: string]: string }>({});
-  const [localExpenseAmounts, setLocalExpenseAmounts] = useState<{ [key: string]: string }>({});
-  const [localSavingsAmounts, setLocalSavingsAmounts] = useState<{ [key: string]: string }>({});
+  // Simple local state for individual input values as strings
+  const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
 
-  // Initialize local amounts from plan data when data loads
+  // Initialize input values when data loads
   useEffect(() => {
-    if (income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) {
-      const newIncomeAmounts: { [key: string]: string } = {};
-      const newExpenseAmounts: { [key: string]: string } = {};
-      const newSavingsAmounts: { [key: string]: string } = {};
-      
-      // Calculate total amounts from plan data
-      const totalIncome = planData.monthly_income;
-      const totalExpenses = planData.monthly_expenses;
-      const totalSavings = planData.monthly_savings;
-      
-      // Calculate original totals to determine proportions
-      let originalIncomeTotal = 0;
-      let originalExpenseTotal = 0;
-      let originalSavingsTotal = 0;
-      
-      income.forEach((incomeItem) => {
-        const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
-        originalIncomeTotal += monthlyAmount;
-      });
-      
-      expenses.forEach((expense) => {
-        const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
-        originalExpenseTotal += monthlyAmount;
-      });
-      
-      savingsContributions.forEach((saving) => {
-        const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
-        originalSavingsTotal += monthlyAmount;
-      });
-      
-      // Distribute plan amounts proportionally
-      income.forEach((incomeItem) => {
-        const originalMonthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
-        const proportion = originalIncomeTotal > 0 ? originalMonthlyAmount / originalIncomeTotal : 1 / income.length;
-        const distributedAmount = totalIncome * proportion;
-        newIncomeAmounts[incomeItem.id] = distributedAmount.toFixed(0);
-      });
-      
-      expenses.forEach((expense) => {
-        const originalMonthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
-        const proportion = originalExpenseTotal > 0 ? originalMonthlyAmount / originalExpenseTotal : 1 / expenses.length;
-        const distributedAmount = totalExpenses * proportion;
-        newExpenseAmounts[expense.id] = distributedAmount.toFixed(0);
-      });
-      
-      savingsContributions.forEach((saving) => {
-        const originalMonthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
-        const proportion = originalSavingsTotal > 0 ? originalMonthlyAmount / originalSavingsTotal : 1 / savingsContributions.length;
-        const distributedAmount = totalSavings * proportion;
-        newSavingsAmounts[saving.id] = distributedAmount.toFixed(0);
-      });
-      
-      setLocalIncomeAmounts(newIncomeAmounts);
-      setLocalExpenseAmounts(newExpenseAmounts);
-      setLocalSavingsAmounts(newSavingsAmounts);
-    }
+    if (!income.length && !expenses.length && !savingsContributions.length) return;
+    
+    const newInputValues: { [key: string]: string } = {};
+    
+    // Calculate total amounts from plan data
+    const totalIncome = planData.monthly_income;
+    const totalExpenses = planData.monthly_expenses;
+    const totalSavings = planData.monthly_savings;
+    
+    // Calculate original totals to determine proportions
+    let originalIncomeTotal = 0;
+    let originalExpenseTotal = 0;
+    let originalSavingsTotal = 0;
+    
+    income.forEach((incomeItem) => {
+      const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
+      originalIncomeTotal += monthlyAmount;
+    });
+    
+    expenses.forEach((expense) => {
+      const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
+      originalExpenseTotal += monthlyAmount;
+    });
+    
+    savingsContributions.forEach((saving) => {
+      const monthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
+      originalSavingsTotal += monthlyAmount;
+    });
+    
+    // Distribute amounts proportionally
+    income.forEach((incomeItem) => {
+      const originalMonthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
+      const proportion = originalIncomeTotal > 0 ? originalMonthlyAmount / originalIncomeTotal : 1 / income.length;
+      const distributedAmount = totalIncome * proportion;
+      newInputValues[`income_${incomeItem.id}`] = Math.round(distributedAmount).toString();
+    });
+    
+    expenses.forEach((expense) => {
+      const originalMonthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
+      const proportion = originalExpenseTotal > 0 ? originalMonthlyAmount / originalExpenseTotal : 1 / expenses.length;
+      const distributedAmount = totalExpenses * proportion;
+      newInputValues[`expense_${expense.id}`] = Math.round(distributedAmount).toString();
+    });
+    
+    savingsContributions.forEach((saving) => {
+      const originalMonthlyAmount = Number(saving.amount) * getFrequencyMultiplier(saving.frequency);
+      const proportion = originalSavingsTotal > 0 ? originalMonthlyAmount / originalSavingsTotal : 1 / savingsContributions.length;
+      const distributedAmount = totalSavings * proportion;
+      newInputValues[`saving_${saving.id}`] = Math.round(distributedAmount).toString();
+    });
+    
+    setInputValues(newInputValues);
   }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
 
-  const updateIncomeAmount = (incomeId: string, inputValue: string) => {
-    const newIncomeAmounts = { ...localIncomeAmounts, [incomeId]: inputValue };
-    setLocalIncomeAmounts(newIncomeAmounts);
+  const handleInputChange = (key: string, value: string, type: 'income' | 'expense' | 'saving') => {
+    // Update local input state
+    const newInputValues = { ...inputValues, [key]: value };
+    setInputValues(newInputValues);
     
-    // Calculate total and update plan
-    const totalIncome = Object.values(newIncomeAmounts).reduce((sum, amt) => sum + (Number(amt) || 0), 0);
-    onPlanChange({
-      ...planData,
-      monthly_income: totalIncome,
-    });
-  };
-
-  const updateExpenseAmount = (expenseId: string, inputValue: string) => {
-    const newExpenseAmounts = { ...localExpenseAmounts, [expenseId]: inputValue };
-    setLocalExpenseAmounts(newExpenseAmounts);
-    
-    // Calculate total and update plan
-    const totalExpenses = Object.values(newExpenseAmounts).reduce((sum, amt) => sum + (Number(amt) || 0), 0);
-    onPlanChange({
-      ...planData,
-      monthly_expenses: totalExpenses,
-    });
-  };
-
-  const updateSavingsAmount = (savingId: string, inputValue: string) => {
-    const newSavingsAmounts = { ...localSavingsAmounts, [savingId]: inputValue };
-    setLocalSavingsAmounts(newSavingsAmounts);
-    
-    // Calculate total and update plan
-    const totalSavings = Object.values(newSavingsAmounts).reduce((sum, amt) => sum + (Number(amt) || 0), 0);
-    onPlanChange({
-      ...planData,
-      monthly_savings: totalSavings,
-    });
+    // Calculate new total for this type
+    let total = 0;
+    if (type === 'income') {
+      income.forEach((item) => {
+        const inputKey = `income_${item.id}`;
+        const inputValue = newInputValues[inputKey] || '0';
+        total += Number(inputValue) || 0;
+      });
+      onPlanChange({ ...planData, monthly_income: total });
+    } else if (type === 'expense') {
+      expenses.forEach((item) => {
+        const inputKey = `expense_${item.id}`;
+        const inputValue = newInputValues[inputKey] || '0';
+        total += Number(inputValue) || 0;
+      });
+      onPlanChange({ ...planData, monthly_expenses: total });
+    } else if (type === 'saving') {
+      savingsContributions.forEach((item) => {
+        const inputKey = `saving_${item.id}`;
+        const inputValue = newInputValues[inputKey] || '0';
+        total += Number(inputValue) || 0;
+      });
+      onPlanChange({ ...planData, monthly_savings: total });
+    }
   };
 
   const updatePlan = (field: keyof PlanData, value: number) => {
@@ -218,8 +207,8 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="number"
-                    value={localIncomeAmounts[incomeItem.id] || '0'}
-                    onChange={(e) => updateIncomeAmount(incomeItem.id, e.target.value)}
+                    value={inputValues[`income_${incomeItem.id}`] || '0'}
+                    onChange={(e) => handleInputChange(`income_${incomeItem.id}`, e.target.value, 'income')}
                     className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
@@ -252,8 +241,8 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                   <span>$</span>
                   <Input
                     type="number"
-                    value={localExpenseAmounts[expense.id] || '0'}
-                    onChange={(e) => updateExpenseAmount(expense.id, e.target.value)}
+                    value={inputValues[`expense_${expense.id}`] || '0'}
+                    onChange={(e) => handleInputChange(`expense_${expense.id}`, e.target.value, 'expense')}
                     className="w-20 h-7 text-xs"
                   />
                   <span className="text-xs">/mo</span>
@@ -295,8 +284,8 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                     <span>$</span>
                     <Input
                       type="number"
-                      value={localSavingsAmounts[saving.id] || '0'}
-                      onChange={(e) => updateSavingsAmount(saving.id, e.target.value)}
+                      value={inputValues[`saving_${saving.id}`] || '0'}
+                      onChange={(e) => handleInputChange(`saving_${saving.id}`, e.target.value, 'saving')}
                       className="w-20 h-7 text-xs"
                     />
                     <span className="text-xs">/mo</span>
