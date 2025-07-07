@@ -92,51 +92,53 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   };
 
-  // Initialize local inputs when planData changes
+  // Initialize local inputs when data loads - only run once
   useEffect(() => {
-    const newLocalInputs: { [key: string]: string } = {};
-    
-    // Calculate original totals
-    let totalOriginalIncome = 0;
-    let totalOriginalExpenses = 0;
-    let totalOriginalSavings = 0;
-    
-    income.forEach((item) => {
-      totalOriginalIncome += Number(item.amount) * getFrequencyMultiplier(item.frequency);
-    });
-    
-    expenses.forEach((item) => {
-      totalOriginalExpenses += Number(item.amount) * getFrequencyMultiplier(item.frequency);
-    });
-    
-    savingsContributions.forEach((item) => {
-      totalOriginalSavings += Number(item.amount) * getFrequencyMultiplier(item.frequency);
-    });
-    
-    // Distribute plan totals proportionally
-    income.forEach((item) => {
-      const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
-      const proportion = totalOriginalIncome > 0 ? originalAmount / totalOriginalIncome : 1 / income.length;
-      const distributedAmount = planData.monthly_income * proportion;
-      newLocalInputs[`income_${item.id}`] = Math.round(distributedAmount).toString();
-    });
-    
-    expenses.forEach((item) => {
-      const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
-      const proportion = totalOriginalExpenses > 0 ? originalAmount / totalOriginalExpenses : 1 / expenses.length;
-      const distributedAmount = planData.monthly_expenses * proportion;
-      newLocalInputs[`expense_${item.id}`] = Math.round(distributedAmount).toString();
-    });
-    
-    savingsContributions.forEach((item) => {
-      const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
-      const proportion = totalOriginalSavings > 0 ? originalAmount / totalOriginalSavings : 1 / savingsContributions.length;
-      const distributedAmount = planData.monthly_savings * proportion;
-      newLocalInputs[`saving_${item.id}`] = Math.round(distributedAmount).toString();
-    });
-    
-    setLocalInputs(newLocalInputs);
-  }, [income, expenses, savingsContributions, planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
+    if ((income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) && Object.keys(localInputs).length === 0) {
+      const newLocalInputs: { [key: string]: string } = {};
+      
+      // Calculate original totals
+      let totalOriginalIncome = 0;
+      let totalOriginalExpenses = 0;
+      let totalOriginalSavings = 0;
+      
+      income.forEach((item) => {
+        totalOriginalIncome += Number(item.amount) * getFrequencyMultiplier(item.frequency);
+      });
+      
+      expenses.forEach((item) => {
+        totalOriginalExpenses += Number(item.amount) * getFrequencyMultiplier(item.frequency);
+      });
+      
+      savingsContributions.forEach((item) => {
+        totalOriginalSavings += Number(item.amount) * getFrequencyMultiplier(item.frequency);
+      });
+      
+      // Distribute plan totals proportionally - only on initial load
+      income.forEach((item) => {
+        const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
+        const proportion = totalOriginalIncome > 0 ? originalAmount / totalOriginalIncome : 1 / income.length;
+        const distributedAmount = planData.monthly_income * proportion;
+        newLocalInputs[`income_${item.id}`] = Math.round(distributedAmount).toString();
+      });
+      
+      expenses.forEach((item) => {
+        const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
+        const proportion = totalOriginalExpenses > 0 ? originalAmount / totalOriginalExpenses : 1 / expenses.length;
+        const distributedAmount = planData.monthly_expenses * proportion;
+        newLocalInputs[`expense_${item.id}`] = Math.round(distributedAmount).toString();
+      });
+      
+      savingsContributions.forEach((item) => {
+        const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
+        const proportion = totalOriginalSavings > 0 ? originalAmount / totalOriginalSavings : 1 / savingsContributions.length;
+        const distributedAmount = planData.monthly_savings * proportion;
+        newLocalInputs[`saving_${item.id}`] = Math.round(distributedAmount).toString();
+      });
+      
+      setLocalInputs(newLocalInputs);
+    }
+  }, [income, expenses, savingsContributions]);
 
   // Handle input changes - just update local state
   const handleInputChange = (key: string, value: string) => {
@@ -168,7 +170,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       newSavingsTotal += Number(inputValue) || 0;
     });
     
-    // Update plan data
+    // Update plan data WITHOUT redistributing back to inputs
     onPlanChange({
       ...planData,
       monthly_income: newIncomeTotal,
