@@ -93,6 +93,33 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
     enabled: !!user,
   });
 
+  const { data: retirementGoal } = useQuery({
+    queryKey: ['retirement_goal', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('goal_type', 'retirement')
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Calculate target retirement age from retirement goal
+  const getTargetRetirementAge = () => {
+    if (retirementGoal?.target_date) {
+      const retirementYear = new Date(retirementGoal.target_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const currentAge = 25; // Default assumption
+      return currentAge + (retirementYear - currentYear);
+    }
+    return 67; // Default if no retirement goal
+  };
+
   // Calculate current situation from user data
   const currentSituation: PlanData = {
     monthly_income: income?.reduce((sum, inc) => {
@@ -113,17 +140,20 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
       if (saving.frequency === 'weekly') return sum + (amount * 4.33);
       return sum + amount;
     }, 0) || 0,
-    target_retirement_age: 67,
+    target_retirement_age: getTargetRetirementAge(),
     target_savings_rate: 20,
     total_assets: assets?.reduce((sum, asset) => sum + Number(asset.value), 0) || 0,
   };
 
   // Initialize editable plan with current situation data
   useEffect(() => {
-    if (currentSituation.monthly_income > 0) {
-      setEditablePlan(currentSituation);
+    if (currentSituation.monthly_income > 0 || retirementGoal) {
+      setEditablePlan({
+        ...currentSituation,
+        target_retirement_age: getTargetRetirementAge(),
+      });
     }
-  }, [currentSituation.monthly_income, currentSituation.monthly_expenses, currentSituation.total_assets]);
+  }, [currentSituation.monthly_income, currentSituation.monthly_expenses, currentSituation.total_assets, retirementGoal]);
 
   // Calculate probability of success for both plans
   const currentPoS = calculateProbabilityOfSuccess(currentSituation);
