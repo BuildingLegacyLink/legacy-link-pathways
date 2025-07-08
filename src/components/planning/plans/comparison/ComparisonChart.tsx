@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +37,23 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         .from('profiles')
         .select('date_of_birth')
         .eq('id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch retirement goal to get the target retirement age
+  const { data: retirementGoal } = useQuery({
+    queryKey: ['goals', user?.id, 'retirement'],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('goal_type', 'retirement')
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -147,7 +165,8 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
   const generateProjections = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = [];
     const currentAge = calculateCurrentAge();
-    const retirementAge = plan.target_retirement_age;
+    // Use retirement age from retirement goal for current situation, or plan's retirement age for editable plan
+    const retirementAge = planType === 'current' ? (retirementGoal?.retirement_age || 67) : plan.target_retirement_age;
     const deathAge = 85;
     const annualGrowthRate = 0.07;
     const expenseGrowthRate = calculateExpenseGrowthRate();
@@ -242,7 +261,9 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
   // Find the age at which portfolio peaks (actual peak or start of drawdown)
   const findPortfolioPeakAge = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = generateProjections(plan, planType);
-    let peakAge = plan.target_retirement_age;
+    // Use retirement age from retirement goal for current situation, or plan's retirement age for editable plan
+    const retirementAge = planType === 'current' ? (retirementGoal?.retirement_age || 67) : plan.target_retirement_age;
+    let peakAge = retirementAge;
     let peakValue = 0;
     
     // First, find the absolute peak value
@@ -260,7 +281,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       const nextValue = projections[i + 1][`${planType}Value`];
       
       // Look for the first decline that's significant (more than just market volatility)
-      if (currentValue > nextValue && currentValue > 0 && projections[i].age >= plan.target_retirement_age - 5) {
+      if (currentValue > nextValue && currentValue > 0 && projections[i].age >= retirementAge - 5) {
         // Check if this is the start of a consistent decline
         let consecutiveDeclines = 0;
         for (let j = i; j < Math.min(i + 3, projections.length - 1); j++) {
