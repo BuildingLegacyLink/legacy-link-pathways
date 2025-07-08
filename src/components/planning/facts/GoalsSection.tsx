@@ -99,14 +99,37 @@ const GoalsSection = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    // Handle target date/age conversion for retirement goals
+    let targetDate = null;
+    if (selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') {
+      const targetAge = parseInt(formData.get('target_age') as string);
+      if (targetAge) {
+        const currentYear = new Date().getFullYear();
+        const birthYear = currentYear - 25; // Assuming current age of 25 as default
+        const retirementYear = birthYear + targetAge;
+        targetDate = `${retirementYear}-01-01`;
+      }
+    } else {
+      targetDate = formData.get('target_date') as string || null;
+    }
+    
     const goalData = {
       name: formData.get('name') as string,
-      target_amount: parseFloat(formData.get('target_amount') as string),
-      target_date: formData.get('target_date') as string || null,
-      priority: parseInt(formData.get('priority') as string) || 1,
-      description: formData.get('description') as string || null,
+      target_amount: (selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement') 
+        ? parseFloat(formData.get('target_amount') as string) 
+        : 0, // Default target amount for retirement goals
+      target_date: targetDate,
+      priority: (selectedTemplate?.id !== 'retirement' && selectedTemplate?.id !== 'heirs' && 
+                editingGoal?.goal_type !== 'retirement' && editingGoal?.goal_type !== 'heirs') 
+        ? parseInt(formData.get('priority') as string) || 1
+        : 1, // Default priority for retirement/heirs goals
+      description: (selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement')
+        ? formData.get('description') as string || null
+        : null, // No description for retirement goals
       goal_type: selectedTemplate?.id || editingGoal?.goal_type || 'custom',
-      withdrawal_order: selectedTemplate?.id === 'retirement' ? withdrawalOrder : [],
+      withdrawal_order: (selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') 
+        ? withdrawalOrder 
+        : [],
     };
 
     if (editingGoal) {
@@ -201,50 +224,79 @@ const GoalsSection = () => {
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="target_amount">Target Amount ($)</Label>
-            <Input
-              id="target_amount"
-              name="target_amount"
-              type="number"
-              step="1"
-              defaultValue={editingGoal?.target_amount || template?.defaultAmount || ''}
-              placeholder={template?.defaultAmount?.toString() || "50000"}
-              required
-            />
-          </div>
+          {/* Target Amount - hide for retirement goals */}
+          {selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement' && (
+            <div className="space-y-2">
+              <Label htmlFor="target_amount">Target Amount ($)</Label>
+              <Input
+                id="target_amount"
+                name="target_amount"
+                type="number"
+                step="1"
+                defaultValue={editingGoal?.target_amount || template?.defaultAmount || ''}
+                placeholder={template?.defaultAmount?.toString() || "50000"}
+                required
+              />
+            </div>
+          )}
           
-          <div className="space-y-2">
-            <Label htmlFor="target_date">Target Date</Label>
-            <Input
-              id="target_date"
-              name="target_date"
-              type="date"
-              defaultValue={editingGoal?.target_date || targetDate.toISOString().split('T')[0]}
-            />
-          </div>
+          {/* Target Date/Age */}
+          {selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement' ? (
+            <div className="space-y-2">
+              <Label htmlFor="target_age">Target Retirement Age</Label>
+              <Input
+                id="target_age"
+                name="target_age"
+                type="number"
+                min="50"
+                max="100"
+                defaultValue={editingGoal?.target_date ? 
+                  new Date().getFullYear() - new Date(editingGoal.target_date).getFullYear() + 67 : 67}
+                placeholder="67"
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="target_date">Target Date</Label>
+              <Input
+                id="target_date"
+                name="target_date"
+                type="date"
+                defaultValue={editingGoal?.target_date || targetDate.toISOString().split('T')[0]}
+              />
+            </div>
+          )}
           
-          <div className="space-y-2">
-            <Label htmlFor="priority">Priority (1-5)</Label>
-            <Input
-              id="priority"
-              name="priority"
-              type="number"
-              min="1"
-              max="5"
-              defaultValue={editingGoal?.priority || 1}
-            />
-          </div>
+          {/* Priority - hide for retirement and heirs goals */}
+          {selectedTemplate?.id !== 'retirement' && 
+           selectedTemplate?.id !== 'heirs' && 
+           editingGoal?.goal_type !== 'retirement' && 
+           editingGoal?.goal_type !== 'heirs' && (
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority (1-5)</Label>
+              <Input
+                id="priority"
+                name="priority"
+                type="number"
+                min="1"
+                max="5"
+                defaultValue={editingGoal?.priority || 1}
+              />
+            </div>
+          )}
           
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              defaultValue={editingGoal?.description || template?.description || ''}
-              placeholder={template?.description || "6 months of living expenses"}
-            />
-          </div>
+          {/* Description - hide for retirement goals */}
+          {selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement' && (
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                defaultValue={editingGoal?.description || template?.description || ''}
+                placeholder={template?.description || "6 months of living expenses"}
+              />
+            </div>
+          )}
 
           {(selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') && (
             <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-600">

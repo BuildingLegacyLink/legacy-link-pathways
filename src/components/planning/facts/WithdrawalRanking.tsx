@@ -120,10 +120,11 @@ const WithdrawalRanking = ({ withdrawalOrder, onWithdrawalOrderChange }: Withdra
     enabled: !!user
   });
 
-  // Filter to only show investment/retirement accounts
+  // Filter to include both investment and retirement accounts
   useEffect(() => {
     if (userAssets) {
       const investmentAccountTypes = ['roth_ira', 'traditional_ira', '401k', '403b', '457', 'brokerage', 'hsa'];
+      const retirementAccountTypes = ['retirement_account', 'retirement', 'pension'];
       const filteredAssets = userAssets.filter(asset => {
         const assetType = asset.type.toLowerCase();
         const assetName = asset.name.toLowerCase();
@@ -132,6 +133,12 @@ const WithdrawalRanking = ({ withdrawalOrder, onWithdrawalOrderChange }: Withdra
         if (investmentAccountTypes.includes(assetType)) return true;
         if (assetType.includes('ira') || assetType.includes('401') || assetType.includes('403') || assetType.includes('457')) return true;
         if (assetType.includes('brokerage') || assetType.includes('investment')) return true;
+        
+        // Include retirement account types
+        if (retirementAccountTypes.includes(assetType)) return true;
+        if (assetType.includes('retirement') || assetType.includes('pension')) return true;
+        
+        // Include HSA if used as investment vehicle
         if (assetType.includes('hsa') && (assetName.includes('investment') || assetName.includes('invest'))) return true;
         
         // Only include savings if it's clearly for investment/emergency fund
