@@ -74,16 +74,25 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
   });
 
   // Filter assets to only show investment accounts
-  const investmentAccountTypes = ['roth_ira', 'traditional_ira', '401k', '403b', 'brokerage', 'hsa', 'savings'];
-  const filteredAssets = assets?.filter(asset => 
-    investmentAccountTypes.includes(asset.type.toLowerCase()) ||
-    asset.type.toLowerCase().includes('ira') ||
-    asset.type.toLowerCase().includes('401') ||
-    asset.type.toLowerCase().includes('403') ||
-    asset.type.toLowerCase().includes('brokerage') ||
-    asset.type.toLowerCase().includes('hsa') ||
-    (asset.type.toLowerCase().includes('savings') && asset.name.toLowerCase().includes('emergency'))
-  ) || [];
+  const investmentAccountTypes = ['roth_ira', 'traditional_ira', '401k', '403b', '457', 'brokerage', 'hsa'];
+  const filteredAssets = assets?.filter(asset => {
+    const assetType = asset.type.toLowerCase();
+    const assetName = asset.name.toLowerCase();
+    
+    // Include specific investment account types
+    if (investmentAccountTypes.includes(assetType)) return true;
+    if (assetType.includes('ira') || assetType.includes('401') || assetType.includes('403') || assetType.includes('457')) return true;
+    if (assetType.includes('brokerage') || assetType.includes('investment')) return true;
+    if (assetType.includes('hsa') && (assetName.includes('investment') || assetName.includes('invest'))) return true;
+    
+    // Only include savings if it's clearly for investment/emergency fund
+    if (assetType.includes('savings') && (assetName.includes('emergency') || assetName.includes('investment'))) return true;
+    
+    // Exclude personal assets, checking accounts, vehicles, etc.
+    if (assetType.includes('checking') || assetType.includes('vehicle') || assetType.includes('car') || assetType.includes('property')) return false;
+    
+    return false;
+  }) || [];
 
   // Calculate current age from date of birth
   const calculateCurrentAge = () => {
@@ -153,9 +162,10 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       selectedAsset = assets.find(asset => asset.id === selectedAccount);
       if (selectedAsset) {
         portfolioValue = Number(selectedAsset.value);
-        // For individual accounts, allocate savings proportionally
-        const totalAssets = plan.total_assets;
-        const assetProportion = totalAssets > 0 ? portfolioValue / totalAssets : 0;
+        // For individual accounts, allocate savings proportionally based on current asset allocation
+        // Use the current plan's total assets for proportion calculation to maintain consistency
+        const referenceAssets = currentPlan.total_assets; // Use current plan as reference for both
+        const assetProportion = referenceAssets > 0 ? portfolioValue / referenceAssets : 0;
         const allocatedSavings = annualSavings * assetProportion;
         
         for (let age = currentAge; age <= deathAge; age++) {
@@ -229,27 +239,44 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     ...editableProjections[index],
   }));
 
-  // Find the age at which portfolio peaks (when withdrawals begin to exceed growth)
+  // Find the age at which portfolio peaks (actual peak or start of drawdown)
   const findPortfolioPeakAge = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = generateProjections(plan, planType);
     let peakAge = plan.target_retirement_age;
     let peakValue = 0;
     
-    for (let i = 0; i < projections.length - 1; i++) {
+    // First, find the absolute peak value
+    for (let i = 0; i < projections.length; i++) {
       const currentValue = projections[i][`${planType}Value`];
-      const nextValue = projections[i + 1][`${planType}Value`];
-      
       if (currentValue > peakValue) {
         peakValue = currentValue;
         peakAge = projections[i].age;
       }
+    }
+    
+    // Then, find the start of consistent drawdown (first year where portfolio value decreases)
+    for (let i = 0; i < projections.length - 1; i++) {
+      const currentValue = projections[i][`${planType}Value`];
+      const nextValue = projections[i + 1][`${planType}Value`];
       
-      // If portfolio starts declining, that's our peak
-      if (currentValue > nextValue && projections[i].age >= plan.target_retirement_age) {
-        return projections[i].age;
+      // Look for the first decline that's significant (more than just market volatility)
+      if (currentValue > nextValue && currentValue > 0 && projections[i].age >= plan.target_retirement_age - 5) {
+        // Check if this is the start of a consistent decline
+        let consecutiveDeclines = 0;
+        for (let j = i; j < Math.min(i + 3, projections.length - 1); j++) {
+          if (projections[j][`${planType}Value`] > projections[j + 1][`${planType}Value`]) {
+            consecutiveDeclines++;
+          }
+        }
+        
+        // If we have consistent declines, this is our drawdown start
+        if (consecutiveDeclines >= 2) {
+          return projections[i].age;
+        }
       }
     }
     
+    // If no consistent drawdown found, return the peak age
     return peakAge;
   };
 
