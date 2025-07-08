@@ -73,6 +73,18 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     enabled: !!user,
   });
 
+  // Filter assets to only show investment accounts
+  const investmentAccountTypes = ['roth_ira', 'traditional_ira', '401k', '403b', 'brokerage', 'hsa', 'savings'];
+  const filteredAssets = assets?.filter(asset => 
+    investmentAccountTypes.includes(asset.type.toLowerCase()) ||
+    asset.type.toLowerCase().includes('ira') ||
+    asset.type.toLowerCase().includes('401') ||
+    asset.type.toLowerCase().includes('403') ||
+    asset.type.toLowerCase().includes('brokerage') ||
+    asset.type.toLowerCase().includes('hsa') ||
+    (asset.type.toLowerCase().includes('savings') && asset.name.toLowerCase().includes('emergency'))
+  ) || [];
+
   // Calculate current age from date of birth
   const calculateCurrentAge = () => {
     if (!profile?.date_of_birth) return 30; // Default fallback
@@ -217,6 +229,30 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     ...editableProjections[index],
   }));
 
+  // Find the age at which portfolio peaks (when withdrawals begin to exceed growth)
+  const findPortfolioPeakAge = (plan: PlanData, planType: 'current' | 'editable') => {
+    const projections = generateProjections(plan, planType);
+    let peakAge = plan.target_retirement_age;
+    let peakValue = 0;
+    
+    for (let i = 0; i < projections.length - 1; i++) {
+      const currentValue = projections[i][`${planType}Value`];
+      const nextValue = projections[i + 1][`${planType}Value`];
+      
+      if (currentValue > peakValue) {
+        peakValue = currentValue;
+        peakAge = projections[i].age;
+      }
+      
+      // If portfolio starts declining, that's our peak
+      if (currentValue > nextValue && projections[i].age >= plan.target_retirement_age) {
+        return projections[i].age;
+      }
+    }
+    
+    return peakAge;
+  };
+
   // Get current selected account name for display
   const getSelectedAccountName = () => {
     if (selectedAccount === 'total') return 'Total Portfolio Value';
@@ -240,7 +276,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               <SelectItem value="total" className="hover:bg-gray-100 dark:hover:bg-gray-700">
                 Total Portfolio Value
               </SelectItem>
-              {assets && assets.map((asset) => (
+              {filteredAssets && filteredAssets.map((asset) => (
                 <SelectItem 
                   key={asset.id} 
                   value={asset.id}
@@ -287,13 +323,13 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               }}
             />
             <ReferenceLine 
-              x={currentPlan.target_retirement_age} 
+              x={findPortfolioPeakAge(currentPlan, 'current')} 
               stroke="#10b981" 
               strokeDasharray="5 5"
               label={{ value: "Current Retirement", position: "top" }}
             />
             <ReferenceLine 
-              x={editablePlan.target_retirement_age} 
+              x={findPortfolioPeakAge(editablePlan, 'editable')} 
               stroke="#3b82f6" 
               strokeDasharray="5 5"
               label={{ value: "Plan Retirement", position: "top" }}
