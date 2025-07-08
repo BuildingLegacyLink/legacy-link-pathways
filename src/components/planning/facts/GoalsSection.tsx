@@ -75,6 +75,7 @@ const GoalsSection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals', user?.id, 'retirement'] });
       resetDialog();
       toast({ title: 'Success', description: 'Goal saved successfully!' });
     },
@@ -94,6 +95,7 @@ const GoalsSection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals', user?.id, 'retirement'] });
       resetDialog();
       toast({ title: 'Success', description: 'Goal updated successfully!' });
     },

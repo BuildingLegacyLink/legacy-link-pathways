@@ -94,7 +94,7 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
   });
 
   const { data: retirementGoal } = useQuery({
-    queryKey: ['goals', user?.id],
+    queryKey: ['goals', user?.id, 'retirement'],
     queryFn: async () => {
       if (!user) return null;
       const { data, error } = await supabase
