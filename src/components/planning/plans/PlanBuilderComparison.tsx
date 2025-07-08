@@ -111,12 +111,25 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
 
   // Calculate target retirement age from retirement goal
   const getTargetRetirementAge = () => {
+    console.log('Retirement goal data:', retirementGoal);
+    
     if (retirementGoal?.target_date) {
       const retirementYear = new Date(retirementGoal.target_date).getFullYear();
       const currentYear = new Date().getFullYear();
       const currentAge = 25; // Default assumption
-      return currentAge + (retirementYear - currentYear);
+      const calculatedAge = currentAge + (retirementYear - currentYear);
+      
+      console.log('Retirement calculation:', {
+        retirementYear,
+        currentYear,
+        currentAge,
+        calculatedAge,
+        targetDate: retirementGoal.target_date
+      });
+      
+      return calculatedAge;
     }
+    console.log('No retirement goal found, using default age 67');
     return 67; // Default if no retirement goal
   };
 
