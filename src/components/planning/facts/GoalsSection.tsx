@@ -143,17 +143,12 @@ const GoalsSection = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    // Handle target date/age conversion for retirement goals
+    // Handle retirement age for retirement goals
     let targetDate = null;
+    let retirementAge = null;
+    
     if (selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') {
-      const targetAge = parseInt(formData.get('target_age') as string);
-      if (targetAge) {
-        const currentYear = new Date().getFullYear();
-        const birthYear = currentYear - 25; // Assuming current age of 25 as default
-        const retirementYear = birthYear + targetAge;
-        targetDate = `${retirementYear}-01-01`;
-        console.log('Retirement goal calculation:', { targetAge, currentYear, birthYear, retirementYear, targetDate });
-      }
+      retirementAge = parseInt(formData.get('target_age') as string) || 67;
     } else {
       targetDate = formData.get('target_date') as string || null;
     }
@@ -162,15 +157,16 @@ const GoalsSection = () => {
       name: formData.get('name') as string,
       target_amount: (selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement') 
         ? parseFloat(formData.get('target_amount') as string) 
-        : 0, // Default target amount for retirement goals
+        : 0,
       target_date: targetDate,
+      retirement_age: retirementAge,
       priority: (selectedTemplate?.id !== 'retirement' && selectedTemplate?.id !== 'heirs' && 
                 editingGoal?.goal_type !== 'retirement' && editingGoal?.goal_type !== 'heirs') 
         ? parseInt(formData.get('priority') as string) || 1
-        : 1, // Default priority for retirement/heirs goals
+        : 1,
       description: (selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement')
         ? formData.get('description') as string || null
-        : null, // No description for retirement goals
+        : null,
       goal_type: selectedTemplate?.id || editingGoal?.goal_type || 'custom',
       withdrawal_order: (selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') 
         ? withdrawalOrder 
@@ -295,8 +291,7 @@ const GoalsSection = () => {
                 type="number"
                 min="50"
                 max="100"
-                defaultValue={editingGoal?.target_date ? 
-                  new Date().getFullYear() - new Date(editingGoal.target_date).getFullYear() + 67 : 67}
+                defaultValue={editingGoal?.retirement_age || 67}
                 placeholder="67"
               />
             </div>

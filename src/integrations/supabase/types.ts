@@ -157,6 +157,7 @@ export type Database = {
           id: string
           name: string
           priority: number | null
+          retirement_age: number | null
           target_amount: number
           target_date: string | null
           updated_at: string
@@ -170,6 +171,7 @@ export type Database = {
           id?: string
           name: string
           priority?: number | null
+          retirement_age?: number | null
           target_amount: number
           target_date?: string | null
           updated_at?: string
@@ -183,6 +185,7 @@ export type Database = {
           id?: string
           name?: string
           priority?: number | null
+          retirement_age?: number | null
           target_amount?: number
           target_date?: string | null
           updated_at?: string
