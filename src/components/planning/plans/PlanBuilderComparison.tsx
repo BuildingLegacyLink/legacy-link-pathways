@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -115,7 +115,7 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
   };
 
   // Calculate current situation from user data
-  const currentSituation: PlanData = {
+  const currentSituation: PlanData = useMemo(() => ({
     monthly_income: income?.reduce((sum, inc) => {
       const amount = Number(inc.amount);
       if (inc.frequency === 'annual') return sum + (amount / 12);
@@ -137,17 +137,17 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
     target_retirement_age: getTargetRetirementAge(),
     target_savings_rate: 20,
     total_assets: assets?.reduce((sum, asset) => sum + Number(asset.value), 0) || 0,
-  };
+  }), [income, expenses, savingsContributions, assets, retirementGoal]);
 
   // Initialize editable plan with current situation data
   useEffect(() => {
     if (currentSituation.monthly_income > 0 || retirementGoal) {
       setEditablePlan({
         ...currentSituation,
-        target_retirement_age: getTargetRetirementAge(),
+        target_retirement_age: currentSituation.target_retirement_age,
       });
     }
-  }, [currentSituation.monthly_income, currentSituation.monthly_expenses, currentSituation.total_assets, retirementGoal]);
+  }, [currentSituation, retirementGoal]);
 
   // Calculate probability of success for both plans
   const currentPoS = calculateProbabilityOfSuccess(currentSituation);
