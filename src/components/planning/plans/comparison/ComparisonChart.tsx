@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -188,7 +189,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         
         for (let age = currentAge; age <= deathAge; age++) {
           const year = new Date().getFullYear() + (age - currentAge);
-          const isRetired = age >= retirementAge;
+          const isRetired = age > retirementAge; // Changed from >= to >
           const yearsFromStart = age - currentAge;
           
           // Apply expense growth over time
@@ -218,7 +219,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       // Total portfolio calculation (existing logic)
       for (let age = currentAge; age <= deathAge; age++) {
         const year = new Date().getFullYear() + (age - currentAge);
-        const isRetired = age >= retirementAge;
+        const isRetired = age > retirementAge; // Changed from >= to >
         const yearsFromStart = age - currentAge;
         
         // Apply expense growth over time
