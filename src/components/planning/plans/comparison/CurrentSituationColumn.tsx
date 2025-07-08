@@ -69,6 +69,23 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
     enabled: !!user,
   });
 
+  // Fetch retirement goal to get the target retirement age
+  const { data: retirementGoal } = useQuery({
+    queryKey: ['goals', user?.id, 'retirement'],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('goal_type', 'retirement')
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const formatCurrency = (value: number) => {
     return `$${value.toFixed(0)}`;
   };
@@ -89,6 +106,9 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
   // Check if value is within $1 of $0
   const isBalanced = Math.abs(monthlySurplusShortfall) <= 1;
   const textColor = isBalanced ? "text-green-600" : "text-red-600";
+
+  // Get target retirement age from retirement goal, fallback to 67
+  const targetRetirementAge = retirementGoal?.retirement_age || 67;
 
   return (
     <div className="space-y-6">
@@ -197,7 +217,7 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
       <div className="space-y-2">
         <Label className="text-sm font-medium">Target Retirement Age</Label>
         <div className="text-lg font-semibold text-gray-900 dark:text-white h-8 flex items-center">
-          {planData.target_retirement_age}
+          {targetRetirementAge}
         </div>
       </div>
     </div>
