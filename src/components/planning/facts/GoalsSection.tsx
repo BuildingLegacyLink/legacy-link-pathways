@@ -8,15 +8,21 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/utils/currency';
+import { goalTemplates, GoalTemplate, getGoalTemplate } from '@/utils/goalTemplates';
+import GoalTypeSelector from './GoalTypeSelector';
+import WithdrawalRanking from './WithdrawalRanking';
 
 const GoalsSection = () => {
   const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<GoalTemplate | null>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(true);
+  const [withdrawalOrder, setWithdrawalOrder] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   const { data: goals, isLoading } = useQuery({
@@ -43,8 +49,7 @@ const GoalsSection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
-      setIsDialogOpen(false);
-      setEditingGoal(null);
+      resetDialog();
       toast({ title: 'Success', description: 'Goal saved successfully!' });
     },
     onError: (error) => {
@@ -63,8 +68,7 @@ const GoalsSection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
-      setIsDialogOpen(false);
-      setEditingGoal(null);
+      resetDialog();
       toast({ title: 'Success', description: 'Goal updated successfully!' });
     },
     onError: (error) => {
@@ -83,6 +87,14 @@ const GoalsSection = () => {
     },
   });
 
+  const resetDialog = () => {
+    setIsDialogOpen(false);
+    setEditingGoal(null);
+    setSelectedTemplate(null);
+    setShowTemplateSelector(true);
+    setWithdrawalOrder([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -93,6 +105,8 @@ const GoalsSection = () => {
       target_date: formData.get('target_date') as string || null,
       priority: parseInt(formData.get('priority') as string) || 1,
       description: formData.get('description') as string || null,
+      goal_type: selectedTemplate?.id || editingGoal?.goal_type || 'custom',
+      withdrawal_order: selectedTemplate?.id === 'retirement' ? withdrawalOrder : [],
     };
 
     if (editingGoal) {
@@ -100,6 +114,162 @@ const GoalsSection = () => {
     } else {
       addGoalMutation.mutate(goalData);
     }
+  };
+
+  const handleTemplateSelect = (template: GoalTemplate) => {
+    setSelectedTemplate(template);
+    setShowTemplateSelector(false);
+  };
+
+  const handleCustomGoal = () => {
+    setSelectedTemplate(null);
+    setShowTemplateSelector(false);
+  };
+
+  const handleBackToTemplates = () => {
+    setShowTemplateSelector(true);
+    setSelectedTemplate(null);
+  };
+
+  const openEditDialog = (goal: any) => {
+    setEditingGoal(goal);
+    setSelectedTemplate(getGoalTemplate(goal.goal_type));
+    setShowTemplateSelector(false);
+    setWithdrawalOrder(goal.withdrawal_order || []);
+    setIsDialogOpen(true);
+  };
+
+  const openAddDialog = () => {
+    setEditingGoal(null);
+    setSelectedTemplate(null);
+    setShowTemplateSelector(true);
+    setWithdrawalOrder([]);
+    setIsDialogOpen(true);
+  };
+
+  const renderGoalForm = () => {
+    if (showTemplateSelector && !editingGoal) {
+      return (
+        <GoalTypeSelector
+          selectedTemplate={selectedTemplate}
+          onTemplateSelect={handleTemplateSelect}
+          onCustomGoal={handleCustomGoal}
+        />
+      );
+    }
+
+    const template = selectedTemplate || getGoalTemplate(editingGoal?.goal_type);
+    const targetDate = new Date();
+    if (template?.suggestedTimeline) {
+      targetDate.setFullYear(targetDate.getFullYear() + template.suggestedTimeline);
+    }
+
+    return (
+      <div className="space-y-4">
+        {!editingGoal && (
+          <div className="flex items-center gap-2 mb-4">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToTemplates}
+              className="p-0 h-auto"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Templates
+            </Button>
+            {template && (
+              <div className="flex items-center gap-2 ml-4">
+                <div className={`w-6 h-6 rounded-full ${template.color} flex items-center justify-center`}>
+                  <template.icon className="h-3 w-3 text-white" />
+                </div>
+                <span className="text-sm font-medium">{template.name}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Goal Name</Label>
+            <Input
+              id="name"
+              name="name"
+              defaultValue={editingGoal?.name || template?.name || ''}
+              placeholder={template?.name || "Emergency Fund"}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="target_amount">Target Amount ($)</Label>
+            <Input
+              id="target_amount"
+              name="target_amount"
+              type="number"
+              step="1"
+              defaultValue={editingGoal?.target_amount || template?.defaultAmount || ''}
+              placeholder={template?.defaultAmount?.toString() || "50000"}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="target_date">Target Date</Label>
+            <Input
+              id="target_date"
+              name="target_date"
+              type="date"
+              defaultValue={editingGoal?.target_date || targetDate.toISOString().split('T')[0]}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="priority">Priority (1-5)</Label>
+            <Input
+              id="priority"
+              name="priority"
+              type="number"
+              min="1"
+              max="5"
+              defaultValue={editingGoal?.priority || 1}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              defaultValue={editingGoal?.description || template?.description || ''}
+              placeholder={template?.description || "6 months of living expenses"}
+            />
+          </div>
+
+          {(selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') && (
+            <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+              <WithdrawalRanking
+                withdrawalOrder={withdrawalOrder}
+                onWithdrawalOrderChange={setWithdrawalOrder}
+              />
+            </div>
+          )}
+
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={addGoalMutation.isPending || updateGoalMutation.isPending}
+          >
+            {(addGoalMutation.isPending || updateGoalMutation.isPending) 
+              ? 'Saving...' 
+              : editingGoal 
+                ? 'Update Goal' 
+                : 'Add Goal'
+            }
+          </Button>
+        </form>
+      </div>
+    );
   };
 
   const formatCurrency = (amount: number) => {
@@ -111,149 +281,118 @@ const GoalsSection = () => {
     }).format(amount);
   };
 
-  const openEditDialog = (goal: any) => {
-    setEditingGoal(goal);
-    setIsDialogOpen(true);
-  };
-
-  const openAddDialog = () => {
-    setEditingGoal(null);
-    setIsDialogOpen(true);
-  };
-
   if (isLoading) return <div>Loading goals...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Financial Goals</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Financial Goals</h2>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          if (!open) resetDialog();
+          else setIsDialogOpen(true);
+        }}>
           <DialogTrigger asChild>
             <Button onClick={openAddDialog} className="bg-green-600 hover:bg-green-700">
               <Plus className="h-4 w-4 mr-2" />
               Add Goal
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingGoal ? 'Edit Goal' : 'Add New Financial Goal'}</DialogTitle>
+              <DialogTitle>
+                {editingGoal ? 'Edit Goal' : 'Add New Financial Goal'}
+              </DialogTitle>
               <DialogDescription>
-                {editingGoal ? 'Update your financial goal details.' : 'Set a new financial goal to track your progress.'}
+                {editingGoal 
+                  ? 'Update your financial goal details.' 
+                  : showTemplateSelector 
+                    ? 'Choose a goal type or create a custom goal.'
+                    : 'Set up your financial goal details.'
+                }
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Goal Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={editingGoal?.name || ''}
-                  placeholder="Emergency Fund"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="target_amount">Target Amount ($)</Label>
-                <Input
-                  id="target_amount"
-                  name="target_amount"
-                  type="number"
-                  step="1"
-                  defaultValue={editingGoal?.target_amount || ''}
-                  placeholder="50000"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="target_date">Target Date</Label>
-                <Input
-                  id="target_date"
-                  name="target_date"
-                  type="date"
-                  defaultValue={editingGoal?.target_date || ''}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority (1-5)</Label>
-                <Input
-                  id="priority"
-                  name="priority"
-                  type="number"
-                  min="1"
-                  max="5"
-                  defaultValue={editingGoal?.priority || 1}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingGoal?.description || ''}
-                  placeholder="6 months of living expenses"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={addGoalMutation.isPending || updateGoalMutation.isPending}>
-                {(addGoalMutation.isPending || updateGoalMutation.isPending) ? 'Saving...' : editingGoal ? 'Update Goal' : 'Add Goal'}
-              </Button>
-            </form>
+            {renderGoalForm()}
           </DialogContent>
         </Dialog>
       </div>
 
       {goals && goals.length > 0 ? (
         <div className="grid gap-4">
-          {goals.map((goal) => (
-            <Card key={goal.id}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{goal.name}</CardTitle>
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(Number(goal.target_amount))}
+          {goals.map((goal) => {
+            const template = getGoalTemplate(goal.goal_type);
+            const IconComponent = template?.icon;
+            
+            return (
+              <Card key={goal.id} className="dark:bg-gray-800 dark:border-gray-700">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-3">
+                      {template && IconComponent && (
+                        <div className={`w-10 h-10 rounded-full ${template.color} flex items-center justify-center flex-shrink-0 mt-1`}>
+                          <IconComponent className="h-5 w-5 text-white" />
+                        </div>
+                      )}
+                      <div>
+                        <CardTitle className="text-lg dark:text-white">{goal.name}</CardTitle>
+                        <div className="text-2xl font-bold text-green-600">
+                          {formatCurrency(Number(goal.target_amount))}
+                        </div>
+                        {template && (
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {template.name}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(goal)}
+                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteGoalMutation.mutate(goal.id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(goal)}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteGoalMutation.mutate(goal.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {goal.description && (
-                    <p className="text-gray-600">{goal.description}</p>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span>Priority: {goal.priority}</span>
-                    {goal.target_date && (
-                      <span>Target: {new Date(goal.target_date).toLocaleDateString()}</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {goal.description && (
+                      <p className="text-gray-600 dark:text-gray-300">{goal.description}</p>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="dark:text-gray-400">Priority: {goal.priority}</span>
+                      {goal.target_date && (
+                        <span className="dark:text-gray-400">
+                          Target: {new Date(goal.target_date).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    {goal.goal_type === 'retirement' && Array.isArray(goal.withdrawal_order) && goal.withdrawal_order.length > 0 && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
+                        <span className="font-medium">Withdrawal Order:</span> {goal.withdrawal_order.length} accounts configured
+                      </div>
                     )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="text-center py-8">
-            <p className="text-gray-500 mb-4">No financial goals set yet.</p>
-            <p className="text-sm text-gray-400">Add your first goal to start tracking your financial progress.</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">No financial goals set yet.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Add your first goal to start tracking your financial progress.</p>
           </CardContent>
         </Card>
       )}

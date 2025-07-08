@@ -153,6 +153,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          goal_type: string | null
           id: string
           name: string
           priority: number | null
@@ -160,10 +161,12 @@ export type Database = {
           target_date: string | null
           updated_at: string
           user_id: string
+          withdrawal_order: Json | null
         }
         Insert: {
           created_at?: string
           description?: string | null
+          goal_type?: string | null
           id?: string
           name: string
           priority?: number | null
@@ -171,10 +174,12 @@ export type Database = {
           target_date?: string | null
           updated_at?: string
           user_id: string
+          withdrawal_order?: Json | null
         }
         Update: {
           created_at?: string
           description?: string | null
+          goal_type?: string | null
           id?: string
           name?: string
           priority?: number | null
@@ -182,6 +187,7 @@ export type Database = {
           target_date?: string | null
           updated_at?: string
           user_id?: string
+          withdrawal_order?: Json | null
         }
         Relationships: []
       }
