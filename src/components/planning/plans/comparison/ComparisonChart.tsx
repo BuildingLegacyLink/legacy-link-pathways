@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tables } from '@/integrations/supabase/types';
 
 interface PlanData {
@@ -23,6 +25,7 @@ type ExpenseData = Tables<'expenses'>;
 
 const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChartProps) => {
   const { user } = useAuth();
+  const [selectedAccount, setSelectedAccount] = useState<string>('total');
 
   // Fetch user profile to get date of birth
   const { data: profile } = useQuery({
@@ -51,6 +54,21 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         .eq('user_id', user.id);
       if (error) throw error;
       return data as ExpenseData[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch user's assets for account selection
+  const { data: assets } = useQuery({
+    queryKey: ['assets', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
     },
     enabled: !!user,
   });
@@ -107,42 +125,84 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
   // Generate projection data for both plans
   const generateProjections = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = [];
-    const currentAge = calculateCurrentAge(); // Use calculated age from user's DOB
+    const currentAge = calculateCurrentAge();
     const retirementAge = plan.target_retirement_age;
     const deathAge = 85;
-    const annualGrowthRate = 0.07; // 7% annual growth
+    const annualGrowthRate = 0.07;
     const expenseGrowthRate = calculateExpenseGrowthRate();
     let annualExpenses = plan.monthly_expenses * 12;
     const annualSavings = plan.monthly_savings * 12;
     
+    // Calculate starting values based on selected account
     let portfolioValue = plan.total_assets;
+    let selectedAsset = null;
     
-    for (let age = currentAge; age <= deathAge; age++) {
-      const year = new Date().getFullYear() + (age - currentAge);
-      const isRetired = age >= retirementAge;
-      const yearsFromStart = age - currentAge;
-      
-      // Apply expense growth over time
-      const inflatedAnnualExpenses = annualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromStart);
-      
-      if (!isRetired) {
-        // Pre-retirement: Add savings and apply growth
-        portfolioValue += annualSavings;
-        portfolioValue *= (1 + annualGrowthRate);
-      } else {
-        // Post-retirement: Apply growth first, then subtract inflated expenses
-        portfolioValue *= (1 + annualGrowthRate);
-        portfolioValue -= inflatedAnnualExpenses;
+    if (selectedAccount !== 'total' && assets) {
+      selectedAsset = assets.find(asset => asset.id === selectedAccount);
+      if (selectedAsset) {
+        portfolioValue = Number(selectedAsset.value);
+        // For individual accounts, allocate savings proportionally
+        const totalAssets = plan.total_assets;
+        const assetProportion = totalAssets > 0 ? portfolioValue / totalAssets : 0;
+        const allocatedSavings = annualSavings * assetProportion;
         
-        // Don't let portfolio go negative
-        portfolioValue = Math.max(0, portfolioValue);
+        for (let age = currentAge; age <= deathAge; age++) {
+          const year = new Date().getFullYear() + (age - currentAge);
+          const isRetired = age >= retirementAge;
+          const yearsFromStart = age - currentAge;
+          
+          // Apply expense growth over time
+          const inflatedAnnualExpenses = annualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromStart);
+          
+          if (!isRetired) {
+            // Pre-retirement: Add proportional savings and apply growth
+            portfolioValue += allocatedSavings;
+            portfolioValue *= (1 + annualGrowthRate);
+          } else {
+            // Post-retirement: Apply growth first, then subtract proportional expenses
+            portfolioValue *= (1 + annualGrowthRate);
+            portfolioValue -= inflatedAnnualExpenses * assetProportion;
+            
+            // Don't let portfolio go negative
+            portfolioValue = Math.max(0, portfolioValue);
+          }
+          
+          projections.push({
+            age,
+            year,
+            [`${planType}Value`]: Math.round(portfolioValue),
+          });
+        }
       }
-      
-      projections.push({
-        age,
-        year,
-        [`${planType}Value`]: Math.round(portfolioValue),
-      });
+    } else {
+      // Total portfolio calculation (existing logic)
+      for (let age = currentAge; age <= deathAge; age++) {
+        const year = new Date().getFullYear() + (age - currentAge);
+        const isRetired = age >= retirementAge;
+        const yearsFromStart = age - currentAge;
+        
+        // Apply expense growth over time
+        const inflatedAnnualExpenses = annualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromStart);
+        
+        if (!isRetired) {
+          // Pre-retirement: Add savings and apply growth
+          portfolioValue += annualSavings;
+          portfolioValue *= (1 + annualGrowthRate);
+        } else {
+          // Post-retirement: Apply growth first, then subtract inflated expenses
+          portfolioValue *= (1 + annualGrowthRate);
+          portfolioValue -= inflatedAnnualExpenses;
+          
+          // Don't let portfolio go negative
+          portfolioValue = Math.max(0, portfolioValue);
+        }
+        
+        projections.push({
+          age,
+          year,
+          [`${planType}Value`]: Math.round(portfolioValue),
+        });
+      }
     }
     
     return projections;
@@ -157,66 +217,108 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     ...editableProjections[index],
   }));
 
+  // Get current selected account name for display
+  const getSelectedAccountName = () => {
+    if (selectedAccount === 'total') return 'Total Portfolio Value';
+    if (assets) {
+      const asset = assets.find(a => a.id === selectedAccount);
+      return asset ? asset.name : 'Total Portfolio Value';
+    }
+    return 'Total Portfolio Value';
+  };
+
   return (
-    <div className="h-80">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={combinedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
-          <XAxis 
-            dataKey="age" 
-            className="text-gray-600 dark:text-gray-400"
-            label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
-          />
-          <YAxis 
-            className="text-gray-600 dark:text-gray-400"
-            tickFormatter={formatCurrency}
-            label={{ value: 'Portfolio Value', angle: -90, position: 'insideLeft' }}
-          />
-          <Tooltip 
-            formatter={(value: number, name: string) => [
-              formatCurrency(value), 
-              name
-            ]}
-            labelFormatter={(age) => `Age: ${age}`}
-            contentStyle={{ 
-              backgroundColor: 'rgba(0, 0, 0, 0.8)', 
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff'
-            }}
-          />
-          <ReferenceLine 
-            x={currentPlan.target_retirement_age} 
-            stroke="#10b981" 
-            strokeDasharray="5 5"
-            label={{ value: "Current Retirement", position: "top" }}
-          />
-          <ReferenceLine 
-            x={editablePlan.target_retirement_age} 
-            stroke="#3b82f6" 
-            strokeDasharray="5 5"
-            label={{ value: "Plan Retirement", position: "top" }}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="currentValue" 
-            stroke="#9ca3af" 
-            strokeWidth={2}
-            strokeDasharray="5 5"
-            dot={false}
-            name="Current Situation"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="editableValue" 
-            stroke="#3b82f6" 
-            strokeWidth={3}
-            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
-            name={planName || 'New Plan'}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="space-y-4">
+      {/* Account Selection Dropdown */}
+      <div className="flex justify-end">
+        <div className="w-48">
+          <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+            <SelectTrigger className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <SelectValue placeholder="Select Account" />
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <SelectItem value="total" className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                Total Portfolio Value
+              </SelectItem>
+              {assets && assets.map((asset) => (
+                <SelectItem 
+                  key={asset.id} 
+                  value={asset.id}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  {asset.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {/* Chart */}
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={combinedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+            <XAxis 
+              dataKey="age" 
+              className="text-gray-600 dark:text-gray-400"
+              label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
+            />
+            <YAxis 
+              className="text-gray-600 dark:text-gray-400"
+              tickFormatter={formatCurrency}
+              label={{ 
+                value: selectedAccount === 'total' ? 'Portfolio Value' : `${getSelectedAccountName()} Value`, 
+                angle: -90, 
+                position: 'insideLeft' 
+              }}
+            />
+            <Tooltip 
+              formatter={(value: number, name: string) => [
+                formatCurrency(value), 
+                name
+              ]}
+              labelFormatter={(age) => `Age: ${age}`}
+              contentStyle={{ 
+                backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff'
+              }}
+            />
+            <ReferenceLine 
+              x={currentPlan.target_retirement_age} 
+              stroke="#10b981" 
+              strokeDasharray="5 5"
+              label={{ value: "Current Retirement", position: "top" }}
+            />
+            <ReferenceLine 
+              x={editablePlan.target_retirement_age} 
+              stroke="#3b82f6" 
+              strokeDasharray="5 5"
+              label={{ value: "Plan Retirement", position: "top" }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="currentValue" 
+              stroke="#9ca3af" 
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              dot={false}
+              name="Current Situation"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="editableValue" 
+              stroke="#3b82f6" 
+              strokeWidth={3}
+              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+              name={planName || 'New Plan'}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
