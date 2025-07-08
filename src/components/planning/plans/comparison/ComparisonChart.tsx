@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -258,47 +257,13 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     ...editableProjections[index],
   }));
 
-  // Find the age at which portfolio peaks (actual peak or start of drawdown)
-  const findPortfolioPeakAge = (plan: PlanData, planType: 'current' | 'editable') => {
-    const projections = generateProjections(plan, planType);
-    // Use retirement age from retirement goal for current situation, or plan's retirement age for editable plan
-    const retirementAge = planType === 'current' ? (retirementGoal?.retirement_age || 67) : plan.target_retirement_age;
-    let peakAge = retirementAge;
-    let peakValue = 0;
-    
-    // First, find the absolute peak value
-    for (let i = 0; i < projections.length; i++) {
-      const currentValue = projections[i][`${planType}Value`];
-      if (currentValue > peakValue) {
-        peakValue = currentValue;
-        peakAge = projections[i].age;
-      }
-    }
-    
-    // Then, find the start of consistent drawdown (first year where portfolio value decreases)
-    for (let i = 0; i < projections.length - 1; i++) {
-      const currentValue = projections[i][`${planType}Value`];
-      const nextValue = projections[i + 1][`${planType}Value`];
-      
-      // Look for the first decline that's significant (more than just market volatility)
-      if (currentValue > nextValue && currentValue > 0 && projections[i].age >= retirementAge - 5) {
-        // Check if this is the start of a consistent decline
-        let consecutiveDeclines = 0;
-        for (let j = i; j < Math.min(i + 3, projections.length - 1); j++) {
-          if (projections[j][`${planType}Value`] > projections[j + 1][`${planType}Value`]) {
-            consecutiveDeclines++;
-          }
-        }
-        
-        // If we have consistent declines, this is our drawdown start
-        if (consecutiveDeclines >= 2) {
-          return projections[i].age;
-        }
-      }
-    }
-    
-    // If no consistent drawdown found, return the peak age
-    return peakAge;
+  // Get retirement ages for reference lines
+  const getCurrentRetirementAge = () => {
+    return retirementGoal?.retirement_age || 67;
+  };
+
+  const getEditableRetirementAge = () => {
+    return editablePlan.target_retirement_age;
   };
 
   // Get current selected account name for display
@@ -371,13 +336,13 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               }}
             />
             <ReferenceLine 
-              x={findPortfolioPeakAge(currentPlan, 'current')} 
+              x={getCurrentRetirementAge()} 
               stroke="#10b981" 
               strokeDasharray="5 5"
               label={{ value: "Current Retirement", position: "top" }}
             />
             <ReferenceLine 
-              x={findPortfolioPeakAge(editablePlan, 'editable')} 
+              x={getEditableRetirementAge()} 
               stroke="#3b82f6" 
               strokeDasharray="5 5"
               label={{ value: "Plan Retirement", position: "top" }}
