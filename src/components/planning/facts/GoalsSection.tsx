@@ -518,8 +518,8 @@ const SortableGoalCard = ({ goal, onEdit, onDelete }: SortableGoalCardProps) => 
               <div>
                 <CardTitle className="text-lg dark:text-white">{goal.name}</CardTitle>
                 <div className="text-2xl font-bold text-green-600">
-                  {goal.goal_type === 'retirement' && goal.target_date
-                    ? `Retire by Age ${getRetirementAge(goal.target_date)}`
+                  {goal.goal_type === 'retirement' && goal.retirement_age
+                    ? `Retire by Age ${goal.retirement_age}`
                     : formatCurrency(Number(goal.target_amount))}
                 </div>
                 {template && (

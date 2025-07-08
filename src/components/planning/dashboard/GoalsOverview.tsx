@@ -69,11 +69,11 @@ const GoalsOverview = () => {
               <Card key={goal.id} className="hover:shadow-lg transition-shadow dark:bg-black dark:border-gray-800">
                  <CardHeader className="pb-3">
                    <CardTitle className="text-lg dark:text-white">{goal.name}</CardTitle>
-                   <div className="text-sm text-gray-600 dark:text-gray-300">
-                     Target: {goal.goal_type === 'retirement' && goal.target_date
-                       ? `Retire by Age ${getRetirementAge(goal.target_date)}`
-                       : formatCurrency(Number(goal.target_amount))}
-                   </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                      Target: {goal.goal_type === 'retirement' && goal.retirement_age
+                        ? `Retire by Age ${goal.retirement_age}`
+                        : formatCurrency(Number(goal.target_amount))}
+                    </div>
                  </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
