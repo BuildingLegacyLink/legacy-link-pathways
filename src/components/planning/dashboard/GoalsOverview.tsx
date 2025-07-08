@@ -38,6 +38,13 @@ const GoalsOverview = () => {
     return Math.min((current / target) * 100, 100);
   };
 
+  const getRetirementAge = (targetDate: string) => {
+    const retirementYear = new Date(targetDate).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const currentAge = 25; // Default assumption
+    return currentAge + (retirementYear - currentYear);
+  };
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-6">
@@ -60,12 +67,14 @@ const GoalsOverview = () => {
             
             return (
               <Card key={goal.id} className="hover:shadow-lg transition-shadow dark:bg-black dark:border-gray-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg dark:text-white">{goal.name}</CardTitle>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">
-                    Target: {formatCurrency(Number(goal.target_amount))}
-                  </div>
-                </CardHeader>
+                 <CardHeader className="pb-3">
+                   <CardTitle className="text-lg dark:text-white">{goal.name}</CardTitle>
+                   <div className="text-sm text-gray-600 dark:text-gray-300">
+                     Target: {goal.goal_type === 'retirement' && goal.target_date
+                       ? `Retire by Age ${getRetirementAge(goal.target_date)}`
+                       : formatCurrency(Number(goal.target_amount))}
+                   </div>
+                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>

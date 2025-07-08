@@ -8,13 +8,32 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Edit2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Edit2, ArrowLeft, GripVertical } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/utils/currency';
 import { goalTemplates, GoalTemplate, getGoalTemplate } from '@/utils/goalTemplates';
 import GoalTypeSelector from './GoalTypeSelector';
 import WithdrawalRanking from './WithdrawalRanking';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const GoalsSection = () => {
   const { user } = useAuth();
@@ -24,6 +43,13 @@ const GoalsSection = () => {
   const [showTemplateSelector, setShowTemplateSelector] = useState(true);
   const [withdrawalOrder, setWithdrawalOrder] = useState<string[]>([]);
   const queryClient = useQueryClient();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const { data: goals, isLoading } = useQuery({
     queryKey: ['goals', user?.id],
@@ -84,6 +110,24 @@ const GoalsSection = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       toast({ title: 'Success', description: 'Goal deleted successfully!' });
+    },
+  });
+
+  const reorderGoalsMutation = useMutation({
+    mutationFn: async (reorderedGoals: any[]) => {
+      const updates = reorderedGoals.map((goal, index) => 
+        supabase
+          .from('goals')
+          .update({ priority: index + 1 })
+          .eq('id', goal.id)
+      );
+      
+      const results = await Promise.all(updates);
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) throw errors[0].error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
     },
   });
 
@@ -333,6 +377,18 @@ const GoalsSection = () => {
     }).format(amount);
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id && goals) {
+      const oldIndex = goals.findIndex(goal => goal.id === active.id);
+      const newIndex = goals.findIndex(goal => goal.id === over?.id);
+
+      const newOrder = arrayMove(goals, oldIndex, newIndex);
+      reorderGoalsMutation.mutate(newOrder);
+    }
+  };
+
   if (isLoading) return <div>Loading goals...</div>;
 
   return (
@@ -369,77 +425,27 @@ const GoalsSection = () => {
       </div>
 
       {goals && goals.length > 0 ? (
-        <div className="grid gap-4">
-          {goals.map((goal) => {
-            const template = getGoalTemplate(goal.goal_type);
-            const IconComponent = template?.icon;
-            
-            return (
-              <Card key={goal.id} className="dark:bg-gray-800 dark:border-gray-700">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-start gap-3">
-                      {template && IconComponent && (
-                        <div className={`w-10 h-10 rounded-full ${template.color} flex items-center justify-center flex-shrink-0 mt-1`}>
-                          <IconComponent className="h-5 w-5 text-white" />
-                        </div>
-                      )}
-                      <div>
-                        <CardTitle className="text-lg dark:text-white">{goal.name}</CardTitle>
-                        <div className="text-2xl font-bold text-green-600">
-                          {formatCurrency(Number(goal.target_amount))}
-                        </div>
-                        {template && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {template.name}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(goal)}
-                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteGoalMutation.mutate(goal.id)}
-                        className="text-red-600 hover:text-red-700 dark:text-red-400"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {goal.description && (
-                      <p className="text-gray-600 dark:text-gray-300">{goal.description}</p>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span className="dark:text-gray-400">Priority: {goal.priority}</span>
-                      {goal.target_date && (
-                        <span className="dark:text-gray-400">
-                          Target: {new Date(goal.target_date).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                    {goal.goal_type === 'retirement' && Array.isArray(goal.withdrawal_order) && goal.withdrawal_order.length > 0 && (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
-                        <span className="font-medium">Withdrawal Order:</span> {goal.withdrawal_order.length} accounts configured
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={goals.map(goal => goal.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {goals.map((goal) => (
+                <SortableGoalCard
+                  key={goal.id}
+                  goal={goal}
+                  onEdit={() => openEditDialog(goal)}
+                  onDelete={() => deleteGoalMutation.mutate(goal.id)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="text-center py-8">
@@ -448,6 +454,125 @@ const GoalsSection = () => {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+};
+
+interface SortableGoalCardProps {
+  goal: any;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+const SortableGoalCard = ({ goal, onEdit, onDelete }: SortableGoalCardProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: goal.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const template = getGoalTemplate(goal.goal_type);
+  const IconComponent = template?.icon;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getRetirementAge = (targetDate: string) => {
+    const retirementYear = new Date(targetDate).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const currentAge = 25; // Default assumption
+    return currentAge + (retirementYear - currentYear);
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group"
+    >
+      <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-3">
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity mt-1"
+              >
+                <GripVertical className="h-5 w-5" />
+              </div>
+              {template && IconComponent && (
+                <div className={`w-10 h-10 rounded-full ${template.color} flex items-center justify-center flex-shrink-0 mt-1`}>
+                  <IconComponent className="h-5 w-5 text-white" />
+                </div>
+              )}
+              <div>
+                <CardTitle className="text-lg dark:text-white">{goal.name}</CardTitle>
+                <div className="text-2xl font-bold text-green-600">
+                  {goal.goal_type === 'retirement' && goal.target_date
+                    ? `Retire by Age ${getRetirementAge(goal.target_date)}`
+                    : formatCurrency(Number(goal.target_amount))}
+                </div>
+                {template && (
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {template.name}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                className="text-red-600 hover:text-red-700 dark:text-red-400"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {goal.description && (
+              <p className="text-gray-600 dark:text-gray-300">{goal.description}</p>
+            )}
+            <div className="flex justify-end text-sm">
+              {goal.target_date && (
+                <span className="dark:text-gray-400">
+                  Target: {new Date(goal.target_date).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+            {goal.goal_type === 'retirement' && Array.isArray(goal.withdrawal_order) && goal.withdrawal_order.length > 0 && (
+              <div className="text-sm text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
+                <span className="font-medium">Withdrawal Order:</span> {goal.withdrawal_order.length} accounts configured
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
