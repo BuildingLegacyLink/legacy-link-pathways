@@ -152,6 +152,7 @@ const GoalsSection = () => {
         const birthYear = currentYear - 25; // Assuming current age of 25 as default
         const retirementYear = birthYear + targetAge;
         targetDate = `${retirementYear}-01-01`;
+        console.log('Retirement goal calculation:', { targetAge, currentYear, birthYear, retirementYear, targetDate });
       }
     } else {
       targetDate = formData.get('target_date') as string || null;
