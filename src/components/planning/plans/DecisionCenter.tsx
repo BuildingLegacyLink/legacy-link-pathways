@@ -347,7 +347,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     const currentYear = new Date().getFullYear();
     const currentAge = calculateCurrentAge();
     const retirementAge = planData.target_retirement_age;
-    const deathAge = 100; // Extended to age 100
+    const deathAge = 95; // Extended to age 95
     const expenseGrowthRate = calculateExpenseGrowthRate();
     
     // Initialize asset balances from current assets - these will track running balances
