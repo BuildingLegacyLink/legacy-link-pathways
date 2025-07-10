@@ -98,6 +98,21 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     enabled: !!user
   });
 
+  // Fetch goals for expense calculations
+  const { data: goals = [] } = useQuery({
+    queryKey: ['goals', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
   // Fetch user's current financial data for comparison
   const { data: income } = useQuery({
     queryKey: ['income', user?.id],
@@ -323,7 +338,21 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       
       // Apply expense growth over time
       const baseAnnualExpenses = planData.monthly_expenses * 12;
-      const inflatedAnnualExpenses = baseAnnualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromNow);
+      let inflatedAnnualExpenses = baseAnnualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromNow);
+      
+      // Add goal expenses for this year (like travel goals)
+      if (goals && goals.length > 0) {
+        goals.forEach(goal => {
+          if (goal.target_date && !goal.is_recurring && goal.target_amount) {
+            const goalDate = new Date(goal.target_date);
+            const goalYear = goalDate.getFullYear();
+            
+            if (goalYear === year) {
+              inflatedAnnualExpenses += Number(goal.target_amount);
+            }
+          }
+        });
+      }
       
       // Base calculations from plan
       const baseSavings = planData.monthly_savings * 12;
@@ -365,8 +394,9 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       const netWorth = portfolioValue;
       const cashFlow = annualIncome - inflatedAnnualExpenses + (isRetired ? 0 : totalAnnualContributions);
       
-      // Calculate individual account values for the table
+      // Calculate individual account values and contributions for the table
       const accountValues: { [key: string]: number } = {};
+      const accountContributions: { [key: string]: number } = {};
       assetBalances.forEach((balance, assetId) => {
         const asset = assets.find(a => a.id === assetId);
         const growthRate = asset?.growth_rate || 0.07;
@@ -378,6 +408,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         }
         
         accountValues[assetId] = Math.max(0, assetValue);
+        accountContributions[assetId] = isRetired ? 0 : annualContribution;
       });
       
       projections.push({
@@ -385,9 +416,11 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         age,
         net_worth: netWorth,
         portfolio_value: portfolioValue,
-        annual_expenses: inflatedAnnualExpenses, // Now using inflated expenses
+        annual_expenses: inflatedAnnualExpenses, // Now includes goal expenses
         cash_flow: cashFlow,
         account_values: accountValues,
+        total_contributions: isRetired ? 0 : totalAnnualContributions,
+        account_contributions: accountContributions,
       });
     }
     

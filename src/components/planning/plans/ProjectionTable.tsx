@@ -12,6 +12,8 @@ interface ProjectionData {
   annual_expenses: number;
   cash_flow: number;
   account_values?: { [key: string]: number }; // Individual account values by account ID
+  total_contributions?: number; // Total contributions for the year
+  account_contributions?: { [key: string]: number }; // Contributions by account ID
 }
 
 interface Asset {
@@ -93,6 +95,17 @@ const ProjectionTable = ({ data, planName, assets }: ProjectionTableProps) => {
     return row.portfolio_value;
   };
 
+  // Get the contributions for the selected account
+  const getContributions = (row: ProjectionData) => {
+    if (selectedAccount === 'portfolio' || selectedAccount === 'net_worth') {
+      return row.total_contributions || 0;
+    }
+    if (row.account_contributions && selectedAccount in row.account_contributions) {
+      return row.account_contributions[selectedAccount];
+    }
+    return 0;
+  };
+
   return (
     <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
       <CardHeader>
@@ -135,7 +148,7 @@ const ProjectionTable = ({ data, planName, assets }: ProjectionTableProps) => {
                 <TableHead className="text-gray-900 dark:text-white">Age</TableHead>
                 <TableHead className="text-gray-900 dark:text-white">{getSelectedAccountName()}</TableHead>
                 <TableHead className="text-gray-900 dark:text-white">Annual Expenses</TableHead>
-                <TableHead className="text-gray-900 dark:text-white">Cash Flow</TableHead>
+                <TableHead className="text-gray-900 dark:text-white">Contributions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -145,8 +158,8 @@ const ProjectionTable = ({ data, planName, assets }: ProjectionTableProps) => {
                   <TableCell className="text-gray-900 dark:text-white">{row.age}</TableCell>
                   <TableCell className="text-gray-900 dark:text-white">{formatCurrency(getDisplayValue(row))}</TableCell>
                   <TableCell className="text-gray-900 dark:text-white">{formatCurrency(row.annual_expenses)}</TableCell>
-                  <TableCell className={`${row.cash_flow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(row.cash_flow)}
+                  <TableCell className="text-green-600">
+                    {formatCurrency(getContributions(row))}
                   </TableCell>
                 </TableRow>
               ))}
