@@ -44,6 +44,23 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     enabled: !!user,
   });
 
+  // Fetch retirement goal to get the target retirement age for current situation
+  const { data: retirementGoal } = useQuery({
+    queryKey: ['goals', user?.id, 'retirement'],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('goal_type', 'retirement')
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Fetch expenses to get growth rates
   const { data: expenses } = useQuery({
     queryKey: ['expenses', user?.id],
@@ -144,13 +161,15 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     return totalExpenses > 0 ? totalWeightedGrowth / totalExpenses : 0.03;
   };
 
-  // Unified projection function that uses the same logic for both plans
+  // Projection function that uses the appropriate data for each plan
   const generateProjections = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = [];
     const currentAge = calculateCurrentAge();
     
-    // CRITICAL FIX: Both plans now use the same retirement age from the plan data
-    const retirementAge = plan.target_retirement_age;
+    // Use correct retirement age source for each plan type
+    const retirementAge = planType === 'current' 
+      ? (retirementGoal?.retirement_age || 67)  // Current situation uses goal from facts
+      : plan.target_retirement_age;             // Editable plan uses its own target
     
     const deathAge = 85;
     const annualGrowthRate = 0.07;
@@ -166,7 +185,8 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       totalAssets: plan.total_assets,
       retirementAge: retirementAge,
       annualSavings: annualSavings,
-      annualExpenses: annualExpenses
+      annualExpenses: annualExpenses,
+      dataSource: planType === 'current' ? 'retirement goal from facts' : 'editable plan inputs'
     });
     
     // Calculate starting values based on selected account
@@ -212,7 +232,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         }
       }
     } else {
-      // Total portfolio calculation - IDENTICAL logic for both plans
+      // Total portfolio calculation - uses each plan's own data
       for (let age = currentAge; age <= deathAge; age++) {
         const year = new Date().getFullYear() + (age - currentAge);
         const isRetired = age > retirementAge;
@@ -240,7 +260,8 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
             isRetired,
             portfolioValue,
             annualSavings,
-            inflatedAnnualExpenses
+            inflatedAnnualExpenses,
+            retirementAge
           });
         }
         
@@ -334,7 +355,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               }}
             />
             <ReferenceLine 
-              x={currentPlan.target_retirement_age} 
+              x={retirementGoal?.retirement_age || 67} 
               stroke="#10b981" 
               strokeDasharray="5 5"
               label={{ value: "Current Retirement", position: "top" }}
