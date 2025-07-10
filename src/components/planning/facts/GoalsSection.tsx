@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/utils/currency';
 import { goalTemplates, GoalTemplate, getGoalTemplate } from '@/utils/goalTemplates';
 import GoalTypeSelector from './GoalTypeSelector';
+import TimingSelector from './TimingSelector';
 import WithdrawalRanking from './WithdrawalRanking';
 import {
   DndContext,
@@ -63,6 +64,21 @@ const GoalsSection = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('priority', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
       if (error) throw error;
       return data;
     },
@@ -159,15 +175,19 @@ const GoalsSection = () => {
       targetDate = formData.get('target_date') as string || null;
     }
     
-    // Handle recurring travel data
+    // Handle recurring travel timing data
     const isRecurringTravel = formData.get('is_recurring') === 'true';
-    let startDate = null;
-    let endDate = null;
+    let startTimingType = null;
+    let startTimingValue = null;
+    let endTimingType = null;
+    let endTimingValue = null;
     let frequency = null;
     
     if (isRecurringTravel) {
-      startDate = formData.get('start_date') as string || null;
-      endDate = formData.get('end_date') as string || null;
+      startTimingType = formData.get('start_type') as string || null;
+      startTimingValue = parseInt(formData.get('start_value') as string) || null;
+      endTimingType = formData.get('end_type') as string || null;
+      endTimingValue = parseInt(formData.get('end_value') as string) || null;
       frequency = formData.get('frequency') as string || null;
     }
 
@@ -193,8 +213,10 @@ const GoalsSection = () => {
         ? withdrawalOrder 
         : [],
       is_recurring: isRecurringTravel,
-      start_date: startDate,
-      end_date: endDate,
+      start_timing_type: startTimingType,
+      start_timing_value: startTimingValue,
+      end_timing_type: endTimingType,
+      end_timing_value: endTimingValue,
       frequency: frequency,
     };
 
@@ -331,23 +353,21 @@ const GoalsSection = () => {
               
               {isRecurring ? (
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start_date">Start Date</Label>
-                    <Input
-                      id="start_date"
-                      name="start_date"
-                      type="date"
-                      defaultValue={editingGoal?.start_date}
-                      required
-                    />
-                  </div>
+                  <TimingSelector
+                    label="Starts"
+                    name="start"
+                    defaultType={editingGoal?.start_timing_type}
+                    defaultValue={editingGoal?.start_timing_value}
+                    profile={profile}
+                    required
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="frequency">Frequency</Label>
                     <Select name="frequency" defaultValue={editingGoal?.frequency || 'annually'}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select frequency" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
                         <SelectItem value="annually">Annually</SelectItem>
                         <SelectItem value="biannually">Twice a year</SelectItem>
                         <SelectItem value="quarterly">Quarterly</SelectItem>
@@ -355,15 +375,13 @@ const GoalsSection = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end_date">End Date (Optional)</Label>
-                    <Input
-                      id="end_date"
-                      name="end_date"
-                      type="date"
-                      defaultValue={editingGoal?.end_date}
-                    />
-                  </div>
+                  <TimingSelector
+                    label="Ends (Optional)"
+                    name="end"
+                    defaultType={editingGoal?.end_timing_type}
+                    defaultValue={editingGoal?.end_timing_value}
+                    profile={profile}
+                  />
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -588,11 +606,21 @@ const SortableGoalCard = ({ goal, onEdit, onDelete }: SortableGoalCardProps) => 
     }).format(amount);
   };
 
-  const getRetirementAge = (targetDate: string) => {
-    const retirementYear = new Date(targetDate).getFullYear();
-    const currentYear = new Date().getFullYear();
-    const currentAge = 25; // Default assumption
-    return currentAge + (retirementYear - currentYear);
+  const formatTiming = (timingType: string, timingValue: number, prefix: string = '') => {
+    if (!timingType || !timingValue) return null;
+    
+    switch (timingType) {
+      case 'calendar_year':
+        return `${prefix}${timingValue}`;
+      case 'age':
+        return `${prefix}Age ${timingValue}`;
+      case 'retirement':
+        return `${prefix}Retirement`;
+      case 'death':
+        return `${prefix}Death`;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -660,11 +688,11 @@ const SortableGoalCard = ({ goal, onEdit, onDelete }: SortableGoalCardProps) => 
               {goal.goal_type === 'travel' && goal.is_recurring ? (
                 <div className="text-right space-y-1 dark:text-gray-400">
                   <div>Recurring: {goal.frequency || 'annually'}</div>
-                  {goal.start_date && (
-                    <div>From: {new Date(goal.start_date).toLocaleDateString()}</div>
+                  {goal.start_timing_type && goal.start_timing_value && (
+                    <div>From: {formatTiming(goal.start_timing_type, goal.start_timing_value)}</div>
                   )}
-                  {goal.end_date && (
-                    <div>Until: {new Date(goal.end_date).toLocaleDateString()}</div>
+                  {goal.end_timing_type && goal.end_timing_value && (
+                    <div>Until: {formatTiming(goal.end_timing_type, goal.end_timing_value)}</div>
                   )}
                 </div>
               ) : goal.target_date && (
