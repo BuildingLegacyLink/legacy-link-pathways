@@ -498,13 +498,11 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
           });
         }
       }
-      
-      // Use the higher of calculated portfolio value or asset-specific calculation
-      portfolioValue = Math.max(portfolioValue, totalAssetValue);
-      
-      // Account for withdrawals in portfolio value calculation
-      portfolioValue -= totalWithdrawals;
-      portfolioValue = Math.max(0, portfolioValue); // Ensure it doesn't go negative
+      // Calculate portfolio value from running balances (which already account for withdrawals)
+      portfolioValue = 0;
+      runningAssetBalances.forEach((balance) => {
+        portfolioValue += balance;
+      });
       
       const netWorth = portfolioValue;
       const cashFlow = annualIncome - inflatedAnnualExpenses + (isRetired ? 0 : totalAnnualContributions);
