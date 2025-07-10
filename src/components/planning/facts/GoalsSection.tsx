@@ -85,6 +85,21 @@ const GoalsSection = () => {
     enabled: !!user
   });
 
+  const { data: assets } = useQuery({
+    queryKey: ['assets', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
   const addGoalMutation = useMutation({
     mutationFn: async (goalData: any) => {
       if (!user) throw new Error('No user');
@@ -218,6 +233,9 @@ const GoalsSection = () => {
       end_timing_type: endTimingType,
       end_timing_value: endTimingValue,
       frequency: frequency,
+      withdrawal_account_id: (selectedTemplate?.id === 'travel' || editingGoal?.goal_type === 'travel')
+        ? formData.get('withdrawal_account_id') as string || null
+        : null,
     };
 
     if (editingGoal) {
@@ -275,6 +293,54 @@ const GoalsSection = () => {
     if (template?.suggestedTimeline) {
       targetDate.setFullYear(targetDate.getFullYear() + template.suggestedTimeline);
     }
+
+    // Helper function to calculate user's age at goal date
+    const getUserAgeAtGoalDate = () => {
+      if (!profile?.date_of_birth) return null;
+      
+      const birthDate = new Date(profile.date_of_birth);
+      let goalDate: Date;
+      
+      if (selectedTemplate?.id === 'travel' || editingGoal?.goal_type === 'travel') {
+        if (isRecurring) {
+          // For recurring travel, use start timing
+          if (editingGoal?.start_timing_type === 'age') {
+            return editingGoal.start_timing_value;
+          } else if (editingGoal?.start_timing_type === 'calendar_year') {
+            goalDate = new Date(editingGoal.start_timing_value, 0, 1);
+          } else {
+            return null;
+          }
+        } else {
+          const targetDateValue = (document.getElementById('target_date') as HTMLInputElement)?.value || 
+                                 editingGoal?.target_date;
+          if (!targetDateValue) return null;
+          goalDate = new Date(targetDateValue);
+        }
+      } else {
+        return null;
+      }
+      
+      if (!goalDate) return null;
+      
+      const ageDiff = goalDate.getTime() - birthDate.getTime();
+      return Math.floor(ageDiff / (1000 * 60 * 60 * 24 * 365.25));
+    };
+
+    // Filter assets for withdrawal account selector
+    const getEligibleWithdrawalAccounts = () => {
+      if (!assets) return [];
+      
+      const userAgeAtGoal = getUserAgeAtGoalDate();
+      const eligibleTypes = ['checking', 'savings', 'investment'];
+      
+      // Add retirement accounts if user will be over 59.5 at goal date
+      if (userAgeAtGoal && userAgeAtGoal >= 59.5) {
+        eligibleTypes.push('retirement');
+      }
+      
+      return assets.filter(asset => eligibleTypes.includes(asset.type));
+    };
 
     return (
       <div className="space-y-4">
@@ -395,6 +461,30 @@ const GoalsSection = () => {
                   />
                 </div>
               )}
+              
+              {/* Withdraw from Accounts selector for Travel Goals */}
+              <div className="space-y-2">
+                <Label htmlFor="withdrawal_account_id">Withdraw from Accounts</Label>
+                <Select name="withdrawal_account_id" defaultValue={editingGoal?.withdrawal_account_id || ''}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account to withdraw from" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
+                    <SelectItem value="">No specific account</SelectItem>
+                    {getEligibleWithdrawalAccounts().map((asset) => (
+                      <SelectItem key={asset.id} value={asset.id}>
+                        {asset.name} ({asset.type === 'investment' ? 'Brokerage' : 
+                          asset.type.charAt(0).toUpperCase() + asset.type.slice(1).replace('_', ' ')})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {getUserAgeAtGoalDate() && getUserAgeAtGoalDate()! < 59.5 && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    Note: Retirement accounts are not available until age 59.5 (you'll be {getUserAgeAtGoalDate()} at goal date)
+                  </p>
+                )}
+              </div>
             </div>
           )}
           

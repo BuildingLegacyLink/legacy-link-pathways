@@ -168,6 +168,7 @@ export type Database = {
           target_date: string | null
           updated_at: string
           user_id: string
+          withdrawal_account_id: string | null
           withdrawal_order: Json | null
         }
         Insert: {
@@ -188,6 +189,7 @@ export type Database = {
           target_date?: string | null
           updated_at?: string
           user_id: string
+          withdrawal_account_id?: string | null
           withdrawal_order?: Json | null
         }
         Update: {
@@ -208,9 +210,18 @@ export type Database = {
           target_date?: string | null
           updated_at?: string
           user_id?: string
+          withdrawal_account_id?: string | null
           withdrawal_order?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "goals_withdrawal_account_id_fkey"
+            columns: ["withdrawal_account_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       income: {
         Row: {
