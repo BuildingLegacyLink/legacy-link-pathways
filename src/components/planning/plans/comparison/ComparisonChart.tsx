@@ -983,13 +983,13 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               x={retirementGoal?.retirement_age || 67} 
               stroke="#10b981" 
               strokeDasharray="5 5"
-              label={{ value: "Current Retirement", position: "topLeft", style: { fontSize: '12px', fill: '#10b981' } }}
+              label={{ value: "Current Retirement", position: "top", style: { fontSize: '12px', fill: '#10b981' } }}
             />
             <ReferenceLine 
               x={editablePlan.target_retirement_age} 
               stroke="#3b82f6" 
               strokeDasharray="5 5"
-              label={{ value: "New Plan Retirement", position: "topRight", style: { fontSize: '12px', fill: '#3b82f6' } }}
+              label={{ value: "New Plan Retirement", position: "top", style: { fontSize: '12px', fill: '#3b82f6' } }}
             />
             {/* Current situation line with retirement goal markers */}
             <Line 
