@@ -90,6 +90,21 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     enabled: !!user,
   });
 
+  // Fetch savings allocations to see how monthly savings are distributed
+  const { data: savings } = useQuery({
+    queryKey: ['savings', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('savings')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Fetch user's assets for account selection
   const { data: assets } = useQuery({
     queryKey: ['assets', user?.id],
@@ -229,7 +244,32 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     return Math.min(remainingExpenses, account.value);
   };
 
-  // Projection function that uses the appropriate data for each plan
+  // Calculate monthly contributions allocated to a specific asset
+  const getMonthlyContributionToAsset = (assetId: string, totalMonthlySavings: number) => {
+    if (!savings || savings.length === 0) {
+      // If no savings allocations defined, distribute proportionally based on current asset values
+      if (!assets || assets.length === 0) return 0;
+      const asset = assets.find(a => a.id === assetId);
+      if (!asset) return 0;
+      
+      const totalAssetValue = assets.reduce((sum, a) => sum + Number(a.value), 0);
+      if (totalAssetValue === 0) return totalMonthlySavings / assets.length; // Equal distribution if no assets
+      
+      return totalMonthlySavings * (Number(asset.value) / totalAssetValue);
+    }
+    
+    // Find savings allocations for this asset
+    const assetSavings = savings.filter(s => s.destination_asset_id === assetId);
+    return assetSavings.reduce((sum, s) => {
+      let monthlyAmount = Number(s.amount);
+      if (s.frequency === 'annual') monthlyAmount = monthlyAmount / 12;
+      if (s.frequency === 'weekly') monthlyAmount = monthlyAmount * 4.33;
+      if (s.frequency === 'quarterly') monthlyAmount = monthlyAmount / 3;
+      return sum + monthlyAmount;
+    }, 0);
+  };
+
+  // Projection function using monthly future value calculations
   const generateProjections = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = [];
     const currentAge = calculateCurrentAge();
@@ -240,104 +280,177 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       : plan.target_retirement_age;             // Editable plan uses its own target
     
     const deathAge = 85;
-    const annualGrowthRate = 0.07;
-    const annualSavings = plan.monthly_savings * 12;
-    
-    // Debug logging to see the differences
-    console.log(`${planType} plan data:`, {
-      monthlyIncome: plan.monthly_income,
-      monthlyExpenses: plan.monthly_expenses,
-      monthlySavings: plan.monthly_savings,
-      totalAssets: plan.total_assets,
-      retirementAge: retirementAge,
-      annualSavings: annualSavings,
-      dataSource: planType === 'current' ? 'retirement goal from facts' : 'editable plan inputs'
-    });
-    
-    // Calculate starting values based on selected account
-    let portfolioValue = plan.total_assets;
-    let selectedAsset = null;
     
     if (selectedAccount !== 'total' && assets) {
-      selectedAsset = assets.find(asset => asset.id === selectedAccount);
+      // Individual account calculation using future value formula
+      const selectedAsset = assets.find(asset => asset.id === selectedAccount);
       if (selectedAsset) {
-        portfolioValue = Number(selectedAsset.value);
-        // For individual accounts, only include savings that are specifically allocated to this account
-        // This prevents contributions to other accounts from affecting this account's chart
-        const allocatedSavings = 0; // Only show growth from existing balance, no new contributions unless specifically allocated
+        const startingValue = Number(selectedAsset.value);
+        const annualGrowthRate = Number(selectedAsset.growth_rate) || 0.07; // Use asset's growth rate
+        const monthlyGrowthRate = annualGrowthRate / 12;
+        const monthlyContribution = getMonthlyContributionToAsset(selectedAccount, plan.monthly_savings);
+        
+        console.log(`${planType} ${selectedAsset.name} calculation:`, {
+          startingValue,
+          annualGrowthRate,
+          monthlyGrowthRate,
+          monthlyContribution
+        });
         
         for (let age = currentAge; age <= deathAge; age++) {
           const year = new Date().getFullYear() + (age - currentAge);
           const isRetired = age > retirementAge;
-          const yearsFromStart = age - currentAge;
+          const monthsFromStart = (age - currentAge) * 12;
           
-          if (!isRetired) {
-            // Pre-retirement: Add proportional savings and apply growth
-            portfolioValue += allocatedSavings;
-            portfolioValue *= (1 + annualGrowthRate);
-          } else {
-            // Post-retirement: Apply growth first, then subtract account-specific expenses
-            portfolioValue *= (1 + annualGrowthRate);
+          let accountValue = startingValue;
+          
+          if (!isRetired && monthsFromStart > 0) {
+            // Pre-retirement: Future value with monthly contributions
+            // FV = PV(1+r)^n + PMT[((1+r)^n - 1)/r]
+            const growthFactor = Math.pow(1 + monthlyGrowthRate, monthsFromStart);
+            const presentValueGrowth = startingValue * growthFactor;
             
-            // Calculate total retirement expenses with individual growth rates
-            const individualExpenses = calculateIndividualExpenses(yearsFromStart);
-            const totalExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
+            let contributionGrowth = 0;
+            if (monthlyContribution > 0 && monthlyGrowthRate > 0) {
+              contributionGrowth = monthlyContribution * ((growthFactor - 1) / monthlyGrowthRate);
+            } else if (monthlyContribution > 0) {
+              contributionGrowth = monthlyContribution * monthsFromStart;
+            }
             
-            // Get current account balances for withdrawal calculation
-            const currentAssets = assets?.map(asset => ({
-              id: asset.id,
-              value: portfolioValue // For simplicity, using current portfolio value
-            })) || [];
+            accountValue = presentValueGrowth + contributionGrowth;
+          } else if (isRetired) {
+            // Post-retirement: Continue growing but start withdrawing for expenses
+            const monthsInRetirement = (age - retirementAge) * 12;
+            const monthsToRetirement = (retirementAge - currentAge) * 12;
             
-            // Calculate withdrawal from this specific account
-            const accountWithdrawal = calculateAccountWithdrawal(selectedAccount, totalExpenses, currentAssets);
-            portfolioValue -= accountWithdrawal;
+            // First calculate value at retirement
+            if (monthsToRetirement > 0) {
+              const growthFactorToRetirement = Math.pow(1 + monthlyGrowthRate, monthsToRetirement);
+              const presentValueGrowthToRetirement = startingValue * growthFactorToRetirement;
+              
+              let contributionGrowthToRetirement = 0;
+              if (monthlyContribution > 0 && monthlyGrowthRate > 0) {
+                contributionGrowthToRetirement = monthlyContribution * ((growthFactorToRetirement - 1) / monthlyGrowthRate);
+              } else if (monthlyContribution > 0) {
+                contributionGrowthToRetirement = monthlyContribution * monthsToRetirement;
+              }
+              
+              accountValue = presentValueGrowthToRetirement + contributionGrowthToRetirement;
+            }
             
-            // Don't let portfolio go negative
-            portfolioValue = Math.max(0, portfolioValue);
+            // Then apply post-retirement growth and withdrawals
+            if (monthsInRetirement > 0) {
+              // Apply growth during retirement
+              accountValue *= Math.pow(1 + monthlyGrowthRate, monthsInRetirement);
+              
+              // Calculate and subtract accumulated expenses for this account
+              const yearsInRetirement = monthsInRetirement / 12;
+              const individualExpenses = calculateIndividualExpenses(retirementAge - currentAge + yearsInRetirement);
+              const totalAnnualExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
+              
+              // Simple approach: subtract proportional share of expenses based on withdrawal order
+              // This is simplified - would need more complex logic to properly track multi-account withdrawals over time
+              const withdrawalOrder = getWithdrawalOrder();
+              const assetIndex = withdrawalOrder.findIndex(id => id === selectedAccount);
+              
+              if (assetIndex !== -1) {
+                // This account is in the withdrawal order, apply some expenses
+                const totalAccumulatedExpenses = totalAnnualExpenses * yearsInRetirement;
+                accountValue -= totalAccumulatedExpenses * 0.3; // Simplified: assume 30% from this account
+              }
+            }
+            
+            accountValue = Math.max(0, accountValue);
           }
           
           projections.push({
             age,
             year,
-            [`${planType}Value`]: Math.round(portfolioValue),
+            [`${planType}Value`]: Math.round(accountValue),
           });
         }
       }
     } else {
-      // Total portfolio calculation - uses each plan's own data
+      // Total portfolio calculation using sum of all asset future values
       for (let age = currentAge; age <= deathAge; age++) {
         const year = new Date().getFullYear() + (age - currentAge);
         const isRetired = age > retirementAge;
-        const yearsFromStart = age - currentAge;
+        const monthsFromStart = (age - currentAge) * 12;
         
-        if (!isRetired) {
-          // Pre-retirement: Add savings and apply growth
-          portfolioValue += annualSavings;
-          portfolioValue *= (1 + annualGrowthRate);
-        } else {
-          // Post-retirement: Apply growth first, then subtract expenses with individual growth rates
-          portfolioValue *= (1 + annualGrowthRate);
-          
-          // Calculate total retirement expenses with individual growth rates
-          const individualExpenses = calculateIndividualExpenses(yearsFromStart);
-          const totalExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
-          portfolioValue -= totalExpenses;
-          
-          // Don't let portfolio go negative
-          portfolioValue = Math.max(0, portfolioValue);
+        let totalPortfolioValue = 0;
+        
+        if (assets) {
+          // Calculate future value for each asset and sum them
+          assets.forEach(asset => {
+            const startingValue = Number(asset.value);
+            const annualGrowthRate = Number(asset.growth_rate) || 0.07;
+            const monthlyGrowthRate = annualGrowthRate / 12;
+            const monthlyContribution = getMonthlyContributionToAsset(asset.id, plan.monthly_savings);
+            
+            let assetValue = startingValue;
+            
+            if (!isRetired && monthsFromStart > 0) {
+              // Pre-retirement future value calculation
+              const growthFactor = Math.pow(1 + monthlyGrowthRate, monthsFromStart);
+              const presentValueGrowth = startingValue * growthFactor;
+              
+              let contributionGrowth = 0;
+              if (monthlyContribution > 0 && monthlyGrowthRate > 0) {
+                contributionGrowth = monthlyContribution * ((growthFactor - 1) / monthlyGrowthRate);
+              } else if (monthlyContribution > 0) {
+                contributionGrowth = monthlyContribution * monthsFromStart;
+              }
+              
+              assetValue = presentValueGrowth + contributionGrowth;
+            } else if (isRetired) {
+              // Post-retirement calculation
+              const monthsInRetirement = (age - retirementAge) * 12;
+              const monthsToRetirement = (retirementAge - currentAge) * 12;
+              
+              // Calculate value at retirement
+              if (monthsToRetirement > 0) {
+                const growthFactorToRetirement = Math.pow(1 + monthlyGrowthRate, monthsToRetirement);
+                const presentValueGrowthToRetirement = startingValue * growthFactorToRetirement;
+                
+                let contributionGrowthToRetirement = 0;
+                if (monthlyContribution > 0 && monthlyGrowthRate > 0) {
+                  contributionGrowthToRetirement = monthlyContribution * ((growthFactorToRetirement - 1) / monthlyGrowthRate);
+                } else if (monthlyContribution > 0) {
+                  contributionGrowthToRetirement = monthlyContribution * monthsToRetirement;
+                }
+                
+                assetValue = presentValueGrowthToRetirement + contributionGrowthToRetirement;
+              }
+              
+              // Apply post-retirement growth
+              if (monthsInRetirement > 0) {
+                assetValue *= Math.pow(1 + monthlyGrowthRate, monthsInRetirement);
+              }
+            }
+            
+            totalPortfolioValue += Math.max(0, assetValue);
+          });
         }
+        
+        // Subtract total expenses from portfolio in retirement
+        if (isRetired) {
+          const yearsFromStart = age - currentAge;
+          const individualExpenses = calculateIndividualExpenses(yearsFromStart);
+          const totalAnnualExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
+          const monthsInRetirement = (age - retirementAge) * 12;
+          const totalAccumulatedExpenses = totalAnnualExpenses * (monthsInRetirement / 12);
+          
+          totalPortfolioValue -= totalAccumulatedExpenses;
+        }
+        
+        totalPortfolioValue = Math.max(0, totalPortfolioValue);
         
         // Debug logging for key ages
         if (age === retirementAge || age === retirementAge + 1) {
-          const individualExpenses = calculateIndividualExpenses(yearsFromStart);
-          const totalExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
           console.log(`${planType} plan at age ${age}:`, {
             isRetired,
-            portfolioValue,
-            annualSavings,
-            totalExpenses,
-            individualExpenses: individualExpenses.map(exp => ({ name: exp.name, amount: exp.inflatedAnnualAmount })),
+            totalPortfolioValue,
+            monthsFromStart,
             retirementAge
           });
         }
@@ -345,7 +458,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         projections.push({
           age,
           year,
-          [`${planType}Value`]: Math.round(portfolioValue),
+          [`${planType}Value`]: Math.round(totalPortfolioValue),
         });
       }
     }
