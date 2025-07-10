@@ -911,33 +911,37 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       </div>
       
       {/* Chart */}
-      <div className="h-96">
+      <div className="h-[500px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={combinedData} margin={{ top: 20, right: 30, left: 80, bottom: 60 }}>
+          <LineChart data={combinedData} margin={{ top: 20, right: 40, left: 120, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
             <XAxis 
               dataKey="age" 
               className="text-gray-600 dark:text-gray-400"
               interval="preserveStartEnd"
               tick={{ fontSize: 12 }}
+              axisLine={{ stroke: '#d1d5db' }}
+              tickLine={{ stroke: '#d1d5db' }}
               label={{ 
                 value: 'Age', 
                 position: 'insideBottom', 
-                offset: -10,
-                style: { textAnchor: 'middle' }
+                offset: -15,
+                style: { textAnchor: 'middle', fontSize: '14px', fontWeight: '500' }
               }}
             />
             <YAxis 
               className="text-gray-600 dark:text-gray-400"
               tickFormatter={formatCurrency}
               tick={{ fontSize: 11 }}
-              width={70}
+              width={90}
+              axisLine={{ stroke: '#d1d5db' }}
+              tickLine={{ stroke: '#d1d5db' }}
               label={{ 
                 value: selectedAccount === 'total' ? 'Portfolio Value' : `${getSelectedAccountName()} Value`, 
                 angle: -90, 
                 position: 'outside',
-                offset: 20,
-                style: { textAnchor: 'middle' }
+                offset: -40,
+                style: { textAnchor: 'middle', fontSize: '14px', fontWeight: '500' }
               }}
             />
             <Tooltip 
