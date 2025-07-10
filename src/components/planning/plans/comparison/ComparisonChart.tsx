@@ -911,9 +911,9 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       </div>
       
       {/* Chart */}
-      <div className="h-[500px] w-full">
+      <div className="h-[600px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={combinedData} margin={{ top: 20, right: 40, left: 160, bottom: 80 }}>
+          <LineChart data={combinedData} margin={{ top: 20, right: 40, left: 200, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
             <XAxis 
               dataKey="age" 
@@ -933,14 +933,14 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               className="text-gray-600 dark:text-gray-400"
               tickFormatter={formatCurrency}
               tick={{ fontSize: 13 }}
-              width={110}
+              width={140}
               axisLine={{ stroke: '#d1d5db' }}
               tickLine={{ stroke: '#d1d5db' }}
               label={{ 
                 value: selectedAccount === 'total' ? 'Portfolio Value' : `${getSelectedAccountName()} Value`, 
                 angle: -90, 
                 position: 'outside',
-                offset: -70,
+                offset: -100,
                 style: { textAnchor: 'middle', fontSize: '16px', fontWeight: '500' }
               }}
             />
