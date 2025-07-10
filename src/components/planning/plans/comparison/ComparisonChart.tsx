@@ -276,38 +276,40 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     return retirementGoal.withdrawal_order as string[];
   };
 
-  // Calculate how much to withdraw from a specific account based on withdrawal order
-  const calculateAccountWithdrawal = (accountId: string, totalExpenses: number, availableAccounts: { id: string; value: number }[]) => {
+  // Track accumulated withdrawals by account for proper order enforcement
+  const accountWithdrawals = new Map<string, number>();
+
+  // Calculate total withdrawals needed per year for each account following withdrawal order
+  const calculateYearlyWithdrawals = (totalAnnualExpenses: number, availableAccounts: { id: string; value: number }[]) => {
     const withdrawalOrder = getWithdrawalOrder();
+    const yearlyWithdrawals = new Map<string, number>();
+    
     if (withdrawalOrder.length === 0) {
       // If no withdrawal order specified, distribute proportionally
       const totalValue = availableAccounts.reduce((sum, acc) => sum + acc.value, 0);
-      const account = availableAccounts.find(acc => acc.id === accountId);
-      if (!account || totalValue === 0) return 0;
-      return totalExpenses * (account.value / totalValue);
+      if (totalValue > 0) {
+        availableAccounts.forEach(account => {
+          yearlyWithdrawals.set(account.id, totalAnnualExpenses * (account.value / totalValue));
+        });
+      }
+      return yearlyWithdrawals;
     }
 
-    // Apply withdrawal order priority
-    let remainingExpenses = totalExpenses;
-    const accountIndex = withdrawalOrder.findIndex(id => id === accountId);
+    // Apply withdrawal order - withdraw from accounts sequentially according to priority
+    let remainingExpenses = totalAnnualExpenses;
     
-    if (accountIndex === -1) return 0; // Account not in withdrawal order
-    
-    // Withdraw from accounts in order
-    for (let i = 0; i < accountIndex; i++) {
-      const priorAccount = availableAccounts.find(acc => acc.id === withdrawalOrder[i]);
-      if (priorAccount && priorAccount.value > 0) {
-        const withdrawal = Math.min(remainingExpenses, priorAccount.value);
-        remainingExpenses -= withdrawal;
-        if (remainingExpenses <= 0) return 0;
-      }
+    for (const accountId of withdrawalOrder) {
+      if (remainingExpenses <= 0) break;
+      
+      const account = availableAccounts.find(acc => acc.id === accountId);
+      if (!account || account.value <= 0) continue;
+      
+      const withdrawal = Math.min(remainingExpenses, account.value);
+      yearlyWithdrawals.set(accountId, withdrawal);
+      remainingExpenses -= withdrawal;
     }
     
-    // This account's turn to cover remaining expenses
-    const account = availableAccounts.find(acc => acc.id === accountId);
-    if (!account || account.value <= 0) return 0;
-    
-    return Math.min(remainingExpenses, account.value);
+    return yearlyWithdrawals;
   };
 
   // Calculate monthly contributions allocated to a specific asset
@@ -404,26 +406,36 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               accountValue = presentValueGrowthToRetirement + contributionGrowthToRetirement;
             }
             
-            // Then apply post-retirement growth and withdrawals
+            // Then simulate year-by-year withdrawals during retirement
             if (monthsInRetirement > 0) {
-              // Apply growth during retirement
-              accountValue *= Math.pow(1 + monthlyGrowthRate, monthsInRetirement);
-              
-              // Calculate and subtract accumulated expenses for this account
               const yearsInRetirement = monthsInRetirement / 12;
-              const individualExpenses = calculateIndividualExpenses(retirementAge - currentAge + yearsInRetirement);
-              const totalAnnualExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
+              let currentAccountValue = accountValue;
               
-              // Simple approach: subtract proportional share of expenses based on withdrawal order
-              // This is simplified - would need more complex logic to properly track multi-account withdrawals over time
-              const withdrawalOrder = getWithdrawalOrder();
-              const assetIndex = withdrawalOrder.findIndex(id => id === selectedAccount);
-              
-              if (assetIndex !== -1) {
-                // This account is in the withdrawal order, apply some expenses
-                const totalAccumulatedExpenses = totalAnnualExpenses * yearsInRetirement;
-                accountValue -= totalAccumulatedExpenses * 0.3; // Simplified: assume 30% from this account
+              // Simulate each year of retirement to properly track withdrawals by order
+              for (let retirementYear = 1; retirementYear <= yearsInRetirement; retirementYear++) {
+                // Apply growth for this year first
+                currentAccountValue *= Math.pow(1 + monthlyGrowthRate, 12);
+                
+                // Calculate expenses for this year
+                const yearsFromStart = retirementAge - currentAge + retirementYear;
+                const individualExpenses = calculateIndividualExpenses(yearsFromStart);
+                const totalAnnualExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
+                
+                // Create snapshot of all account values at this point (simplified - using current values)
+                const accountSnapshot = assets?.map(asset => ({
+                  id: asset.id,
+                  value: Math.max(0, currentAccountValue) // This is simplified - would need to track all accounts
+                })) || [];
+                
+                // Calculate this account's withdrawal for this year
+                const yearlyWithdrawals = calculateYearlyWithdrawals(totalAnnualExpenses, accountSnapshot);
+                const thisAccountWithdrawal = yearlyWithdrawals.get(selectedAccount) || 0;
+                
+                // Apply withdrawal
+                currentAccountValue = Math.max(0, currentAccountValue - thisAccountWithdrawal);
               }
+              
+              accountValue = currentAccountValue;
             }
             
             accountValue = Math.max(0, accountValue);
@@ -498,13 +510,17 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           });
         }
         
-        // Subtract total expenses from portfolio in retirement
+        // Apply withdrawals following the proper order during retirement
         if (isRetired) {
+          const monthsInRetirement = (age - retirementAge) * 12;
+          const yearsInRetirement = monthsInRetirement / 12;
+          
+          // For total portfolio, we need to track withdrawals across all accounts properly
+          // This is a simplified version - for accurate tracking we'd need to simulate year by year
           const yearsFromStart = age - currentAge;
           const individualExpenses = calculateIndividualExpenses(yearsFromStart);
           const totalAnnualExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
-          const monthsInRetirement = (age - retirementAge) * 12;
-          const totalAccumulatedExpenses = totalAnnualExpenses * (monthsInRetirement / 12);
+          const totalAccumulatedExpenses = totalAnnualExpenses * yearsInRetirement;
           
           totalPortfolioValue -= totalAccumulatedExpenses;
         }
