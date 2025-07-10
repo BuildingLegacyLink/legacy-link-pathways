@@ -506,26 +506,29 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         }
       }
     } else {
-      // Total portfolio calculation using sum of all asset future values
-      for (let age = currentAge; age <= deathAge; age++) {
-        const year = new Date().getFullYear() + (age - currentAge);
-        const isRetired = age > retirementAge;
-        const monthsFromStart = (age - currentAge) * 12;
-        
-        let totalPortfolioValue = 0;
-        
-        if (assets) {
-          // Calculate future value for each asset and sum them
-          assets.forEach(asset => {
-            const startingValue = Number(asset.value);
-            const annualGrowthRate = Number(asset.growth_rate) || 0.07;
-            const monthlyGrowthRate = annualGrowthRate / 12;
-            const monthlyContribution = getMonthlyContributionToAsset(asset.id, plan.monthly_savings);
+      // Total portfolio calculation - use the same comprehensive withdrawal simulation as individual accounts
+      
+      // Initialize all account balances for simulation
+      const accountBalances = new Map<string, number[]>(); // Array to track balance at each age
+      
+      if (assets && assets.length > 0) {
+        // Calculate future values for ALL accounts first (without withdrawals)
+        assets.forEach(asset => {
+          const startingValue = Number(asset.value);
+          const annualGrowthRate = Number(asset.growth_rate) || 0.07;
+          const monthlyGrowthRate = annualGrowthRate / 12;
+          const monthlyContribution = getMonthlyContributionToAsset(asset.id, plan.monthly_savings);
+          
+          const balances: number[] = [];
+          
+          for (let age = currentAge; age <= deathAge; age++) {
+            const isRetired = age > retirementAge;
+            const monthsFromStart = (age - currentAge) * 12;
             
             let assetValue = startingValue;
             
             if (!isRetired && monthsFromStart > 0) {
-              // Pre-retirement future value calculation
+              // Pre-retirement: Future value with monthly contributions
               const growthFactor = Math.pow(1 + monthlyGrowthRate, monthsFromStart);
               const presentValueGrowth = startingValue * growthFactor;
               
@@ -538,11 +541,9 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               
               assetValue = presentValueGrowth + contributionGrowth;
             } else if (isRetired) {
-              // Post-retirement calculation
-              const monthsInRetirement = (age - retirementAge) * 12;
+              // At retirement, calculate the accumulated value
               const monthsToRetirement = (retirementAge - currentAge) * 12;
               
-              // Calculate value at retirement
               if (monthsToRetirement > 0) {
                 const growthFactorToRetirement = Math.pow(1 + monthlyGrowthRate, monthsToRetirement);
                 const presentValueGrowthToRetirement = startingValue * growthFactorToRetirement;
@@ -557,40 +558,91 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
                 assetValue = presentValueGrowthToRetirement + contributionGrowthToRetirement;
               }
               
-              // Apply post-retirement growth
+              // Then apply post-retirement growth (will be adjusted for withdrawals below)
+              const monthsInRetirement = (age - retirementAge) * 12;
               if (monthsInRetirement > 0) {
                 assetValue *= Math.pow(1 + monthlyGrowthRate, monthsInRetirement);
               }
             }
             
-            totalPortfolioValue += Math.max(0, assetValue);
-          });
-        }
-        
-        // Apply withdrawals following the proper order during retirement
-        if (isRetired) {
-          const monthsInRetirement = (age - retirementAge) * 12;
-          const yearsInRetirement = monthsInRetirement / 12;
+            balances.push(Math.max(0, assetValue));
+          }
           
-          // For total portfolio, we need to track withdrawals across all accounts properly
-          // This is a simplified version - for accurate tracking we'd need to simulate year by year
+          accountBalances.set(asset.id, balances);
+        });
+        
+        // Now simulate year-by-year withdrawals during retirement following the proper order
+        for (let age = retirementAge + 1; age <= deathAge; age++) {
+          const ageIndex = age - currentAge;
           const yearsFromStart = age - currentAge;
+          
+          // Calculate expenses for this year
           const individualExpenses = calculateIndividualExpenses(yearsFromStart);
           const totalAnnualExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
-          const totalAccumulatedExpenses = totalAnnualExpenses * yearsInRetirement;
           
-          totalPortfolioValue -= totalAccumulatedExpenses;
+          // Get current account balances at this age (before withdrawals)
+          const currentBalances = new Map<string, number>();
+          assets.forEach(asset => {
+            const balances = accountBalances.get(asset.id) || [];
+            currentBalances.set(asset.id, Math.max(0, balances[ageIndex] || 0));
+          });
+          
+          // Apply withdrawals following the withdrawal order
+          const withdrawalOrder = getWithdrawalOrder();
+          let remainingExpenses = totalAnnualExpenses;
+          
+          if (withdrawalOrder.length > 0) {
+            // Follow the specified withdrawal order
+            for (const accountId of withdrawalOrder) {
+              if (remainingExpenses <= 0) break;
+              
+              const currentBalance = currentBalances.get(accountId) || 0;
+              if (currentBalance > 0) {
+                const withdrawal = Math.min(remainingExpenses, currentBalance);
+                currentBalances.set(accountId, currentBalance - withdrawal);
+                remainingExpenses -= withdrawal;
+              }
+            }
+          }
+          
+          // Update the account balances array with post-withdrawal amounts
+          assets.forEach(asset => {
+            const balances = accountBalances.get(asset.id) || [];
+            const newBalance = currentBalances.get(asset.id) || 0;
+            
+            // Update this age and all future ages with the new balance as starting point
+            for (let futureAge = age; futureAge <= deathAge; futureAge++) {
+              const futureAgeIndex = futureAge - currentAge;
+              const monthsFromWithdrawal = (futureAge - age) * 12;
+              
+              if (futureAgeIndex < balances.length) {
+                const annualGrowthRate = Number(asset.growth_rate) || 0.07;
+                const monthlyGrowthRate = annualGrowthRate / 12;
+                
+                // Apply growth from the withdrawal point forward
+                const grownBalance = monthsFromWithdrawal > 0 
+                  ? newBalance * Math.pow(1 + monthlyGrowthRate, monthsFromWithdrawal)
+                  : newBalance;
+                
+                balances[futureAgeIndex] = Math.max(0, grownBalance);
+              }
+            }
+          });
         }
+      }
+      
+      // Generate projections using the final calculated balances
+      for (let age = currentAge; age <= deathAge; age++) {
+        const year = new Date().getFullYear() + (age - currentAge);
+        const ageIndex = age - currentAge;
         
-        totalPortfolioValue = Math.max(0, totalPortfolioValue);
-        
-        // Debug logging for key ages
-        if (age === retirementAge || age === retirementAge + 1) {
-          console.log(`${planType} plan at age ${age}:`, {
-            isRetired,
-            totalPortfolioValue,
-            monthsFromStart,
-            retirementAge
+        // Sum all account balances at this age
+        let totalPortfolioValue = 0;
+        if (assets && assets.length > 0) {
+          assets.forEach(asset => {
+            const balances = accountBalances.get(asset.id) || [];
+            const balance = balances[ageIndex] || 0;
+            totalPortfolioValue += Math.max(0, balance);
           });
         }
         
