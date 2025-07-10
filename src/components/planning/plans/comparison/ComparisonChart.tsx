@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -25,7 +25,73 @@ type ExpenseData = Tables<'expenses'>;
 
 const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChartProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedAccount, setSelectedAccount] = useState<string>('total');
+
+  // Set up real-time subscriptions to invalidate queries when facts change
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('facts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'goals',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Invalidate relevant queries when goals change (including withdrawal order)
+          queryClient.invalidateQueries({ queryKey: ['goals', user.id] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'assets',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Invalidate assets queries when assets change
+          queryClient.invalidateQueries({ queryKey: ['assets', user.id] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'savings',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Invalidate savings queries when savings allocations change
+          queryClient.invalidateQueries({ queryKey: ['savings', user.id] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'expenses',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Invalidate expenses queries when expenses change
+          queryClient.invalidateQueries({ queryKey: ['expenses', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   // Fetch user profile to get date of birth
   const { data: profile } = useQuery({
