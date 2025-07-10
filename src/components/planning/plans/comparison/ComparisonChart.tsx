@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Scatter, ScatterChart, ReferenceDot } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -100,13 +100,28 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       if (!user) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('date_of_birth')
+        .select('*')
         .eq('id', user.id)
-        .maybeSingle();
+        .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user
+  });
+
+  // Fetch goals for timeline indicators
+  const { data: goals } = useQuery({
+    queryKey: ['goals', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
   });
 
   // Fetch retirement goal to get the target retirement age for current situation
@@ -666,6 +681,67 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     ...editableProjections[index],
   }));
 
+  // Calculate when goals occur based on their timing
+  const calculateGoalAges = () => {
+    if (!goals || !profile) return [];
+    
+    const currentAge = calculateCurrentAge();
+    const currentYear = new Date().getFullYear();
+    const retirementAge = profile.retirement_age || 67;
+    const deathAge = profile.projected_death_age || 85;
+    
+    return goals.map(goal => {
+      let goalAge = null;
+      
+      if (goal.target_date) {
+        // Traditional date-based goal
+        const targetYear = new Date(goal.target_date).getFullYear();
+        goalAge = currentAge + (targetYear - currentYear);
+      } else if (goal.retirement_age) {
+        // Retirement goal
+        goalAge = goal.retirement_age;
+      } else if (goal.start_timing_type && goal.start_timing_value) {
+        // New timing system
+        switch (goal.start_timing_type) {
+          case 'calendar_year':
+            goalAge = currentAge + (goal.start_timing_value - currentYear);
+            break;
+          case 'age':
+            goalAge = goal.start_timing_value;
+            break;
+          case 'retirement':
+            goalAge = retirementAge;
+            break;
+          case 'death':
+            goalAge = deathAge;
+            break;
+        }
+      }
+      
+      return {
+        ...goal,
+        goalAge,
+        color: getGoalColor(goal.goal_type)
+      };
+    }).filter(goal => goal.goalAge && goal.goalAge >= currentAge && goal.goalAge <= 85);
+  };
+
+  const getGoalColor = (goalType: string) => {
+    const colors = {
+      retirement: '#10b981',
+      travel: '#3b82f6', 
+      wedding: '#ec4899',
+      home: '#f59e0b',
+      education: '#8b5cf6',
+      celebration: '#eab308',
+      heirs: '#6366f1',
+      custom: '#6b7280'
+    };
+    return colors[goalType as keyof typeof colors] || colors.custom;
+  };
+
+  const goalMarkers = calculateGoalAges();
+
   // Get current selected account name for display
   const getSelectedAccountName = () => {
     if (selectedAccount === 'total') return 'Total Portfolio Value';
@@ -735,6 +811,57 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
                 color: '#fff'
               }}
             />
+            
+            {/* Goal markers as reference dots */}
+            {goalMarkers.map((goal) => {
+              // Find the portfolio value at this age from the combined data
+              const dataPoint = combinedData.find(d => d.age === goal.goalAge);
+              const yValue = selectedAccount === 'total' 
+                ? (dataPoint?.editableValue || dataPoint?.currentValue || 0)
+                : (dataPoint?.editableValue || dataPoint?.currentValue || 0);
+                
+              return (
+                <ReferenceDot
+                  key={goal.id}
+                  x={goal.goalAge}
+                  y={yValue}
+                  r={6}
+                  fill={goal.color}
+                  stroke="#fff"
+                  strokeWidth={2}
+                  style={{ cursor: 'pointer' }}
+                />
+              );
+            })}
+            
+            {goalMarkers.length > 0 && (
+              <Tooltip
+                content={({ payload, label, active }) => {
+                  if (active && label) {
+                    const age = Number(label);
+                    const matchingGoals = goalMarkers.filter(g => g.goalAge === age);
+                    
+                    if (matchingGoals.length > 0) {
+                      return (
+                        <div className="bg-black bg-opacity-90 text-white p-3 rounded-lg shadow-lg">
+                          <div className="text-sm font-medium mb-2">Age {age}</div>
+                          {matchingGoals.map(goal => (
+                            <div key={goal.id} className="flex items-center gap-2 text-sm">
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: goal.color }}
+                              />
+                              <span>{goal.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                  }
+                  return null;
+                }}
+              />
+            )}
             <ReferenceLine 
               x={retirementGoal?.retirement_age || 67} 
               stroke="#10b981" 
