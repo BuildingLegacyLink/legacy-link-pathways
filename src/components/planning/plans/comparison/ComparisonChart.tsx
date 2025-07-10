@@ -685,7 +685,19 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
   const calculateGoalAges = () => {
     if (!goals || !profile) return [];
     
-    const currentAge = calculateCurrentAge();
+    const getCurrentAge = () => {
+      if (!profile?.date_of_birth) return 25; // fallback
+      const birthDate = new Date(profile.date_of_birth);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    };
+    
+    const currentAge = getCurrentAge();
     const currentYear = new Date().getFullYear();
     const retirementAge = profile.retirement_age || 67;
     const deathAge = profile.projected_death_age || 85;
@@ -694,9 +706,21 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       let goalAge = null;
       
       if (goal.target_date) {
-        // Traditional date-based goal
-        const targetYear = new Date(goal.target_date).getFullYear();
-        goalAge = currentAge + (targetYear - currentYear);
+        // Traditional date-based goal - calculate age from target date
+        const targetDate = new Date(goal.target_date);
+        const targetYear = targetDate.getFullYear();
+        const birthDate = new Date(profile.date_of_birth);
+        goalAge = targetYear - birthDate.getFullYear();
+        
+        // Adjust for birth month/day
+        const targetMonth = targetDate.getMonth();
+        const targetDay = targetDate.getDate();
+        const birthMonth = birthDate.getMonth();
+        const birthDay = birthDate.getDate();
+        
+        if (targetMonth < birthMonth || (targetMonth === birthMonth && targetDay < birthDay)) {
+          goalAge--;
+        }
       } else if (goal.retirement_age) {
         // Retirement goal
         goalAge = goal.retirement_age;
@@ -704,7 +728,8 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         // New timing system
         switch (goal.start_timing_type) {
           case 'calendar_year':
-            goalAge = currentAge + (goal.start_timing_value - currentYear);
+            const birthYear = new Date(profile.date_of_birth).getFullYear();
+            goalAge = goal.start_timing_value - birthYear;
             break;
           case 'age':
             goalAge = goal.start_timing_value;
@@ -723,7 +748,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         goalAge,
         color: getGoalColor(goal.goal_type)
       };
-    }).filter(goal => goal.goalAge && goal.goalAge >= currentAge && goal.goalAge <= 85);
+    }).filter(goal => goal.goalAge && goal.goalAge >= currentAge && goal.goalAge <= 100);
   };
 
   const getGoalColor = (goalType: string) => {
@@ -799,52 +824,23 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               }}
             />
             <Tooltip 
-              formatter={(value: number, name: string) => [
-                formatCurrency(value), 
-                name
-              ]}
-              labelFormatter={(age) => `Age: ${age}`}
-              contentStyle={{ 
-                backgroundColor: 'rgba(0, 0, 0, 0.8)', 
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff'
-              }}
-            />
-            
-            {/* Goal markers as reference dots */}
-            {goalMarkers.map((goal) => {
-              // Find the portfolio value at this age from the combined data
-              const dataPoint = combinedData.find(d => d.age === goal.goalAge);
-              const yValue = selectedAccount === 'total' 
-                ? (dataPoint?.editableValue || dataPoint?.currentValue || 0)
-                : (dataPoint?.editableValue || dataPoint?.currentValue || 0);
-                
-              return (
-                <ReferenceDot
-                  key={goal.id}
-                  x={goal.goalAge}
-                  y={yValue}
-                  r={6}
-                  fill={goal.color}
-                  stroke="#fff"
-                  strokeWidth={2}
-                  style={{ cursor: 'pointer' }}
-                />
-              );
-            })}
-            
-            {goalMarkers.length > 0 && (
-              <Tooltip
-                content={({ payload, label, active }) => {
-                  if (active && label) {
-                    const age = Number(label);
-                    const matchingGoals = goalMarkers.filter(g => g.goalAge === age);
-                    
-                    if (matchingGoals.length > 0) {
-                      return (
-                        <div className="bg-black bg-opacity-90 text-white p-3 rounded-lg shadow-lg">
-                          <div className="text-sm font-medium mb-2">Age {age}</div>
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length && label) {
+                  const age = Number(label);
+                  const matchingGoals = goalMarkers.filter(g => g.goalAge === age);
+                  
+                  return (
+                    <div className="bg-black bg-opacity-90 text-white p-3 rounded-lg shadow-lg">
+                      <div className="text-sm font-medium mb-2">Age {age}</div>
+                      {payload.map((entry: any, index: number) => (
+                        <div key={index} className="text-sm mb-1">
+                          <span style={{ color: entry.color }}>{entry.name}: </span>
+                          {formatCurrency(entry.value)}
+                        </div>
+                      ))}
+                      {matchingGoals.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-600">
+                          <div className="text-xs text-gray-300 mb-1">Goals:</div>
                           {matchingGoals.map(goal => (
                             <div key={goal.id} className="flex items-center gap-2 text-sm">
                               <div 
@@ -855,13 +851,13 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
                             </div>
                           ))}
                         </div>
-                      );
-                    }
-                  }
-                  return null;
-                }}
-              />
-            )}
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
             <ReferenceLine 
               x={retirementGoal?.retirement_age || 67} 
               stroke="#10b981" 
@@ -883,12 +879,37 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               dot={false}
               name="Current Situation"
             />
+            
+            {/* Goal markers as custom dots on the New Plan line */}
             <Line 
               type="monotone" 
               dataKey="editableValue" 
               stroke="#3b82f6" 
               strokeWidth={3}
-              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (!payload || !goalMarkers) return null;
+                
+                // Check if this age has any goals
+                const goalsAtThisAge = goalMarkers.filter(goal => goal.goalAge === payload.age);
+                if (goalsAtThisAge.length === 0) {
+                  return <circle cx={cx} cy={cy} r={4} fill="#3b82f6" stroke="#fff" strokeWidth={2} />;
+                }
+                
+                // Render goal marker
+                const goal = goalsAtThisAge[0]; // Use first goal if multiple
+                return (
+                  <circle 
+                    cx={cx} 
+                    cy={cy} 
+                    r={8} 
+                    fill={goal.color} 
+                    stroke="#fff" 
+                    strokeWidth={3}
+                    style={{ cursor: 'pointer' }}
+                  />
+                );
+              }}
               activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
               name={planName || 'New Plan'}
             />
