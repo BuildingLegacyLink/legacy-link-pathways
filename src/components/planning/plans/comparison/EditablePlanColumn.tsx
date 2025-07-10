@@ -97,24 +97,18 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     if ((income.length > 0 || expenses.length > 0 || savingsContributions.length > 0) && Object.keys(localInputs).length === 0) {
       const newLocalInputs: { [key: string]: string } = {};
       
-      // Calculate original totals
-      let totalOriginalIncome = 0;
-      let totalOriginalExpenses = 0;
+      // Set initial values directly from plan data (proportional distribution)
       let totalOriginalSavings = 0;
       
-      income.forEach((item) => {
-        totalOriginalIncome += Number(item.amount) * getFrequencyMultiplier(item.frequency);
-      });
-      
-      expenses.forEach((item) => {
-        totalOriginalExpenses += Number(item.amount) * getFrequencyMultiplier(item.frequency);
-      });
+      // Calculate original totals
+      const totalOriginalIncome = income.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
+      const totalOriginalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
       
       savingsContributions.forEach((item) => {
         totalOriginalSavings += Number(item.amount) * getFrequencyMultiplier(item.frequency);
       });
       
-      // Set initial values directly from plan data
+      // Distribute income proportionally
       income.forEach((item) => {
         const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
         const proportion = totalOriginalIncome > 0 ? originalAmount / totalOriginalIncome : 1 / income.length;
@@ -122,6 +116,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         newLocalInputs[`income_${item.id}`] = Math.round(distributedAmount).toString();
       });
       
+      // Distribute expenses proportionally
       expenses.forEach((item) => {
         const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
         const proportion = totalOriginalExpenses > 0 ? originalAmount / totalOriginalExpenses : 1 / expenses.length;
@@ -129,20 +124,22 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
         newLocalInputs[`expense_${item.id}`] = Math.round(distributedAmount).toString();
       });
       
-      savingsContributions.forEach((item) => {
-        const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
-        const proportion = totalOriginalSavings > 0 ? originalAmount / totalOriginalSavings : 1 / savingsContributions.length;
-        const distributedAmount = planData.monthly_savings * proportion;
-        newLocalInputs[`saving_${item.id}`] = Math.round(distributedAmount).toString();
-      });
+      // Distribute savings proportionally ONLY if there are actual savings contributions
+      if (savingsContributions.length > 0) {
+        savingsContributions.forEach((item) => {
+          const originalAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
+          const proportion = totalOriginalSavings > 0 ? originalAmount / totalOriginalSavings : 1 / savingsContributions.length;
+          const distributedAmount = planData.monthly_savings * proportion;
+          newLocalInputs[`saving_${item.id}`] = Math.round(distributedAmount).toString();
+        });
+      }
       
       setLocalInputs(newLocalInputs);
     }
-  }, [income, expenses, savingsContributions]);
+  }, [income, expenses, savingsContributions, planData]);
 
-  // Reset inputs when plan data is reset externally (like "Reset to Current Situation")
+  // Reset inputs when plan data is reset externally
   useEffect(() => {
-    // Only reset if we have existing inputs and the plan data appears to be reset to original values
     if (Object.keys(localInputs).length > 0 && income.length > 0 && expenses.length > 0) {
       const originalIncome = income.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
       const originalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
@@ -177,7 +174,6 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
 
   // Handle input changes - allow empty string and numbers only
   const handleInputChange = (key: string, value: string) => {
-    // Allow empty string or numbers only
     if (value === '' || /^\d*$/.test(value)) {
       setLocalInputs(prev => ({ ...prev, [key]: value }));
     }
@@ -200,17 +196,18 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       newExpenseTotal += inputValue === '' ? 0 : (Number(inputValue) || 0);
     });
     
+    // ONLY add up actual savings contributions - don't derive from surplus
     savingsContributions.forEach((item) => {
       const inputValue = localInputs[`saving_${item.id}`];
       newSavingsTotal += inputValue === '' ? 0 : (Number(inputValue) || 0);
     });
     
-    // Update plan data
+    // Update plan data with actual savings (not derived surplus)
     onPlanChange({
       ...planData,
       monthly_income: newIncomeTotal,
       monthly_expenses: newExpenseTotal,
-      monthly_savings: newSavingsTotal,
+      monthly_savings: newSavingsTotal, // This should be actual planned savings, not surplus
     });
   };
 
@@ -221,12 +218,12 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     });
   };
 
-  // Calculate surplus/shortfall
+  // Calculate surplus/shortfall (this is separate from planned savings)
   const monthlySurplusShortfall = planData.monthly_income - planData.monthly_expenses - planData.monthly_savings;
   
-  // Check if value is within $1 of $0
+  // Check if surplus/shortfall is balanced (within $1 of $0)
   const isBalanced = Math.abs(monthlySurplusShortfall) <= 1;
-  const textColor = isBalanced ? "text-green-600" : "text-red-600";
+  const textColor = isBalanced ? "text-green-600" : (monthlySurplusShortfall > 0 ? "text-blue-600" : "text-red-600");
 
   return (
     <div className="space-y-6">
@@ -340,30 +337,35 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
                 <span>${formatCurrency(planData.monthly_savings)}</span>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center font-semibold h-8">
-                <span className={textColor}>
-                  {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
-                </span>
-                <span className={textColor}>
-                  ${formatCurrency(Math.abs(monthlySurplusShortfall))}
-                </span>
-              </div>
-              {!isBalanced && (
-                <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                  <AlertDescription className="text-orange-800 dark:text-orange-200 text-xs">
-                    Please make this value $0 by adjusting income/expenses/savings amount
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
           </div>
         ) : (
           <div className="text-sm text-gray-500 dark:text-gray-400">
             No savings contributions added yet. Add them in Facts to see them here.
           </div>
         )}
+        
+        {/* Monthly Surplus/Shortfall Section - Always show this */}
+        <div className="pt-2 border-t dark:border-gray-700">
+          <div className="flex justify-between items-center font-semibold h-8">
+            <span className={textColor}>
+              {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
+            </span>
+            <span className={textColor}>
+              ${formatCurrency(Math.abs(monthlySurplusShortfall))}
+            </span>
+          </div>
+          {!isBalanced && Math.abs(monthlySurplusShortfall) > 50 && (
+            <Alert className="mt-2 border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800 dark:text-orange-200 text-xs">
+                {monthlySurplusShortfall > 0 
+                  ? `You have $${formatCurrency(monthlySurplusShortfall)} available each month that could be allocated to savings.`
+                  : `You're spending $${formatCurrency(Math.abs(monthlySurplusShortfall))} more than you earn each month.`
+                }
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">

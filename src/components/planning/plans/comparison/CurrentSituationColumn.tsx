@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Info } from 'lucide-react';
 
 interface PlanData {
   monthly_income: number;
@@ -69,7 +71,7 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
     enabled: !!user,
   });
 
-  // Fetch retirement goal to get the target retirement age
+  // Fetch retirement goal
   const { data: retirementGoal } = useQuery({
     queryKey: ['goals', user?.id, 'retirement'],
     queryFn: async () => {
@@ -87,7 +89,7 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
   });
 
   const formatCurrency = (value: number) => {
-    return `$${value.toFixed(0)}`;
+    return value.toFixed(0);
   };
 
   const getFrequencyMultiplier = (frequency: string) => {
@@ -102,13 +104,8 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
 
   // Calculate surplus/shortfall
   const monthlySurplusShortfall = planData.monthly_income - planData.monthly_expenses - planData.monthly_savings;
-  
-  // Check if value is within $1 of $0
   const isBalanced = Math.abs(monthlySurplusShortfall) <= 1;
-  const textColor = isBalanced ? "text-green-600" : "text-red-600";
-
-  // Get target retirement age from retirement goal, fallback to 67
-  const targetRetirementAge = retirementGoal?.retirement_age || 67;
+  const textColor = isBalanced ? "text-green-600" : (monthlySurplusShortfall > 0 ? "text-blue-600" : "text-red-600");
 
   return (
     <div className="space-y-6">
@@ -121,15 +118,15 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
               const monthlyAmount = Number(incomeItem.amount) * getFrequencyMultiplier(incomeItem.frequency);
               return (
                 <div key={incomeItem.id} className="flex justify-between items-center text-sm h-8">
-                  <span className="text-gray-600 dark:text-gray-400">{incomeItem.name}</span>
-                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+                  <span className="text-gray-600 dark:text-gray-400 flex-1">{incomeItem.name}</span>
+                  <span className="font-medium">${formatCurrency(monthlyAmount)}/mo</span>
                 </div>
               );
             })}
             <div className="pt-2 border-t dark:border-gray-700">
               <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Income</span>
-                <span>{formatCurrency(planData.monthly_income)}</span>
+                <span>${formatCurrency(planData.monthly_income)}</span>
               </div>
             </div>
           </div>
@@ -149,15 +146,15 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
               const monthlyAmount = Number(expense.amount) * getFrequencyMultiplier(expense.frequency);
               return (
                 <div key={expense.id} className="flex justify-between items-center text-sm h-8">
-                  <span className="text-gray-600 dark:text-gray-400">{expense.name}</span>
-                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+                  <span className="text-gray-600 dark:text-gray-400 flex-1">{expense.name}</span>
+                  <span className="font-medium">${formatCurrency(monthlyAmount)}/mo</span>
                 </div>
               );
             })}
             <div className="pt-2 border-t dark:border-gray-700">
               <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Expenses</span>
-                <span>{formatCurrency(planData.monthly_expenses)}</span>
+                <span>${formatCurrency(planData.monthly_expenses)}</span>
               </div>
             </div>
           </div>
@@ -183,27 +180,17 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
               
               return (
                 <div key={saving.id} className="flex justify-between items-center text-sm h-8">
-                  <span className="text-gray-600 dark:text-gray-400">
+                  <span className="text-gray-600 dark:text-gray-400 flex-1">
                     {description}
                   </span>
-                  <span className="font-medium">${monthlyAmount.toFixed(0)}/mo</span>
+                  <span className="font-medium">${formatCurrency(monthlyAmount)}/mo</span>
                 </div>
               );
             })}
             <div className="pt-2 border-t dark:border-gray-700">
               <div className="flex justify-between items-center font-semibold h-8">
                 <span>Total Monthly Savings</span>
-                <span>{formatCurrency(planData.monthly_savings)}</span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center font-semibold h-8">
-                <span className={textColor}>
-                  {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
-                </span>
-                <span className={textColor}>
-                  {formatCurrency(Math.abs(monthlySurplusShortfall))}
-                </span>
+                <span>${formatCurrency(planData.monthly_savings)}</span>
               </div>
             </div>
           </div>
@@ -212,12 +199,38 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
             No savings contributions added yet. Add them in Facts to see them here.
           </div>
         )}
+        
+        {/* Monthly Surplus/Shortfall Section - Always show this */}
+        <div className="pt-2 border-t dark:border-gray-700">
+          <div className="flex justify-between items-center font-semibold h-8">
+            <span className={textColor}>
+              {monthlySurplusShortfall >= 0 ? "Monthly Surplus" : "Monthly Shortfall"}
+            </span>
+            <span className={textColor}>
+              ${formatCurrency(Math.abs(monthlySurplusShortfall))}
+            </span>
+          </div>
+          {!isBalanced && Math.abs(monthlySurplusShortfall) > 50 && (
+            <Alert className="mt-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200 text-xs">
+                {monthlySurplusShortfall > 0 
+                  ? `You have $${formatCurrency(monthlySurplusShortfall)} available each month that could be allocated to savings.`
+                  : `You're spending $${formatCurrency(Math.abs(monthlySurplusShortfall))} more than you earn each month.`
+                }
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Target Retirement Age</Label>
-        <div className="text-lg font-semibold text-gray-900 dark:text-white h-8 flex items-center">
-          {targetRetirementAge}
+      {/* Retirement Age (Read-only) */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">
+          Retirement Age: {retirementGoal?.retirement_age || 67}
+        </Label>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          Set in Facts → Goals section
         </div>
       </div>
     </div>
