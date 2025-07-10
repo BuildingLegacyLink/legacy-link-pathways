@@ -434,12 +434,6 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         totalAssetValue += balance;
       });
       
-      // Use the higher of calculated portfolio value or asset-specific calculation
-      portfolioValue = Math.max(portfolioValue, totalAssetValue);
-      
-      const netWorth = portfolioValue;
-      const cashFlow = annualIncome - inflatedAnnualExpenses + (isRetired ? 0 : totalAnnualContributions);
-      
       // Calculate individual account values and contributions for the table
       const accountValues: { [key: string]: number } = {};
       const accountContributions: { [key: string]: number } = {};
@@ -505,11 +499,21 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         }
       }
       
+      // Use the higher of calculated portfolio value or asset-specific calculation
+      portfolioValue = Math.max(portfolioValue, totalAssetValue);
+      
+      // Account for withdrawals in portfolio value calculation
+      portfolioValue -= totalWithdrawals;
+      portfolioValue = Math.max(0, portfolioValue); // Ensure it doesn't go negative
+      
+      const netWorth = portfolioValue;
+      const cashFlow = annualIncome - inflatedAnnualExpenses + (isRetired ? 0 : totalAnnualContributions);
+      
       projections.push({
         year,
         age,
         net_worth: netWorth,
-        portfolio_value: portfolioValue,
+        portfolio_value: portfolioValue, // Now properly accounts for withdrawals
         annual_expenses: inflatedAnnualExpenses, // Now includes goal expenses
         cash_flow: cashFlow,
         account_values: accountValues,
