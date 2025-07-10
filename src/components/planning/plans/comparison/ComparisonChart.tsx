@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,23 +90,36 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     enabled: !!user,
   });
 
-  // Filter assets to only show investment accounts
-  const investmentAccountTypes = ['roth_ira', 'traditional_ira', '401k', '403b', '457', 'brokerage', 'hsa'];
+  // Filter assets to include investment, retirement, and savings accounts
   const filteredAssets = assets?.filter(asset => {
     const assetType = asset.type.toLowerCase();
     const assetName = asset.name.toLowerCase();
     
-    // Include specific investment account types
-    if (investmentAccountTypes.includes(assetType)) return true;
+    // Include retirement account types
+    if (['roth_ira', 'traditional_ira', '401k', '403b', '457', 'pension', 'sep_ira', 'simple_ira'].includes(assetType)) return true;
     if (assetType.includes('ira') || assetType.includes('401') || assetType.includes('403') || assetType.includes('457')) return true;
-    if (assetType.includes('brokerage') || assetType.includes('investment')) return true;
-    if (assetType.includes('hsa') && (assetName.includes('investment') || assetName.includes('invest'))) return true;
+    if (assetType.includes('retirement') || assetType.includes('pension')) return true;
     
-    // Only include savings if it's clearly for investment/emergency fund
-    if (assetType.includes('savings') && (assetName.includes('emergency') || assetName.includes('investment'))) return true;
+    // Include investment account types
+    if (['brokerage', 'investment', 'mutual_fund', 'etf', 'stocks', 'bonds'].includes(assetType)) return true;
+    if (assetType.includes('brokerage') || assetType.includes('investment') || assetType.includes('mutual')) return true;
+    if (assetType.includes('stock') || assetType.includes('bond') || assetType.includes('fund')) return true;
     
-    // Exclude personal assets, checking accounts, vehicles, etc.
-    if (assetType.includes('checking') || assetType.includes('vehicle') || assetType.includes('car') || assetType.includes('property')) return false;
+    // Include savings account types
+    if (['savings', 'high_yield_savings', 'money_market', 'cd', 'certificate_of_deposit'].includes(assetType)) return true;
+    if (assetType.includes('savings') || assetType.includes('money_market') || assetType.includes('certificate')) return true;
+    
+    // Include HSA if it has investment component
+    if (assetType.includes('hsa')) return true;
+    
+    // Exclude personal assets, checking accounts, vehicles, property, etc.
+    if (assetType.includes('checking') || assetType.includes('vehicle') || assetType.includes('car') || 
+        assetType.includes('property') || assetType.includes('real_estate') || assetType.includes('home') ||
+        assetType.includes('auto') || assetType.includes('personal')) return false;
+    
+    // If it's not explicitly excluded and contains investment-related keywords in name, include it
+    if (assetName.includes('investment') || assetName.includes('retirement') || assetName.includes('savings') ||
+        assetName.includes('portfolio') || assetName.includes('fund') || assetName.includes('account')) return true;
     
     return false;
   }) || [];
