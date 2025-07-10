@@ -365,6 +365,21 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       const netWorth = portfolioValue;
       const cashFlow = annualIncome - inflatedAnnualExpenses + (isRetired ? 0 : totalAnnualContributions);
       
+      // Calculate individual account values for the table
+      const accountValues: { [key: string]: number } = {};
+      assetBalances.forEach((balance, assetId) => {
+        const asset = assets.find(a => a.id === assetId);
+        const growthRate = asset?.growth_rate || 0.07;
+        const annualContribution = contributionsByDestination.get(assetId) || 0;
+        
+        let assetValue = balance * Math.pow(1 + growthRate, yearsFromNow);
+        if (yearsFromNow > 0 && annualContribution > 0) {
+          assetValue += annualContribution * ((Math.pow(1 + growthRate, yearsFromNow) - 1) / growthRate);
+        }
+        
+        accountValues[assetId] = Math.max(0, assetValue);
+      });
+      
       projections.push({
         year,
         age,
@@ -372,6 +387,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         portfolio_value: portfolioValue,
         annual_expenses: inflatedAnnualExpenses, // Now using inflated expenses
         cash_flow: cashFlow,
+        account_values: accountValues,
       });
     }
     
@@ -765,7 +781,7 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       </div>
 
       {/* Projection Table */}
-      <ProjectionTable data={projections} planName={plan.name} />
+      <ProjectionTable data={projections} planName={plan.name} assets={assets} />
     </div>
   );
 };
