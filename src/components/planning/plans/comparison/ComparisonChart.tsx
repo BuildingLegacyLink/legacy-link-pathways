@@ -510,7 +510,15 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           allGoals.forEach(goal => {
             if (goal.withdrawal_account_id && goal.target_date && !goal.is_recurring) {
               const goalDate = new Date(goal.target_date);
-              const goalAge = calculateCurrentAge() + (goalDate.getFullYear() - new Date().getFullYear());
+              const currentDate = new Date();
+              const birthDate = new Date(profile?.date_of_birth || '1995-01-01');
+              
+              // Calculate precise age at goal date
+              let goalAge = goalDate.getFullYear() - birthDate.getFullYear();
+              const monthDiff = goalDate.getMonth() - birthDate.getMonth();
+              if (monthDiff < 0 || (monthDiff === 0 && goalDate.getDate() < birthDate.getDate())) {
+                goalAge--;
+              }
               
               if (goalAge >= currentAge && goalAge <= deathAge) {
                 const goalAgeIndex = goalAge - currentAge;
@@ -695,7 +703,15 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           allGoals.forEach(goal => {
             if (goal.withdrawal_account_id && goal.target_date && !goal.is_recurring) {
               const goalDate = new Date(goal.target_date);
-              const goalAge = calculateCurrentAge() + (goalDate.getFullYear() - new Date().getFullYear());
+              const currentDate = new Date();
+              const birthDate = new Date(profile?.date_of_birth || '1995-01-01');
+              
+              // Calculate precise age at goal date
+              let goalAge = goalDate.getFullYear() - birthDate.getFullYear();
+              const monthDiff = goalDate.getMonth() - birthDate.getMonth();
+              if (monthDiff < 0 || (monthDiff === 0 && goalDate.getDate() < birthDate.getDate())) {
+                goalAge--;
+              }
               
               if (goalAge >= currentAge && goalAge <= deathAge) {
                 const goalAgeIndex = goalAge - currentAge;
