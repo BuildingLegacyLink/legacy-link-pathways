@@ -362,7 +362,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       ? (retirementGoal?.retirement_age || 67)  // Current situation uses goal from facts
       : plan.target_retirement_age;             // Editable plan uses its own target
     
-    const deathAge = 85;
+    const deathAge = 100;
     
     if (selectedAccount !== 'total' && assets) {
       // Individual account calculation requires tracking ALL accounts to follow withdrawal order properly
@@ -911,22 +911,32 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       </div>
       
       {/* Chart */}
-      <div className="h-80">
+      <div className="h-96">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={combinedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart data={combinedData} margin={{ top: 20, right: 30, left: 60, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
             <XAxis 
               dataKey="age" 
               className="text-gray-600 dark:text-gray-400"
-              label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
+              interval="preserveStartEnd"
+              tick={{ fontSize: 12 }}
+              label={{ 
+                value: 'Age', 
+                position: 'insideBottom', 
+                offset: -10,
+                style: { textAnchor: 'middle' }
+              }}
             />
             <YAxis 
               className="text-gray-600 dark:text-gray-400"
               tickFormatter={formatCurrency}
+              tick={{ fontSize: 11 }}
+              width={50}
               label={{ 
                 value: selectedAccount === 'total' ? 'Portfolio Value' : `${getSelectedAccountName()} Value`, 
                 angle: -90, 
-                position: 'insideLeft' 
+                position: 'insideLeft',
+                style: { textAnchor: 'middle' }
               }}
             />
             <Tooltip 
