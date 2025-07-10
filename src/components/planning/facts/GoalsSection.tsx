@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Edit2, ArrowLeft, GripVertical } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +44,7 @@ const GoalsSection = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<GoalTemplate | null>(null);
   const [showTemplateSelector, setShowTemplateSelector] = useState(true);
   const [withdrawalOrder, setWithdrawalOrder] = useState<string[]>([]);
+  const [isRecurring, setIsRecurring] = useState(false);
   const queryClient = useQueryClient();
 
   const sensors = useSensors(
@@ -139,6 +142,7 @@ const GoalsSection = () => {
     setSelectedTemplate(null);
     setShowTemplateSelector(true);
     setWithdrawalOrder([]);
+    setIsRecurring(false);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -155,24 +159,43 @@ const GoalsSection = () => {
       targetDate = formData.get('target_date') as string || null;
     }
     
+    // Handle recurring travel data
+    const isRecurringTravel = formData.get('is_recurring') === 'true';
+    let startDate = null;
+    let endDate = null;
+    let frequency = null;
+    
+    if (isRecurringTravel) {
+      startDate = formData.get('start_date') as string || null;
+      endDate = formData.get('end_date') as string || null;
+      frequency = formData.get('frequency') as string || null;
+    }
+
     const goalData = {
       name: formData.get('name') as string,
       target_amount: (selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement') 
         ? parseFloat(formData.get('target_amount') as string) 
         : 0,
-      target_date: targetDate,
+      target_date: isRecurringTravel ? null : targetDate,
       retirement_age: retirementAge,
       priority: (selectedTemplate?.id !== 'retirement' && selectedTemplate?.id !== 'heirs' && 
-                editingGoal?.goal_type !== 'retirement' && editingGoal?.goal_type !== 'heirs') 
+                selectedTemplate?.id !== 'travel' &&
+                editingGoal?.goal_type !== 'retirement' && editingGoal?.goal_type !== 'heirs' &&
+                editingGoal?.goal_type !== 'travel') 
         ? parseInt(formData.get('priority') as string) || 1
         : 1,
-      description: (selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement')
+      description: (selectedTemplate?.id !== 'retirement' && selectedTemplate?.id !== 'travel' &&
+                   editingGoal?.goal_type !== 'retirement' && editingGoal?.goal_type !== 'travel')
         ? formData.get('description') as string || null
         : null,
       goal_type: selectedTemplate?.id || editingGoal?.goal_type || 'custom',
       withdrawal_order: (selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') 
         ? withdrawalOrder 
         : [],
+      is_recurring: isRecurringTravel,
+      start_date: startDate,
+      end_date: endDate,
+      frequency: frequency,
     };
 
     if (editingGoal) {
@@ -202,6 +225,7 @@ const GoalsSection = () => {
     setSelectedTemplate(getGoalTemplate(goal.goal_type));
     setShowTemplateSelector(false);
     setWithdrawalOrder(goal.withdrawal_order || []);
+    setIsRecurring(goal.is_recurring || false);
     setIsDialogOpen(true);
   };
 
@@ -283,8 +307,81 @@ const GoalsSection = () => {
             </div>
           )}
           
-          {/* Target Date/Age */}
-          {selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement' ? (
+          {/* Recurring Travel Option for Travel Goals */}
+          {(selectedTemplate?.id === 'travel' || editingGoal?.goal_type === 'travel') && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <Label>Recurring travel?</Label>
+                <RadioGroup
+                  name="is_recurring"
+                  value={isRecurring ? 'true' : 'false'}
+                  onValueChange={(value) => setIsRecurring(value === 'true')}
+                  className="flex gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="false" id="no-recurring" />
+                    <Label htmlFor="no-recurring" className="cursor-pointer">No</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="true" id="yes-recurring" />
+                    <Label htmlFor="yes-recurring" className="cursor-pointer">Yes</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              {isRecurring ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_date">Start Date</Label>
+                    <Input
+                      id="start_date"
+                      name="start_date"
+                      type="date"
+                      defaultValue={editingGoal?.start_date}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="frequency">Frequency</Label>
+                    <Select name="frequency" defaultValue={editingGoal?.frequency || 'annually'}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="annually">Annually</SelectItem>
+                        <SelectItem value="biannually">Twice a year</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end_date">End Date (Optional)</Label>
+                    <Input
+                      id="end_date"
+                      name="end_date"
+                      type="date"
+                      defaultValue={editingGoal?.end_date}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="target_date">Target Date</Label>
+                  <Input
+                    id="target_date"
+                    name="target_date"
+                    type="date"
+                    defaultValue={editingGoal?.target_date || targetDate.toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Target Date/Age for Non-Travel Goals */}
+          {(selectedTemplate?.id === 'retirement' || editingGoal?.goal_type === 'retirement') ? (
             <div className="space-y-2">
               <Label htmlFor="target_age">Target Retirement Age</Label>
               <Input
@@ -297,7 +394,7 @@ const GoalsSection = () => {
                 placeholder="67"
               />
             </div>
-          ) : (
+          ) : (selectedTemplate?.id !== 'travel' && editingGoal?.goal_type !== 'travel') && (
             <div className="space-y-2">
               <Label htmlFor="target_date">Target Date</Label>
               <Input
@@ -309,11 +406,13 @@ const GoalsSection = () => {
             </div>
           )}
           
-          {/* Priority - hide for retirement and heirs goals */}
+          {/* Priority - hide for retirement, heirs, and travel goals */}
           {selectedTemplate?.id !== 'retirement' && 
            selectedTemplate?.id !== 'heirs' && 
+           selectedTemplate?.id !== 'travel' &&
            editingGoal?.goal_type !== 'retirement' && 
-           editingGoal?.goal_type !== 'heirs' && (
+           editingGoal?.goal_type !== 'heirs' &&
+           editingGoal?.goal_type !== 'travel' && (
             <div className="space-y-2">
               <Label htmlFor="priority">Priority (1-5)</Label>
               <Input
@@ -327,8 +426,9 @@ const GoalsSection = () => {
             </div>
           )}
           
-          {/* Description - hide for retirement goals */}
-          {selectedTemplate?.id !== 'retirement' && editingGoal?.goal_type !== 'retirement' && (
+          {/* Description - hide for retirement and travel goals */}
+          {selectedTemplate?.id !== 'retirement' && selectedTemplate?.id !== 'travel' && 
+           editingGoal?.goal_type !== 'retirement' && editingGoal?.goal_type !== 'travel' && (
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -557,7 +657,17 @@ const SortableGoalCard = ({ goal, onEdit, onDelete }: SortableGoalCardProps) => 
               <p className="text-gray-600 dark:text-gray-300">{goal.description}</p>
             )}
             <div className="flex justify-end text-sm">
-              {goal.target_date && (
+              {goal.goal_type === 'travel' && goal.is_recurring ? (
+                <div className="text-right space-y-1 dark:text-gray-400">
+                  <div>Recurring: {goal.frequency || 'annually'}</div>
+                  {goal.start_date && (
+                    <div>From: {new Date(goal.start_date).toLocaleDateString()}</div>
+                  )}
+                  {goal.end_date && (
+                    <div>Until: {new Date(goal.end_date).toLocaleDateString()}</div>
+                  )}
+                </div>
+              ) : goal.target_date && (
                 <span className="dark:text-gray-400">
                   Target: {new Date(goal.target_date).toLocaleDateString()}
                 </span>

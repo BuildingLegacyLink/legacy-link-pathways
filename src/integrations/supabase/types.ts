@@ -153,11 +153,15 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          end_date: string | null
+          frequency: string | null
           goal_type: string | null
           id: string
+          is_recurring: boolean | null
           name: string
           priority: number | null
           retirement_age: number | null
+          start_date: string | null
           target_amount: number
           target_date: string | null
           updated_at: string
@@ -167,11 +171,15 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          end_date?: string | null
+          frequency?: string | null
           goal_type?: string | null
           id?: string
+          is_recurring?: boolean | null
           name: string
           priority?: number | null
           retirement_age?: number | null
+          start_date?: string | null
           target_amount: number
           target_date?: string | null
           updated_at?: string
@@ -181,11 +189,15 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          end_date?: string | null
+          frequency?: string | null
           goal_type?: string | null
           id?: string
+          is_recurring?: boolean | null
           name?: string
           priority?: number | null
           retirement_age?: number | null
+          start_date?: string | null
           target_amount?: number
           target_date?: string | null
           updated_at?: string
