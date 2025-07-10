@@ -505,6 +505,51 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           });
         }
         
+        // Apply goal-specific withdrawals (e.g., travel goals from savings accounts)
+        if (allGoals && allGoals.length > 0) {
+          allGoals.forEach(goal => {
+            if (goal.withdrawal_account_id && goal.target_date && !goal.is_recurring) {
+              const goalDate = new Date(goal.target_date);
+              const goalAge = calculateCurrentAge() + (goalDate.getFullYear() - new Date().getFullYear());
+              
+              if (goalAge >= currentAge && goalAge <= deathAge) {
+                const goalAgeIndex = goalAge - currentAge;
+                const targetAccountBalances = accountBalances.get(goal.withdrawal_account_id);
+                
+                if (targetAccountBalances && targetAccountBalances[goalAgeIndex] > 0) {
+                  const goalAmount = Number(goal.target_amount) || 0;
+                  const currentBalance = targetAccountBalances[goalAgeIndex];
+                  const withdrawalAmount = Math.min(goalAmount, currentBalance);
+                  
+                  // Subtract the withdrawal from this age forward
+                  for (let futureAge = goalAge; futureAge <= deathAge; futureAge++) {
+                    const futureAgeIndex = futureAge - currentAge;
+                    if (futureAgeIndex < targetAccountBalances.length) {
+                      if (futureAge === goalAge) {
+                        // Year of withdrawal - subtract the amount
+                        targetAccountBalances[futureAgeIndex] = Math.max(0, targetAccountBalances[futureAgeIndex] - withdrawalAmount);
+                      } else {
+                        // Future years - recalculate growth from the reduced balance
+                        const asset = assets?.find(a => a.id === goal.withdrawal_account_id);
+                        if (asset) {
+                          const annualGrowthRate = Number(asset.growth_rate) || 0.07;
+                          const monthlyGrowthRate = annualGrowthRate / 12;
+                          const yearsOfGrowth = futureAge - goalAge;
+                          const monthsOfGrowth = yearsOfGrowth * 12;
+                          const baseBalance = targetAccountBalances[goalAge - currentAge];
+                          targetAccountBalances[futureAgeIndex] = baseBalance * Math.pow(1 + monthlyGrowthRate, monthsOfGrowth);
+                        }
+                      }
+                    }
+                  }
+                  
+                  accountBalances.set(goal.withdrawal_account_id, targetAccountBalances);
+                }
+              }
+            }
+          });
+        }
+        
         // Get the final balances for the selected account
         const selectedAccountBalances = accountBalances.get(selectedAccount) || [];
         
@@ -640,6 +685,51 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
                   : newBalance;
                 
                 balances[futureAgeIndex] = Math.max(0, grownBalance);
+              }
+            }
+          });
+        }
+        
+        // Apply goal-specific withdrawals (e.g., travel goals from savings accounts)
+        if (allGoals && allGoals.length > 0) {
+          allGoals.forEach(goal => {
+            if (goal.withdrawal_account_id && goal.target_date && !goal.is_recurring) {
+              const goalDate = new Date(goal.target_date);
+              const goalAge = calculateCurrentAge() + (goalDate.getFullYear() - new Date().getFullYear());
+              
+              if (goalAge >= currentAge && goalAge <= deathAge) {
+                const goalAgeIndex = goalAge - currentAge;
+                const targetAccountBalances = accountBalances.get(goal.withdrawal_account_id);
+                
+                if (targetAccountBalances && targetAccountBalances[goalAgeIndex] > 0) {
+                  const goalAmount = Number(goal.target_amount) || 0;
+                  const currentBalance = targetAccountBalances[goalAgeIndex];
+                  const withdrawalAmount = Math.min(goalAmount, currentBalance);
+                  
+                  // Subtract the withdrawal from this age forward
+                  for (let futureAge = goalAge; futureAge <= deathAge; futureAge++) {
+                    const futureAgeIndex = futureAge - currentAge;
+                    if (futureAgeIndex < targetAccountBalances.length) {
+                      if (futureAge === goalAge) {
+                        // Year of withdrawal - subtract the amount
+                        targetAccountBalances[futureAgeIndex] = Math.max(0, targetAccountBalances[futureAgeIndex] - withdrawalAmount);
+                      } else {
+                        // Future years - recalculate growth from the reduced balance
+                        const asset = assets?.find(a => a.id === goal.withdrawal_account_id);
+                        if (asset) {
+                          const annualGrowthRate = Number(asset.growth_rate) || 0.07;
+                          const monthlyGrowthRate = annualGrowthRate / 12;
+                          const yearsOfGrowth = futureAge - goalAge;
+                          const monthsOfGrowth = yearsOfGrowth * 12;
+                          const baseBalance = targetAccountBalances[goalAge - currentAge];
+                          targetAccountBalances[futureAgeIndex] = baseBalance * Math.pow(1 + monthlyGrowthRate, monthsOfGrowth);
+                        }
+                      }
+                    }
+                  }
+                  
+                  accountBalances.set(goal.withdrawal_account_id, targetAccountBalances);
+                }
               }
             }
           });
