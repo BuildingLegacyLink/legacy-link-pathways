@@ -311,10 +311,10 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     const deathAge = planData.assets_last_until_age;
     const expenseGrowthRate = calculateExpenseGrowthRate();
     
-    // Initialize asset balances from current assets
-    const assetBalances = new Map();
+    // Initialize asset balances from current assets - these will track running balances
+    const runningAssetBalances = new Map();
     assets.forEach(asset => {
-      assetBalances.set(asset.id, Number(asset.value));
+      runningAssetBalances.set(asset.id, Number(asset.value));
     });
     
     // Calculate total annual contributions by destination
@@ -372,20 +372,27 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         portfolioValue += contributionGrowth;
       }
       
-      // Calculate asset-specific values
-      let totalAssetValue = 0;
-      assetBalances.forEach((balance, assetId) => {
+      // Apply growth to running balances first
+      runningAssetBalances.forEach((balance, assetId) => {
         const asset = assets.find(a => a.id === assetId);
         const growthRate = asset?.growth_rate || 0.07;
         const annualContribution = contributionsByDestination.get(assetId) || 0;
         
-        // Apply growth and contributions
-        let assetValue = balance * Math.pow(1 + growthRate, yearsFromNow);
-        if (yearsFromNow > 0 && annualContribution > 0) {
-          assetValue += annualContribution * ((Math.pow(1 + growthRate, yearsFromNow) - 1) / growthRate);
+        // Apply growth for one year
+        let newBalance = balance * (1 + growthRate);
+        
+        // Add contributions if not retired
+        if (!isRetired) {
+          newBalance += annualContribution;
         }
         
-        totalAssetValue += assetValue;
+        runningAssetBalances.set(assetId, newBalance);
+      });
+
+      // Calculate asset-specific values
+      let totalAssetValue = 0;
+      runningAssetBalances.forEach((balance) => {
+        totalAssetValue += balance;
       });
       
       // Use the higher of calculated portfolio value or asset-specific calculation
@@ -400,17 +407,10 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       const accountWithdrawals: { [key: string]: number } = {};
       let totalWithdrawals = 0;
 
-      assetBalances.forEach((balance, assetId) => {
-        const asset = assets.find(a => a.id === assetId);
-        const growthRate = asset?.growth_rate || 0.07;
+      runningAssetBalances.forEach((balance, assetId) => {
         const annualContribution = contributionsByDestination.get(assetId) || 0;
         
-        let assetValue = balance * Math.pow(1 + growthRate, yearsFromNow);
-        if (yearsFromNow > 0 && annualContribution > 0) {
-          assetValue += annualContribution * ((Math.pow(1 + growthRate, yearsFromNow) - 1) / growthRate);
-        }
-        
-        accountValues[assetId] = Math.max(0, assetValue);
+        accountValues[assetId] = Math.max(0, balance);
         accountContributions[assetId] = isRetired ? 0 : annualContribution;
         accountWithdrawals[assetId] = 0; // Initialize
       });
@@ -423,8 +423,14 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
             const goalYear = goalDate.getFullYear();
             
             if (goalYear === year && goal.withdrawal_account_id) {
-              accountWithdrawals[goal.withdrawal_account_id] = (accountWithdrawals[goal.withdrawal_account_id] || 0) + Number(goal.target_amount);
-              totalWithdrawals += Number(goal.target_amount);
+              const withdrawAmount = Number(goal.target_amount);
+              accountWithdrawals[goal.withdrawal_account_id] = (accountWithdrawals[goal.withdrawal_account_id] || 0) + withdrawAmount;
+              totalWithdrawals += withdrawAmount;
+              
+              // Update running balance
+              const currentBalance = runningAssetBalances.get(goal.withdrawal_account_id) || 0;
+              runningAssetBalances.set(goal.withdrawal_account_id, Math.max(0, currentBalance - withdrawAmount));
+              accountValues[goal.withdrawal_account_id] = Math.max(0, currentBalance - withdrawAmount);
             }
           }
         });
@@ -441,14 +447,19 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
           let remainingWithdrawal = inflatedAnnualExpenses;
           
           withdrawalOrder.forEach((accountId: string) => {
-            if (remainingWithdrawal > 0 && accountValues[accountId]) {
-              const currentValue = accountValues[accountId];
-              const withdrawAmount = Math.min(remainingWithdrawal, currentValue);
+            if (remainingWithdrawal > 0) {
+              const currentBalance = runningAssetBalances.get(accountId) || 0;
+              const withdrawAmount = Math.min(remainingWithdrawal, currentBalance);
               
               if (withdrawAmount > 0) {
                 accountWithdrawals[accountId] = (accountWithdrawals[accountId] || 0) + withdrawAmount;
                 totalWithdrawals += withdrawAmount;
                 remainingWithdrawal -= withdrawAmount;
+                
+                // Update running balance
+                const newBalance = Math.max(0, currentBalance - withdrawAmount);
+                runningAssetBalances.set(accountId, newBalance);
+                accountValues[accountId] = newBalance;
               }
             }
           });
