@@ -44,23 +44,6 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     enabled: !!user,
   });
 
-  // Fetch retirement goal to get the target retirement age
-  const { data: retirementGoal } = useQuery({
-    queryKey: ['goals', user?.id, 'retirement'],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('goal_type', 'retirement')
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
   // Fetch expenses to get growth rates
   const { data: expenses } = useQuery({
     queryKey: ['expenses', user?.id],
@@ -161,17 +144,30 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     return totalExpenses > 0 ? totalWeightedGrowth / totalExpenses : 0.03;
   };
 
-  // Generate projection data for both plans
+  // Unified projection function that uses the same logic for both plans
   const generateProjections = (plan: PlanData, planType: 'current' | 'editable') => {
     const projections = [];
     const currentAge = calculateCurrentAge();
-    // Use retirement age from retirement goal for current situation, or plan's retirement age for editable plan
-    const retirementAge = planType === 'current' ? (retirementGoal?.retirement_age || 67) : plan.target_retirement_age;
+    
+    // CRITICAL FIX: Both plans now use the same retirement age from the plan data
+    const retirementAge = plan.target_retirement_age;
+    
     const deathAge = 85;
     const annualGrowthRate = 0.07;
     const expenseGrowthRate = calculateExpenseGrowthRate();
     let annualExpenses = plan.monthly_expenses * 12;
     const annualSavings = plan.monthly_savings * 12;
+    
+    // Debug logging to see the differences
+    console.log(`${planType} plan data:`, {
+      monthlyIncome: plan.monthly_income,
+      monthlyExpenses: plan.monthly_expenses,
+      monthlySavings: plan.monthly_savings,
+      totalAssets: plan.total_assets,
+      retirementAge: retirementAge,
+      annualSavings: annualSavings,
+      annualExpenses: annualExpenses
+    });
     
     // Calculate starting values based on selected account
     let portfolioValue = plan.total_assets;
@@ -189,7 +185,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         
         for (let age = currentAge; age <= deathAge; age++) {
           const year = new Date().getFullYear() + (age - currentAge);
-          const isRetired = age > retirementAge; // Changed from >= to >
+          const isRetired = age > retirementAge;
           const yearsFromStart = age - currentAge;
           
           // Apply expense growth over time
@@ -216,10 +212,10 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         }
       }
     } else {
-      // Total portfolio calculation (existing logic)
+      // Total portfolio calculation - IDENTICAL logic for both plans
       for (let age = currentAge; age <= deathAge; age++) {
         const year = new Date().getFullYear() + (age - currentAge);
-        const isRetired = age > retirementAge; // Changed from >= to >
+        const isRetired = age > retirementAge;
         const yearsFromStart = age - currentAge;
         
         // Apply expense growth over time
@@ -236,6 +232,16 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           
           // Don't let portfolio go negative
           portfolioValue = Math.max(0, portfolioValue);
+        }
+        
+        // Debug logging for key ages
+        if (age === retirementAge || age === retirementAge + 1) {
+          console.log(`${planType} plan at age ${age}:`, {
+            isRetired,
+            portfolioValue,
+            annualSavings,
+            inflatedAnnualExpenses
+          });
         }
         
         projections.push({
@@ -257,15 +263,6 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     ...current,
     ...editableProjections[index],
   }));
-
-  // Get retirement ages for reference lines
-  const getCurrentRetirementAge = () => {
-    return retirementGoal?.retirement_age || 67;
-  };
-
-  const getEditableRetirementAge = () => {
-    return editablePlan.target_retirement_age;
-  };
 
   // Get current selected account name for display
   const getSelectedAccountName = () => {
@@ -337,13 +334,13 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               }}
             />
             <ReferenceLine 
-              x={getCurrentRetirementAge()} 
+              x={currentPlan.target_retirement_age} 
               stroke="#10b981" 
               strokeDasharray="5 5"
               label={{ value: "Current Retirement", position: "top" }}
             />
             <ReferenceLine 
-              x={getEditableRetirementAge()} 
+              x={editablePlan.target_retirement_age} 
               stroke="#3b82f6" 
               strokeDasharray="5 5"
               label={{ value: "Plan Retirement", position: "top" }}
