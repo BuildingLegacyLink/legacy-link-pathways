@@ -913,35 +913,35 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       {/* Chart */}
       <div className="h-[500px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={combinedData} margin={{ top: 20, right: 40, left: 120, bottom: 80 }}>
+          <LineChart data={combinedData} margin={{ top: 20, right: 40, left: 160, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
             <XAxis 
               dataKey="age" 
               className="text-gray-600 dark:text-gray-400"
               interval="preserveStartEnd"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 14 }}
               axisLine={{ stroke: '#d1d5db' }}
               tickLine={{ stroke: '#d1d5db' }}
               label={{ 
                 value: 'Age', 
                 position: 'insideBottom', 
                 offset: -15,
-                style: { textAnchor: 'middle', fontSize: '14px', fontWeight: '500' }
+                style: { textAnchor: 'middle', fontSize: '16px', fontWeight: '500' }
               }}
             />
             <YAxis 
               className="text-gray-600 dark:text-gray-400"
               tickFormatter={formatCurrency}
-              tick={{ fontSize: 11 }}
-              width={90}
+              tick={{ fontSize: 13 }}
+              width={110}
               axisLine={{ stroke: '#d1d5db' }}
               tickLine={{ stroke: '#d1d5db' }}
               label={{ 
                 value: selectedAccount === 'total' ? 'Portfolio Value' : `${getSelectedAccountName()} Value`, 
                 angle: -90, 
                 position: 'outside',
-                offset: -40,
-                style: { textAnchor: 'middle', fontSize: '14px', fontWeight: '500' }
+                offset: -70,
+                style: { textAnchor: 'middle', fontSize: '16px', fontWeight: '500' }
               }}
             />
             <Tooltip 
@@ -978,6 +978,16 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
                 }
                 return null;
               }}
+            />
+            <ReferenceLine 
+              x={retirementGoal?.retirement_age || 67} 
+              stroke="#10b981" 
+              strokeDasharray="5 5"
+            />
+            <ReferenceLine 
+              x={editablePlan.target_retirement_age} 
+              stroke="#3b82f6" 
+              strokeDasharray="5 5"
             />
             {/* Current situation line with retirement goal markers */}
             <Line 
