@@ -48,6 +48,29 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
   const [editedName, setEditedName] = useState('');
   const [editablePlan, setEditablePlan] = useState<PlanData | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+
+  // Fetch user profile for age calculation
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
 
   // Fetch plan data
   const { data: plan, isLoading } = useQuery({
@@ -302,11 +325,27 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
     }
   };
 
+  // Calculate current age from profile
+  const calculateCurrentAge = () => {
+    if (!profile?.date_of_birth) return 25; // Default fallback
+    
+    const today = new Date();
+    const birthDate = new Date(profile.date_of_birth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   // Generate projections with savings contributions factored in
   const generateProjections = (planData: any) => {
     const projections = [];
     const currentYear = new Date().getFullYear();
-    const currentAge = 30; // Assuming current age of 30 for demo
+    const currentAge = calculateCurrentAge();
     const retirementAge = planData.target_retirement_age;
     const deathAge = planData.assets_last_until_age;
     const expenseGrowthRate = calculateExpenseGrowthRate();
