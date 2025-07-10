@@ -913,7 +913,7 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       {/* Chart */}
       <div className="h-[600px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={combinedData} margin={{ top: 20, right: 40, left: 200, bottom: 80 }}>
+          <LineChart data={combinedData} margin={{ top: 20, right: 40, left: 120, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
             <XAxis 
               dataKey="age" 
@@ -933,14 +933,14 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               className="text-gray-600 dark:text-gray-400"
               tickFormatter={formatCurrency}
               tick={{ fontSize: 13 }}
-              width={140}
+              width={100}
               axisLine={{ stroke: '#d1d5db' }}
               tickLine={{ stroke: '#d1d5db' }}
               label={{ 
                 value: selectedAccount === 'total' ? 'Portfolio Value' : `${getSelectedAccountName()} Value`, 
                 angle: -90, 
                 position: 'outside',
-                offset: -100,
+                offset: -80,
                 style: { textAnchor: 'middle', fontSize: '16px', fontWeight: '500' }
               }}
             />
@@ -983,11 +983,13 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               x={retirementGoal?.retirement_age || 67} 
               stroke="#10b981" 
               strokeDasharray="5 5"
+              label={{ value: "Current Retirement", position: "topLeft", style: { fontSize: '12px', fill: '#10b981' } }}
             />
             <ReferenceLine 
               x={editablePlan.target_retirement_age} 
               stroke="#3b82f6" 
               strokeDasharray="5 5"
+              label={{ value: "New Plan Retirement", position: "topRight", style: { fontSize: '12px', fill: '#3b82f6' } }}
             />
             {/* Current situation line with retirement goal markers */}
             <Line 
