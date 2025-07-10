@@ -470,7 +470,7 @@ const GoalsSection = () => {
                     <SelectValue placeholder="Select account to withdraw from" />
                   </SelectTrigger>
                   <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
-                    <SelectItem value="">No specific account</SelectItem>
+                    <SelectItem value="none">No specific account</SelectItem>
                     {getEligibleWithdrawalAccounts().map((asset) => (
                       <SelectItem key={asset.id} value={asset.id}>
                         {asset.name} ({asset.type === 'investment' ? 'Brokerage' : 
