@@ -14,6 +14,8 @@ interface ProjectionData {
   account_values?: { [key: string]: number }; // Individual account values by account ID
   total_contributions?: number; // Total contributions for the year
   account_contributions?: { [key: string]: number }; // Contributions by account ID
+  total_withdrawals?: number; // Total withdrawals for the year
+  account_withdrawals?: { [key: string]: number }; // Withdrawals by account ID
 }
 
 interface Asset {
@@ -106,6 +108,17 @@ const ProjectionTable = ({ data, planName, assets }: ProjectionTableProps) => {
     return 0;
   };
 
+  // Get the withdrawals for the selected account
+  const getWithdrawals = (row: ProjectionData) => {
+    if (selectedAccount === 'portfolio' || selectedAccount === 'net_worth') {
+      return row.total_withdrawals || 0;
+    }
+    if (row.account_withdrawals && selectedAccount in row.account_withdrawals) {
+      return row.account_withdrawals[selectedAccount];
+    }
+    return 0;
+  };
+
   return (
     <Card className="dark:bg-gray-800/50 dark:border-gray-700/50 border border-gray-200/50">
       <CardHeader>
@@ -147,8 +160,8 @@ const ProjectionTable = ({ data, planName, assets }: ProjectionTableProps) => {
                 <TableHead className="text-gray-900 dark:text-white">Year</TableHead>
                 <TableHead className="text-gray-900 dark:text-white">Age</TableHead>
                 <TableHead className="text-gray-900 dark:text-white">{getSelectedAccountName()}</TableHead>
-                <TableHead className="text-gray-900 dark:text-white">Annual Expenses</TableHead>
                 <TableHead className="text-gray-900 dark:text-white">Contributions</TableHead>
+                <TableHead className="text-gray-900 dark:text-white">Withdrawals</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -157,9 +170,11 @@ const ProjectionTable = ({ data, planName, assets }: ProjectionTableProps) => {
                   <TableCell className="text-gray-900 dark:text-white">{row.year}</TableCell>
                   <TableCell className="text-gray-900 dark:text-white">{row.age}</TableCell>
                   <TableCell className="text-gray-900 dark:text-white">{formatCurrency(getDisplayValue(row))}</TableCell>
-                  <TableCell className="text-gray-900 dark:text-white">{formatCurrency(row.annual_expenses)}</TableCell>
                   <TableCell className="text-green-600">
                     {formatCurrency(getContributions(row))}
+                  </TableCell>
+                  <TableCell className="text-red-600">
+                    {formatCurrency(getWithdrawals(row))}
                   </TableCell>
                 </TableRow>
               ))}

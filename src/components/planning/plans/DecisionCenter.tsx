@@ -397,6 +397,9 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
       // Calculate individual account values and contributions for the table
       const accountValues: { [key: string]: number } = {};
       const accountContributions: { [key: string]: number } = {};
+      const accountWithdrawals: { [key: string]: number } = {};
+      let totalWithdrawals = 0;
+
       assetBalances.forEach((balance, assetId) => {
         const asset = assets.find(a => a.id === assetId);
         const growthRate = asset?.growth_rate || 0.07;
@@ -409,7 +412,48 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         
         accountValues[assetId] = Math.max(0, assetValue);
         accountContributions[assetId] = isRetired ? 0 : annualContribution;
+        accountWithdrawals[assetId] = 0; // Initialize
       });
+
+      // Calculate withdrawals for goals (like travel goals)
+      if (goals && goals.length > 0) {
+        goals.forEach(goal => {
+          if (goal.withdrawal_account_id && goal.target_date && !goal.is_recurring && goal.target_amount) {
+            const goalDate = new Date(goal.target_date);
+            const goalYear = goalDate.getFullYear();
+            
+            if (goalYear === year && goal.withdrawal_account_id) {
+              accountWithdrawals[goal.withdrawal_account_id] = (accountWithdrawals[goal.withdrawal_account_id] || 0) + Number(goal.target_amount);
+              totalWithdrawals += Number(goal.target_amount);
+            }
+          }
+        });
+      }
+
+      // Calculate retirement withdrawals based on withdrawal order
+      if (isRetired && goals && goals.length > 0) {
+        const retirementGoal = goals.find(g => g.goal_type === 'retirement');
+        if (retirementGoal && retirementGoal.withdrawal_order) {
+          const withdrawalOrder = Array.isArray(retirementGoal.withdrawal_order) 
+            ? retirementGoal.withdrawal_order 
+            : [];
+
+          let remainingWithdrawal = inflatedAnnualExpenses;
+          
+          withdrawalOrder.forEach((accountId: string) => {
+            if (remainingWithdrawal > 0 && accountValues[accountId]) {
+              const currentValue = accountValues[accountId];
+              const withdrawAmount = Math.min(remainingWithdrawal, currentValue);
+              
+              if (withdrawAmount > 0) {
+                accountWithdrawals[accountId] = (accountWithdrawals[accountId] || 0) + withdrawAmount;
+                totalWithdrawals += withdrawAmount;
+                remainingWithdrawal -= withdrawAmount;
+              }
+            }
+          });
+        }
+      }
       
       projections.push({
         year,
@@ -421,6 +465,8 @@ const DecisionCenter = ({ planId, onBack }: DecisionCenterProps) => {
         account_values: accountValues,
         total_contributions: isRetired ? 0 : totalAnnualContributions,
         account_contributions: accountContributions,
+        total_withdrawals: totalWithdrawals,
+        account_withdrawals: accountWithdrawals,
       });
     }
     
