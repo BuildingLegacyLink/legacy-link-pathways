@@ -209,11 +209,9 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       selectedAsset = assets.find(asset => asset.id === selectedAccount);
       if (selectedAsset) {
         portfolioValue = Number(selectedAsset.value);
-        // For individual accounts, allocate savings proportionally based on current asset allocation
-        // Use the current plan's total assets for proportion calculation to maintain consistency
-        const referenceAssets = currentPlan.total_assets; // Use current plan as reference for both
-        const assetProportion = referenceAssets > 0 ? portfolioValue / referenceAssets : 0;
-        const allocatedSavings = annualSavings * assetProportion;
+        // For individual accounts, only include savings that are specifically allocated to this account
+        // This prevents contributions to other accounts from affecting this account's chart
+        const allocatedSavings = 0; // Only show growth from existing balance, no new contributions unless specifically allocated
         
         for (let age = currentAge; age <= deathAge; age++) {
           const year = new Date().getFullYear() + (age - currentAge);
@@ -228,9 +226,9 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
             portfolioValue += allocatedSavings;
             portfolioValue *= (1 + annualGrowthRate);
           } else {
-            // Post-retirement: Apply growth first, then subtract proportional expenses
+            // Post-retirement: Apply growth first, but don't subtract expenses from individual accounts
+            // Individual accounts only show their own growth without expense withdrawals
             portfolioValue *= (1 + annualGrowthRate);
-            portfolioValue -= inflatedAnnualExpenses * assetProportion;
             
             // Don't let portfolio go negative
             portfolioValue = Math.max(0, portfolioValue);
