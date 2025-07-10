@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -223,7 +222,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
   
   // Check if surplus/shortfall is balanced (within $1 of $0)
   const isBalanced = Math.abs(monthlySurplusShortfall) <= 1;
-  const textColor = isBalanced ? "text-green-600" : (monthlySurplusShortfall > 0 ? "text-blue-600" : "text-red-600");
+  const textColor = isBalanced ? "text-green-600" : "text-red-600";
 
   return (
     <div className="space-y-6">
@@ -354,14 +353,11 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
               ${formatCurrency(Math.abs(monthlySurplusShortfall))}
             </span>
           </div>
-          {!isBalanced && Math.abs(monthlySurplusShortfall) > 50 && (
-            <Alert className="mt-2 border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800 dark:text-orange-200 text-xs">
-                {monthlySurplusShortfall > 0 
-                  ? `You have $${formatCurrency(monthlySurplusShortfall)} available each month that could be allocated to savings.`
-                  : `You're spending $${formatCurrency(Math.abs(monthlySurplusShortfall))} more than you earn each month.`
-                }
+          {!isBalanced && (
+            <Alert className="mt-2 border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-700">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800 dark:text-red-200 text-xs">
+                Please make the monthly surplus/shortfall $0 by adjusting the income/expenses/savings above.
               </AlertDescription>
             </Alert>
           )}

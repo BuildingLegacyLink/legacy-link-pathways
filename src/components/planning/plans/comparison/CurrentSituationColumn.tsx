@@ -1,10 +1,9 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 interface PlanData {
   monthly_income: number;
@@ -210,17 +209,6 @@ const CurrentSituationColumn = ({ planData }: CurrentSituationColumnProps) => {
               ${formatCurrency(Math.abs(monthlySurplusShortfall))}
             </span>
           </div>
-          {!isBalanced && Math.abs(monthlySurplusShortfall) > 50 && (
-            <Alert className="mt-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800 dark:text-blue-200 text-xs">
-                {monthlySurplusShortfall > 0 
-                  ? `You have $${formatCurrency(monthlySurplusShortfall)} available each month that could be allocated to savings.`
-                  : `You're spending $${formatCurrency(Math.abs(monthlySurplusShortfall))} more than you earn each month.`
-                }
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
       </div>
 
