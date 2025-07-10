@@ -870,17 +870,38 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
               strokeDasharray="5 5"
               label={{ value: "Plan Retirement", position: "top" }}
             />
+            {/* Current situation line with retirement goal markers */}
             <Line 
               type="monotone" 
               dataKey="currentValue" 
               stroke="#9ca3af" 
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={false}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (!payload) return null;
+                
+                // Only show retirement goal on current situation line at current retirement age
+                const currentRetirementAge = retirementGoal?.retirement_age || 67;
+                if (payload.age === currentRetirementAge) {
+                  return (
+                    <circle 
+                      cx={cx} 
+                      cy={cy} 
+                      r={8} 
+                      fill="#10b981" 
+                      stroke="#fff" 
+                      strokeWidth={3}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  );
+                }
+                return null;
+              }}
               name="Current Situation"
             />
             
-            {/* Goal markers as custom dots on the New Plan line */}
+            {/* New plan line with goal markers (excluding current retirement) */}
             <Line 
               type="monotone" 
               dataKey="editableValue" 
@@ -890,8 +911,29 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
                 const { cx, cy, payload } = props;
                 if (!payload || !goalMarkers) return null;
                 
-                // Check if this age has any goals
-                const goalsAtThisAge = goalMarkers.filter(goal => goal.goalAge === payload.age);
+                const currentRetirementAge = retirementGoal?.retirement_age || 67;
+                
+                // Check if this age has any goals (excluding current retirement goal)
+                const goalsAtThisAge = goalMarkers.filter(goal => 
+                  goal.goalAge === payload.age && 
+                  !(goal.goal_type === 'retirement' && goal.goalAge === currentRetirementAge)
+                );
+                
+                // Show new plan retirement goal at new retirement age
+                if (payload.age === editablePlan.target_retirement_age) {
+                  return (
+                    <circle 
+                      cx={cx} 
+                      cy={cy} 
+                      r={8} 
+                      fill="#3b82f6" 
+                      stroke="#fff" 
+                      strokeWidth={3}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  );
+                }
+                
                 if (goalsAtThisAge.length === 0) {
                   return <circle cx={cx} cy={cy} r={4} fill="#3b82f6" stroke="#fff" strokeWidth={2} />;
                 }
