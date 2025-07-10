@@ -60,6 +60,21 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     enabled: !!user,
   });
 
+  // Fetch all goals to get withdrawal orders
+  const { data: allGoals } = useQuery({
+    queryKey: ['goals', user?.id, 'all'],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Fetch expenses to get growth rates
   const { data: expenses } = useQuery({
     queryKey: ['expenses', user?.id],
@@ -148,29 +163,70 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     }).format(value);
   };
 
-  // Calculate weighted average expense growth rate
-  const calculateExpenseGrowthRate = () => {
-    if (!expenses || expenses.length === 0) return 0.03; // Default 3% inflation
+  // Calculate individual expense projections with their own growth rates
+  const calculateIndividualExpenses = (yearsFromStart: number) => {
+    if (!expenses || expenses.length === 0) return [];
     
-    let totalWeightedGrowth = 0;
-    let totalExpenses = 0;
-    
-    expenses.forEach(expense => {
+    return expenses.map(expense => {
       const amount = Number(expense.amount);
-      // Use the growth_rate from the expense if available, otherwise default to 3%
       const growthRate = (expense.growth_rate != null ? Number(expense.growth_rate) : 3.0) / 100;
       
-      // Convert to monthly if needed
-      let monthlyAmount = amount;
-      if (expense.frequency === 'annual') monthlyAmount = amount / 12;
-      if (expense.frequency === 'weekly') monthlyAmount = amount * 4.33;
-      if (expense.frequency === 'quarterly') monthlyAmount = amount / 3;
+      // Convert to annual amount
+      let annualAmount = amount;
+      if (expense.frequency === 'monthly') annualAmount = amount * 12;
+      if (expense.frequency === 'weekly') annualAmount = amount * 52;
+      if (expense.frequency === 'quarterly') annualAmount = amount * 4;
       
-      totalWeightedGrowth += monthlyAmount * growthRate;
-      totalExpenses += monthlyAmount;
+      // Apply individual growth rate
+      const inflatedAmount = annualAmount * Math.pow(1 + growthRate, yearsFromStart);
+      
+      return {
+        ...expense,
+        inflatedAnnualAmount: inflatedAmount
+      };
     });
+  };
+
+  // Get withdrawal order from retirement goal
+  const getWithdrawalOrder = () => {
+    if (!retirementGoal?.withdrawal_order || !Array.isArray(retirementGoal.withdrawal_order)) {
+      return [];
+    }
+    return retirementGoal.withdrawal_order as string[];
+  };
+
+  // Calculate how much to withdraw from a specific account based on withdrawal order
+  const calculateAccountWithdrawal = (accountId: string, totalExpenses: number, availableAccounts: { id: string; value: number }[]) => {
+    const withdrawalOrder = getWithdrawalOrder();
+    if (withdrawalOrder.length === 0) {
+      // If no withdrawal order specified, distribute proportionally
+      const totalValue = availableAccounts.reduce((sum, acc) => sum + acc.value, 0);
+      const account = availableAccounts.find(acc => acc.id === accountId);
+      if (!account || totalValue === 0) return 0;
+      return totalExpenses * (account.value / totalValue);
+    }
+
+    // Apply withdrawal order priority
+    let remainingExpenses = totalExpenses;
+    const accountIndex = withdrawalOrder.findIndex(id => id === accountId);
     
-    return totalExpenses > 0 ? totalWeightedGrowth / totalExpenses : 0.03;
+    if (accountIndex === -1) return 0; // Account not in withdrawal order
+    
+    // Withdraw from accounts in order
+    for (let i = 0; i < accountIndex; i++) {
+      const priorAccount = availableAccounts.find(acc => acc.id === withdrawalOrder[i]);
+      if (priorAccount && priorAccount.value > 0) {
+        const withdrawal = Math.min(remainingExpenses, priorAccount.value);
+        remainingExpenses -= withdrawal;
+        if (remainingExpenses <= 0) return 0;
+      }
+    }
+    
+    // This account's turn to cover remaining expenses
+    const account = availableAccounts.find(acc => acc.id === accountId);
+    if (!account || account.value <= 0) return 0;
+    
+    return Math.min(remainingExpenses, account.value);
   };
 
   // Projection function that uses the appropriate data for each plan
@@ -185,8 +241,6 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
     
     const deathAge = 85;
     const annualGrowthRate = 0.07;
-    const expenseGrowthRate = calculateExpenseGrowthRate();
-    let annualExpenses = plan.monthly_expenses * 12;
     const annualSavings = plan.monthly_savings * 12;
     
     // Debug logging to see the differences
@@ -197,7 +251,6 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       totalAssets: plan.total_assets,
       retirementAge: retirementAge,
       annualSavings: annualSavings,
-      annualExpenses: annualExpenses,
       dataSource: planType === 'current' ? 'retirement goal from facts' : 'editable plan inputs'
     });
     
@@ -218,17 +271,27 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
           const isRetired = age > retirementAge;
           const yearsFromStart = age - currentAge;
           
-          // Apply expense growth over time
-          const inflatedAnnualExpenses = annualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromStart);
-          
           if (!isRetired) {
             // Pre-retirement: Add proportional savings and apply growth
             portfolioValue += allocatedSavings;
             portfolioValue *= (1 + annualGrowthRate);
           } else {
-            // Post-retirement: Apply growth first, but don't subtract expenses from individual accounts
-            // Individual accounts only show their own growth without expense withdrawals
+            // Post-retirement: Apply growth first, then subtract account-specific expenses
             portfolioValue *= (1 + annualGrowthRate);
+            
+            // Calculate total retirement expenses with individual growth rates
+            const individualExpenses = calculateIndividualExpenses(yearsFromStart);
+            const totalExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
+            
+            // Get current account balances for withdrawal calculation
+            const currentAssets = assets?.map(asset => ({
+              id: asset.id,
+              value: portfolioValue // For simplicity, using current portfolio value
+            })) || [];
+            
+            // Calculate withdrawal from this specific account
+            const accountWithdrawal = calculateAccountWithdrawal(selectedAccount, totalExpenses, currentAssets);
+            portfolioValue -= accountWithdrawal;
             
             // Don't let portfolio go negative
             portfolioValue = Math.max(0, portfolioValue);
@@ -248,17 +311,18 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         const isRetired = age > retirementAge;
         const yearsFromStart = age - currentAge;
         
-        // Apply expense growth over time
-        const inflatedAnnualExpenses = annualExpenses * Math.pow(1 + expenseGrowthRate, yearsFromStart);
-        
         if (!isRetired) {
           // Pre-retirement: Add savings and apply growth
           portfolioValue += annualSavings;
           portfolioValue *= (1 + annualGrowthRate);
         } else {
-          // Post-retirement: Apply growth first, then subtract inflated expenses
+          // Post-retirement: Apply growth first, then subtract expenses with individual growth rates
           portfolioValue *= (1 + annualGrowthRate);
-          portfolioValue -= inflatedAnnualExpenses;
+          
+          // Calculate total retirement expenses with individual growth rates
+          const individualExpenses = calculateIndividualExpenses(yearsFromStart);
+          const totalExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
+          portfolioValue -= totalExpenses;
           
           // Don't let portfolio go negative
           portfolioValue = Math.max(0, portfolioValue);
@@ -266,11 +330,14 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
         
         // Debug logging for key ages
         if (age === retirementAge || age === retirementAge + 1) {
+          const individualExpenses = calculateIndividualExpenses(yearsFromStart);
+          const totalExpenses = individualExpenses.reduce((sum, exp) => sum + exp.inflatedAnnualAmount, 0);
           console.log(`${planType} plan at age ${age}:`, {
             isRetired,
             portfolioValue,
             annualSavings,
-            inflatedAnnualExpenses,
+            totalExpenses,
+            individualExpenses: individualExpenses.map(exp => ({ name: exp.name, amount: exp.inflatedAnnualAmount })),
             retirementAge
           });
         }
