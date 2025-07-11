@@ -28,14 +28,30 @@ export interface PlanData {
 
 const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
   const { user } = useAuth();
-  const [editablePlan, setEditablePlan] = useState<PlanData>({
-    monthly_income: 0,
-    monthly_expenses: 0,
-    monthly_savings: 0,
-    target_retirement_age: 67,
-    target_savings_rate: 20,
-    total_assets: 0,
-  });
+  
+  // Load saved plan from localStorage or use default
+  const getInitialPlan = (): PlanData => {
+    if (typeof window !== 'undefined' && user) {
+      const savedPlan = localStorage.getItem(`editablePlan_${user.id}`);
+      if (savedPlan) {
+        try {
+          return JSON.parse(savedPlan);
+        } catch (error) {
+          console.error('Error parsing saved plan:', error);
+        }
+      }
+    }
+    return {
+      monthly_income: 0,
+      monthly_expenses: 0,
+      monthly_savings: 0,
+      target_retirement_age: 67,
+      target_savings_rate: 20,
+      total_assets: 0,
+    };
+  };
+
+  const [editablePlan, setEditablePlan] = useState<PlanData>(getInitialPlan);
 
   // Fetch user's current financial data
   const { data: income } = useQuery({
@@ -140,15 +156,25 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
     total_assets: assets?.reduce((sum, asset) => sum + Number(asset.value), 0) || 0,
   }), [income, expenses, savingsContributions, assets, retirementGoal]);
 
-  // Initialize editable plan with current situation data
+  // Initialize editable plan with current situation data (only if no saved plan exists)
   useEffect(() => {
-    if (currentSituation.monthly_income > 0 || retirementGoal) {
-      setEditablePlan({
-        ...currentSituation,
-        target_retirement_age: currentSituation.target_retirement_age,
-      });
+    if (user && (currentSituation.monthly_income > 0 || retirementGoal)) {
+      const savedPlan = localStorage.getItem(`editablePlan_${user.id}`);
+      if (!savedPlan) {
+        setEditablePlan({
+          ...currentSituation,
+          target_retirement_age: currentSituation.target_retirement_age,
+        });
+      }
     }
-  }, [currentSituation, retirementGoal]);
+  }, [currentSituation, retirementGoal, user]);
+
+  // Save editable plan to localStorage whenever it changes
+  useEffect(() => {
+    if (user && editablePlan.monthly_income > 0) {
+      localStorage.setItem(`editablePlan_${user.id}`, JSON.stringify(editablePlan));
+    }
+  }, [editablePlan, user]);
 
   // Calculate probability of success for both plans
   const currentPoS = calculateProbabilityOfSuccess(currentSituation);
@@ -165,10 +191,15 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
   };
 
   const resetToCurrentSituation = () => {
-    setEditablePlan({
+    const resetPlan = {
       ...currentSituation,
       individual_contributions: undefined, // Clear individual contributions to force recalculation
-    });
+    };
+    setEditablePlan(resetPlan);
+    // Clear saved plan from localStorage
+    if (user) {
+      localStorage.removeItem(`editablePlan_${user.id}`);
+    }
   };
 
   return (
