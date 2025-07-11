@@ -13,6 +13,7 @@ interface PlanData {
   target_retirement_age: number;
   target_savings_rate: number;
   total_assets: number;
+  individual_contributions?: { [assetId: string]: number }; // Track individual contributions by asset ID
 }
 
 interface ComparisonChartProps {
@@ -329,54 +330,12 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
 
   // Calculate monthly contributions allocated to a specific asset
   const getMonthlyContributionToAsset = (assetId: string, totalMonthlySavings: number, planType: 'current' | 'editable') => {
-    // For editable plan, we need to calculate based on the updated savings amounts
-    // since the database savings may not reflect the user's current edits
-    if (planType === 'editable') {
-      // For editable plans, distribute proportionally based on current savings allocations
-      // but scaled to match the new total monthly savings amount
-      if (!savings || savings.length === 0) {
-        // If no savings allocations defined, distribute proportionally based on current asset values
-        if (!assets || assets.length === 0) return 0;
-        const asset = assets.find(a => a.id === assetId);
-        if (!asset) return 0;
-        
-        const totalAssetValue = assets.reduce((sum, a) => sum + Number(a.value), 0);
-        if (totalAssetValue === 0) return totalMonthlySavings / assets.length; // Equal distribution if no assets
-        
-        return totalMonthlySavings * (Number(asset.value) / totalAssetValue);
-      }
-      
-      // Calculate what proportion this asset should get based on original allocations
-      const assetSavings = savings.filter(s => s.destination_asset_id === assetId);
-      const originalAssetContribution = assetSavings.reduce((sum, s) => {
-        let monthlyAmount = Number(s.amount);
-        if (s.frequency === 'annual') monthlyAmount = monthlyAmount / 12;
-        if (s.frequency === 'weekly') monthlyAmount = monthlyAmount * 4.33;
-        if (s.frequency === 'quarterly') monthlyAmount = monthlyAmount / 3;
-        return sum + monthlyAmount;
-      }, 0);
-      
-      // Calculate total original contributions to get the proportion
-      const totalOriginalContributions = savings.reduce((sum, s) => {
-        let monthlyAmount = Number(s.amount);
-        if (s.frequency === 'annual') monthlyAmount = monthlyAmount / 12;
-        if (s.frequency === 'weekly') monthlyAmount = monthlyAmount * 4.33;
-        if (s.frequency === 'quarterly') monthlyAmount = monthlyAmount / 3;
-        return sum + monthlyAmount;
-      }, 0);
-      
-      // If no original contributions, distribute equally
-      if (totalOriginalContributions === 0) {
-        const assetsWithSavings = new Set(savings.map(s => s.destination_asset_id).filter(Boolean));
-        return assetsWithSavings.has(assetId) ? totalMonthlySavings / assetsWithSavings.size : 0;
-      }
-      
-      // Scale the original asset contribution by the ratio of new to original total
-      const proportion = originalAssetContribution / totalOriginalContributions;
-      return totalMonthlySavings * proportion;
+    // For editable plan with individual contributions, use the exact amounts
+    if (planType === 'editable' && editablePlan.individual_contributions) {
+      return editablePlan.individual_contributions[assetId] || 0;
     }
     
-    // For current plan, use the original database amounts
+    // For current plan OR editable plan without individual contributions, use proportional distribution
     if (!savings || savings.length === 0) {
       // If no savings allocations defined, distribute proportionally based on current asset values
       if (!assets || assets.length === 0) return 0;
@@ -389,15 +348,39 @@ const ComparisonChart = ({ currentPlan, editablePlan, planName }: ComparisonChar
       return totalMonthlySavings * (Number(asset.value) / totalAssetValue);
     }
     
-    // Find savings allocations for this asset
+    // For current plan or editable plan without individual_contributions, use database allocations
     const assetSavings = savings.filter(s => s.destination_asset_id === assetId);
-    return assetSavings.reduce((sum, s) => {
+    const originalAssetContribution = assetSavings.reduce((sum, s) => {
       let monthlyAmount = Number(s.amount);
       if (s.frequency === 'annual') monthlyAmount = monthlyAmount / 12;
       if (s.frequency === 'weekly') monthlyAmount = monthlyAmount * 4.33;
       if (s.frequency === 'quarterly') monthlyAmount = monthlyAmount / 3;
       return sum + monthlyAmount;
     }, 0);
+    
+    // For current plan, return the original amount
+    if (planType === 'current') {
+      return originalAssetContribution;
+    }
+    
+    // For editable plan, scale proportionally to match the new total
+    const totalOriginalContributions = savings.reduce((sum, s) => {
+      let monthlyAmount = Number(s.amount);
+      if (s.frequency === 'annual') monthlyAmount = monthlyAmount / 12;
+      if (s.frequency === 'weekly') monthlyAmount = monthlyAmount * 4.33;
+      if (s.frequency === 'quarterly') monthlyAmount = monthlyAmount / 3;
+      return sum + monthlyAmount;
+    }, 0);
+    
+    // If no original contributions, distribute equally among assets with savings
+    if (totalOriginalContributions === 0) {
+      const assetsWithSavings = new Set(savings.map(s => s.destination_asset_id).filter(Boolean));
+      return assetsWithSavings.has(assetId) ? totalMonthlySavings / assetsWithSavings.size : 0;
+    }
+    
+    // Scale the original asset contribution by the ratio of new to original total
+    const proportion = originalAssetContribution / totalOriginalContributions;
+    return totalMonthlySavings * proportion;
   };
 
   // Projection function using monthly future value calculations

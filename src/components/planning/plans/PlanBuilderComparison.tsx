@@ -23,6 +23,7 @@ export interface PlanData {
   target_retirement_age: number;
   target_savings_rate: number;
   total_assets: number;
+  individual_contributions?: { [assetId: string]: number }; // Track individual contributions by asset ID
 }
 
 const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {

@@ -15,6 +15,7 @@ interface PlanData {
   target_retirement_age: number;
   target_savings_rate: number;
   total_assets: number;
+  individual_contributions?: { [assetId: string]: number }; // Track individual contributions by asset ID
 }
 
 interface EditablePlanColumnProps {
@@ -183,6 +184,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     let newIncomeTotal = 0;
     let newExpenseTotal = 0;
     let newSavingsTotal = 0;
+    const individualContributions: { [assetId: string]: number } = {};
     
     // Calculate totals from local inputs, treating empty strings as 0
     income.forEach((item) => {
@@ -195,18 +197,26 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
       newExpenseTotal += inputValue === '' ? 0 : (Number(inputValue) || 0);
     });
     
-    // ONLY add up actual savings contributions - don't derive from surplus
+    // Track individual savings contributions by asset ID
     savingsContributions.forEach((item) => {
       const inputValue = localInputs[`saving_${item.id}`];
-      newSavingsTotal += inputValue === '' ? 0 : (Number(inputValue) || 0);
+      const amount = inputValue === '' ? 0 : (Number(inputValue) || 0);
+      newSavingsTotal += amount;
+      
+      // Map to asset ID for individual tracking
+      const assetId = item.destination_asset_id;
+      if (assetId) {
+        individualContributions[assetId] = (individualContributions[assetId] || 0) + amount;
+      }
     });
     
-    // Update plan data with actual savings (not derived surplus)
+    // Update plan data with actual savings and individual contributions
     onPlanChange({
       ...planData,
       monthly_income: newIncomeTotal,
       monthly_expenses: newExpenseTotal,
-      monthly_savings: newSavingsTotal, // This should be actual planned savings, not surplus
+      monthly_savings: newSavingsTotal,
+      individual_contributions: individualContributions,
     });
   };
 
