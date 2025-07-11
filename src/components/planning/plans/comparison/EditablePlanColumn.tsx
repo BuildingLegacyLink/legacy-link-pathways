@@ -138,39 +138,7 @@ const EditablePlanColumn = ({ planData, onPlanChange }: EditablePlanColumnProps)
     }
   }, [income, expenses, savingsContributions, planData]);
 
-  // Reset inputs when plan data is reset externally
-  useEffect(() => {
-    if (Object.keys(localInputs).length > 0 && income.length > 0 && expenses.length > 0) {
-      const originalIncome = income.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
-      const originalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
-      const originalSavings = savingsContributions.reduce((sum, item) => sum + Number(item.amount) * getFrequencyMultiplier(item.frequency), 0);
-      
-      // If plan data matches original data, reset inputs
-      if (Math.abs(planData.monthly_income - originalIncome) < 1 && 
-          Math.abs(planData.monthly_expenses - originalExpenses) < 1 &&
-          Math.abs(planData.monthly_savings - originalSavings) < 1) {
-        
-        const newLocalInputs: { [key: string]: string } = {};
-        
-        income.forEach((item) => {
-          const monthlyAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
-          newLocalInputs[`income_${item.id}`] = Math.round(monthlyAmount).toString();
-        });
-        
-        expenses.forEach((item) => {
-          const monthlyAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
-          newLocalInputs[`expense_${item.id}`] = Math.round(monthlyAmount).toString();
-        });
-        
-        savingsContributions.forEach((item) => {
-          const monthlyAmount = Number(item.amount) * getFrequencyMultiplier(item.frequency);
-          newLocalInputs[`saving_${item.id}`] = Math.round(monthlyAmount).toString();
-        });
-        
-        setLocalInputs(newLocalInputs);
-      }
-    }
-  }, [planData.monthly_income, planData.monthly_expenses, planData.monthly_savings]);
+  // Only reset inputs when explicitly reset via the Reset button (handled in parent component)
 
   // Handle input changes - allow empty string and numbers only
   const handleInputChange = (key: string, value: string) => {

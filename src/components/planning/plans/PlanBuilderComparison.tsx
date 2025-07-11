@@ -165,7 +165,10 @@ const PlanBuilderComparison = ({ onBack }: PlanBuilderComparisonProps) => {
   };
 
   const resetToCurrentSituation = () => {
-    setEditablePlan(currentSituation);
+    setEditablePlan({
+      ...currentSituation,
+      individual_contributions: undefined, // Clear individual contributions to force recalculation
+    });
   };
 
   return (
