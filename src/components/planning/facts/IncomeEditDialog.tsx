@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,24 @@ const IncomeEditDialog = ({ income, open, onOpenChange }: IncomeEditDialogProps)
     end_date_type: income?.end_date_type || 'none',
     end_date_value: income?.end_date_value
   });
+
+  // Update form data whenever the income prop changes
+  useEffect(() => {
+    if (income) {
+      setEditData({
+        name: income.name || '',
+        type: income.type || 'salary',
+        amount: income.amount?.toString() || '',
+        frequency: income.frequency || 'monthly',
+        start_date: income.start_date || '',
+        end_date: income.end_date || '',
+        start_date_type: income.start_date_type || 'none',
+        start_date_value: income.start_date_value,
+        end_date_type: income.end_date_type || 'none',
+        end_date_value: income.end_date_value
+      });
+    }
+  }, [income]);
 
   // Fetch user profile for first name and age calculation
   const { data: profile } = useQuery({
